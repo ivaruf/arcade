@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07060b">
+<meta name="description" content="One launcher for every ivaruf game.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ARCADE</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0912'/><rect x='5' y='5' width='10' height='10' rx='3' fill='%232ad1c9'/><rect x='17' y='5' width='10' height='10' rx='3' fill='%238b5cf6'/><rect x='5' y='17' width='10' height='10' rx='3' fill='%233b9be9'/><rect x='17' y='17' width='10' height='10' rx='3' fill='%23f0b429'/></svg>">
+<link rel="stylesheet" href="arcade.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">ivaruf.github.io</p>
+  <h1>ARCADE</h1>
+  <p class="lede">Insert coin. Pick a machine.</p>
+</header>
+
+<main>
+  <section id="grid" class="grid" aria-label="Games" aria-busy="true"></section>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+</main>
+
+<footer class="foot">
+  <p>Every machine is its own web app on the same site. Add one by adding its name to <code>games.json</code>.</p>
+</footer>
+
+<!-- One card per game. arcade.js clones this and fills it from the game's own manifest. -->
+<template id="card-tpl">
+  <article class="card pending">
+    <div class="head">
+      <div class="icon-wrap">
+        <img class="icon" alt="" decoding="async" loading="lazy" hidden>
+        <span class="monogram" aria-hidden="true"></span>
+      </div>
+      <div class="naming">
+        <h2 class="title"></h2>
+        <p class="tagline" hidden></p>
+      </div>
+    </div>
+    <p class="desc"></p>
+    <div class="actions">
+      <button class="play" type="button">PLAY</button>
+      <a class="open" target="_blank" rel="noopener" title="Open on its own page" aria-label="Open on its own page">↗</a>
+      <span class="badge" hidden>offline ready</span>
+    </div>
+  </article>
+</template>
+
+<!-- The in-arcade player: the chosen game runs here in an iframe, the pill takes you back. -->
+<div id="player" class="player" hidden>
+  <iframe id="frame" title="Game"
+          allow="fullscreen; autoplay; gamepad; screen-wake-lock; accelerometer; gyroscope; pointer-lock; xr-spatial-tracking"
+          allowfullscreen></iframe>
+  <div class="pill">
+    <button id="exit" type="button" aria-label="Back to the arcade">◂ ARCADE</button>
+  </div>
+</div>
+
+<script src="arcade.js"></script>
+</body>
+</html>
