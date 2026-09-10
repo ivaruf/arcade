@@ -92,6 +92,11 @@ const lerpAngle = (a, b, t) => a + wrapAngle(b - a) * t;
 // DOM
 // ---------------------------------------------------------------------------
 
+// Tell the watchdog in index.html that the modules parsed and are running.
+// Set before anything that can throw, so a later failure reports itself
+// through the boot card rather than being mistaken for a dead module.
+window.__cloudnineBooted = true;
+
 const $ = (id) => document.getElementById(id);
 const ui = {
   canvas: $('stage'),

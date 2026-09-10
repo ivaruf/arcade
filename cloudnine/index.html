@@ -109,6 +109,28 @@
   integrity="sha384-u+jmBF3Ig/827G8UT4kF+dDbuY0uXakBSGip6BUjiZ7IHqxA44vGxcpx76wGLI3f"
   crossorigin="anonymous"
 ></script>
+<!--
+  The boot card's text is plain HTML, so if the module below never RUNS the
+  page sits on "unlocking the doors…" for ever with nothing to go on. That is
+  not hypothetical: opened over file:// the browser blocks ES modules by CORS,
+  Babylon still loads because it is a classic script, and the page looks like
+  it is thinking rather than broken.
+
+  This is the only classic script on the page and its whole job is to notice.
+-->
+<script>
+  window.__cloudnineBooted = false;
+  setTimeout(function () {
+    if (window.__cloudnineBooted) return;
+    var line = document.getElementById('boot-line');
+    if (!line) return;
+    line.className = 'line warn';
+    line.innerHTML =
+      location.protocol === 'file:'
+        ? 'The floor has to be served over HTTP &mdash; browsers refuse to load ES modules from a file:// page.<br><br><code>cd ~/projects/games &amp;&amp; python3 -m http.server 8000</code><br>then open <code>localhost:8000/arcade/cloudnine/</code>'
+        : 'The floor did not start. Check the browser console \u2014 and note that a module script reports its whole graph through this one tag, so the error names js/main.js even when the file that actually failed is one of its imports.';
+  }, 5000);
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

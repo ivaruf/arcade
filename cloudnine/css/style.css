@@ -135,6 +135,22 @@ body::after {
   color: #6f7b88;
 }
 
+/* The boot card telling you why it never got going. */
+.line.warn {
+  color: #ffd3de;
+  line-height: 1.7;
+}
+
+.line.warn code {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .07);
+  color: var(--ivory);
+  font-size: 12px;
+}
+
 kbd {
   display: inline-block;
   min-width: 1.5em;
