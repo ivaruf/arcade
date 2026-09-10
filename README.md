@@ -103,5 +103,12 @@ so a stylesheet change does not re-download nine megabytes of gopher.
 
 ## Icons
 
-`python3 tools/make-icons.py` regenerates `icons/` (needs Pillow).
-`python3 cloudnine/tools/make-icons.py` does the same for the 3D floor.
+`python3 tools/make-icons.py` regenerates this launcher's `icons/` — a motif
+drawn procedurally, per §4 of the hub rules (needs Pillow).
+
+`python3 cloudnine/tools/make-icons.py` regenerates the cloud arcade's, and is
+the exception: its motif is the owner's drawing of the gopher on a cloud,
+committed at `cloudnine/icons/source/gopher-cloud.png`. Pillow cannot draw
+that, so the script crops, masks, pads and resizes instead. The icon set is
+still reproducible from committed inputs by one command, which was the point of
+the rule; the drawing-it-ourselves part was not.

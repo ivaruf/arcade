@@ -1,5 +1,5 @@
 {
-  "name": "GOPHER CLOUD ARCADE — the sky is the arcade",
+  "name": "GOPHER CLOUD ARCADE \u2014 the sky is the arcade",
   "short_name": "Gopher Cloud",
   "description": "Fly between cloud platforms as the gopher and play any machine in the sky. Fall off and the cloud comes back for you.",
   "id": "./",
@@ -7,12 +7,35 @@
   "scope": "../",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#060910",
+  "background_color": "#f9c66b",
   "theme_color": "#050810",
-  "categories": ["games", "entertainment"],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

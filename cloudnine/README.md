@@ -162,6 +162,24 @@ decoder's priming silence so the seam is inaudible. It has its own switch in
 the pause menu, separate from the room's synthesized sound, and it ducks
 rather than restarts while a game has the machine.
 
+## Installing it
+
+It is a PWA in its own right: manifest, icons, and it registers the launcher's
+own worker at `/arcade/` rather than a second one, so the grid and the sky
+share one cache and one version number. Its manifest scope is `../` on purpose
+— scoped to this directory, the WAY OUT ring would throw an installed player
+out of the app and into a browser tab.
+
+`display: fullscreen`, `orientation: landscape`. On a touch device held
+upright you get a rotate prompt instead of a squeezed sky, and its button goes
+fullscreen *and* pins landscape in one tap — a page may only pin its
+orientation while fullscreen, which is why `js/screen.js` owns both. Where a
+browser cannot pin, only the button's label changes; where there is no
+fullscreen at all, both buttons hide and the prompt stands on its own.
+
+The icon is the owner's drawing, at `icons/source/gopher-cloud.png`, with the
+set derived from it by `tools/make-icons.py`.
+
 ## Known limits
 
 These are honest, not oversights.

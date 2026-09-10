@@ -58,6 +58,9 @@ const SHELL_FILES = [
   './cloudnine/js/audio.js',
   './cloudnine/js/signs.js',
   './cloudnine/js/screen.js',
+  './cloudnine/icons/icon-32.png',
+  './cloudnine/icons/icon-192.png',
+  './cloudnine/icons/icon-512.png',
 ];
 
 /** Big binaries live in the unversioned cache. See the header. */
