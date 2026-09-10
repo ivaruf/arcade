@@ -283,6 +283,91 @@ kbd {
 
 .chip:hover { border-color: rgba(18, 217, 184, .5); color: #d9fff7; }
 
+.hud-tools {
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+#fullscreen {
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* ---------- turn your device sideways ----------
+   Shown by media query alone, so a phone held upright gets the instruction
+   even if the modules never ran. The button inside is screen.js's. */
+
+.rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 24px;
+  background: linear-gradient(170deg, #16233f, var(--enamel));
+  color: var(--ink);
+  text-align: center;
+}
+
+@media (pointer: coarse) and (orientation: portrait) {
+  .rotate { display: flex; }
+}
+
+.rotate-art {
+  width: min(46vw, 190px);
+  height: auto;
+}
+
+.rotate-arrow { opacity: .9; }
+
+.rotate-phone {
+  transform-origin: 120px 120px;
+  animation: tip 2.6s ease-in-out infinite;
+}
+
+@keyframes tip {
+  0%, 45% { transform: rotate(0deg); }
+  70%, 100% { transform: rotate(-90deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-phone { animation: none; transform: rotate(-90deg); }
+}
+
+.rotate h2 {
+  margin: 20px 0 2px;
+  font-size: clamp(20px, 6vw, 27px);
+  font-weight: 400;
+  letter-spacing: .06em;
+  color: #dffaf4;
+  text-shadow: 0 0 18px rgba(18, 217, 184, .5);
+}
+
+.rotate p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.rotate-go {
+  width: auto;
+  margin-top: 22px;
+  padding: 13px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rotate-note {
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: #ffd3de;
+}
+
 /* ---------- the machine callout ---------- */
 
 .prompt {

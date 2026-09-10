@@ -46,10 +46,13 @@
 <div id="hud" class="hud" hidden>
   <div class="hud-room">
     <span class="hud-name">GOPHER CLOUD</span>
-    <span id="hud-room" class="hud-where">Main hall</span>
+    <span id="hud-room" class="hud-where">The welcome cloud</span>
     <span id="hud-count" class="hud-count"></span>
   </div>
-  <button id="pause-btn" class="chip" type="button" aria-label="Pause">II</button>
+  <div class="hud-tools">
+    <button id="fullscreen" class="chip" type="button" aria-label="Go fullscreen" aria-pressed="false" title="Go fullscreen" hidden>&#10530;</button>
+    <button id="pause-btn" class="chip" type="button" aria-label="Pause">II</button>
+  </div>
 </div>
 
 <!-- The callout that floats over whatever the gopher is standing in front of. -->
@@ -87,7 +90,28 @@
   </div>
 </div>
 
-<!-- Walking out of the door dims the room before the page changes. -->
+<!-- A phone held upright gets this instead of a squeezed sky. Pure CSS to
+     show, so it works even if the modules never load; the button inside is
+     the only part screen.js touches, and it stays hidden where the browser
+     has no fullscreen to offer. -->
+<div id="rotate" class="rotate" role="dialog" aria-live="polite">
+  <svg class="rotate-art" viewBox="0 0 240 240" aria-hidden="true">
+    <path class="rotate-arrow" d="M52 168 A90 90 0 0 1 182 66" fill="none" stroke="#12d9b8" stroke-width="12" stroke-linecap="round"/>
+    <path d="M150 42 L196 60 L178 106 Z" fill="#12d9b8"/>
+    <g class="rotate-phone">
+      <rect x="92" y="70" width="56" height="100" rx="12" fill="#0a0e1c" stroke="#8e9aa8" stroke-width="6"/>
+      <rect x="102" y="84" width="36" height="66" rx="3" fill="#132038"/>
+    </g>
+  </svg>
+  <h2>Turn your device sideways</h2>
+  <p>The sky is wider than it is tall.</p>
+  <button id="rotate-go" class="neon rotate-go" type="button" hidden>
+    <b id="rotate-go-label">Or play fullscreen</b> <span aria-hidden="true">&rarr;</span>
+  </button>
+  <p id="rotate-note" class="rotate-note" hidden></p>
+</div>
+
+<!-- Leaving the sky dims it before the page changes. -->
 <div id="fade" class="fade" hidden></div>
 
 <noscript><p class="card boot">The arcade floor needs JavaScript.</p></noscript>

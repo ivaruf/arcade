@@ -37,6 +37,7 @@ import { createGopher } from './gopher.js';
 import * as input from './controls.js';
 import * as sfx from './audio.js';
 import { createLauncher, hashSlug, pushSlug, dropSlug } from './launcher.js';
+import { setupScreen, registerWorker } from './screen.js';
 
 // ---------------------------------------------------------------------------
 // Tuning. A gopher is about 0.8 m tall, so these are small numbers on purpose:
@@ -300,6 +301,9 @@ async function boot() {
   dressTheSky();
   engine.runRenderLoop(render);
   window.addEventListener('resize', () => engine.resize());
+  // Fullscreen changes the viewport without firing resize on every browser,
+  // so screen.js calls back rather than us hoping.
+  setupScreen(() => engine.resize());
 
   // A #play= link is a link to a machine: skip the title and put a coin in.
   const wanted = cabinets.find((c) => c.game && c.game.slug === hashSlug());
@@ -1066,7 +1070,10 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Service worker: the launcher's worker already covers /arcade/, so there is
-// nothing to register here. It caches this page and these assets the first
-// time they are asked for.
+// Installable in its own right. The launcher's worker already covers this
+// directory, but only once you have been to the launcher — arriving here
+// directly left the page uncontrolled, and an uncontrolled page cannot be
+// installed however good its manifest is. screen.js registers that same
+// worker rather than a second one; see its header.
 // ---------------------------------------------------------------------------
+registerWorker();
