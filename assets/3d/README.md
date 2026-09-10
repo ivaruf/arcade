@@ -18,6 +18,11 @@ input handlers, navigation, or animation clips are included.
 | `gopher-scarf.glb` | Original grounded scarf gopher |
 | `gopher-scarf-cloud.glb` | Original cloud-riding scarf gopher |
 | `arcade-props.glb` | Set dressing added for the CLOUD NINE game: token machine, planters, bin, entrance mat, A-frame sign, wall posters, bunting, and the street outside the entrance. Placed at final room positions — load it at the origin |
+| `hall-patch.glb` | The hall surfaces the game replaces: floor with the lift pit cut out, west wall with an arch through to the wing, roof with a skylight, plus the roof as a walkable place |
+| `level-basement.glb` | The mine under the hall: rock, ore seams, pit props, cart and rails |
+| `wing-aquarium.glb` | The water room west of the hall: wall-length tank, stools, marquee |
+| `deck-cloud.glb` | The platform in the sky, reachable only by flying |
+| `lift-cage.glb` | The cage between hall and mine. Exported at the origin because the runtime moves it |
 
 Choose the assembled environment OR the room plus individual machines to avoid
 loading overlapping geometry. Add the ceiling if needed. Gophers are included as
@@ -58,6 +63,17 @@ It preserves and imports the two gopher GLBs if present. Gopher model source is
 also included as `source/gopher_scarf.py`; the gopher GLBs are supplied in their
 original rest poses. Scarf movement from the earlier game is runtime code and
 is not baked into these model files.
+
+The building the game adds on top of the kit is a third script, and the same
+rules apply — it writes only its own five files:
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background --python source/build_world.py
+```
+
+Unlike everything else here, `build_world.py` authors in the GAME's coordinates
+and converts on the way out, because every number in it has to line up with a
+collision volume in `cloudnine/js/room.js`. Its header explains the mapping.
 
 The set dressing is a second, independent script:
 

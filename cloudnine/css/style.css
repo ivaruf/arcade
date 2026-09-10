@@ -236,6 +236,13 @@ kbd {
   text-shadow: 0 0 14px rgba(18, 217, 184, .5);
 }
 
+.hud-where {
+  font-size: 11.5px;
+  letter-spacing: .22em;
+  color: #ffe6c2;
+  text-shadow: 0 0 14px rgba(250, 145, 16, .45);
+}
+
 .hud-count {
   font-size: 10.5px;
   letter-spacing: .18em;

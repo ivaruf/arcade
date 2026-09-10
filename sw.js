@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.1.1'; // CLOUD NINE: theme is .m4a now, and the hum is gone
+const VERSION = 'v1.2.0'; // CLOUD NINE: four floors, a lift and a cloud deck
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

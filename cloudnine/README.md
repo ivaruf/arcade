@@ -1,7 +1,7 @@
 # CLOUD NINE — the arcade floor
 
-A proof of concept: the same games the 2D launcher lists, on a floor you walk
-around as the scarf gopher. Walk up to a machine and press play, and the
+A proof of concept: the same games the 2D launcher lists, in a building you
+walk around as the scarf gopher. Walk up to a machine and press play, and the
 camera pushes into the cabinet's screen until the real game grows out of it.
 
 Live at `/arcade/cloudnine/`. The 2D grid at `/arcade/` is untouched and
@@ -9,12 +9,41 @@ remains the dependable launcher; this is the other door into the same room.
 
 ![the arcade floor](../assets/3d/previews/arcade-interior.png)
 
+## Four floors
+
+```
+        ╔═══════════════════════╗
+        ║  CLOUD DECK     +9m   ║  swirls — open sky, fly up to it
+        ╚══════════╦════════════╝
+                   ║  skylight
+ ╔═════════════╗ ╔═╩═════════════════╗
+ ║  AQUARIUM   ╠═╣  MAIN HALL    0m  ║  maxgear, the door to the street
+ ║  fishtank   ║ ║                   ║
+ ║  dam_break  ║ ╚═════════╦═════════╝
+ ╚═════════════╝           ║  cage lift
+        ╔══════════════════╩════╗
+        ║  LOWER LEVEL    -5m   ║  supermine, supermine_adventure
+        ╚═══════════════════════╝
+```
+
+Each space has its own light, its own air and its own sound. The mine is dark,
+warm and fogged and lit mostly by its own ore; the aquarium is lit by the tank;
+the cloud deck is bright, hazy and quiet, with no machines going off across the
+room because that is not what it is for.
+
 ## What it does
 
 - **Six cabinets, six real games.** `../games.json` is still the registry. A
-  slug added there gets a machine here, wearing that game's own name on the
+  slug added there gets a machine, wearing that game's own name on the
   marquee, that game's own icon on the CRT, and a neon tint derived from it.
-  Nothing is hardcoded per game.
+  Nothing is hardcoded per game. Which room it goes in is one line in
+  `PLACEMENT`; anything not named there lands in the hall.
+- **Ride the cage down.** Step into the lift in the corner of the hall, stand
+  still for a beat, and it takes you to the mine. Step in when it is at the
+  other end and it comes to you.
+- **Fly up to the deck.** The middle of the hall's roof is open. Take off, rise
+  through it, and the building drops away — the cloud deck is the only room
+  with no other way in.
 - **Play the machine.** `E` (or the on-screen PLAY button, or X on a pad) at a
   machine drops a coin, flies the camera to the glass, boots the tube, and then
   the game — the actual game, in an iframe — appears *on the cabinet screen* at
@@ -36,6 +65,9 @@ remains the dependable launcher; this is the other door into the same room.
 | `E` / `Enter` | Play the machine you are standing at | — |
 | `Escape` | Pause; or leave a running game | Pause |
 | Drag / wheel | Orbit / zoom | Same |
+
+The lift needs no button: stand on the cage and wait. The cloud deck needs no
+lift: it is up through the skylight and there is no other way.
 
 Touch gets a floating stick on the left half, hop and sprint on the right, and
 a PLAY button that only exists while a machine is within reach. A gamepad
@@ -69,7 +101,7 @@ unversioned runtime cache so a launcher release does not evict nine megabytes.
 | File | Owns |
 | --- | --- |
 | `js/main.js` | Phases, movement, collision, the camera, the coin |
-| `js/room.js` | The building, the floor plan, and the Blender↔Babylon axis conversion |
+| `js/room.js` | The building as a union of boxes, the floor plans, the moods |
 | `js/cabinets.js` | One machine per game: tint, marquee, CRT art, floor mark |
 | `js/gopher.js` | Two models, one pivot, and all the procedural animation |
 | `js/launcher.js` | The handover from cabinet screen to running game |
@@ -79,7 +111,27 @@ unversioned runtime cache so a launcher release does not evict nine megabytes.
 
 Read the header of `js/room.js` before touching any coordinate. Blender is
 Z-up and the glTF loader mirrors X, and the two together are the only thing
-standing between you and a CLOUD NINE sign behind your head.
+standing between you and a CLOUD NINE sign behind your head. Everything the
+game added since is authored in game coordinates by `build_world.py` and
+converted on the way out, so those numbers and room.js's are the same numbers.
+
+### The world is a union of boxes
+
+There is no navmesh and no physics engine. `VOLUMES` are boxes you may be
+inside — the gaps between them are the walls — and `PLATFORMS` are rectangles
+at a height, the highest one below you being the ground. That is the whole
+model, and it is why none of the interesting bits needed special cases:
+
+- an **archway** is a small box bridging two rooms;
+- a **hole in the floor** is three rectangles that do not cover it;
+- **falling through the skylight** into the hall is the ground query finding
+  the hall floor because the roof rectangles have a gap;
+- the **lift** is one extra platform whose height changes.
+
+The camera uses the same union: it walks out along its own chase direction
+until the sample leaves the boxes, and stops there. Rooms carry the chase
+distance that suits them, so a 5 m camera in the hall becomes 3 m in the shaft
+without anyone noticing it happen.
 
 ### The one thing that is not real
 
@@ -121,9 +173,13 @@ These are honest, not oversights.
   it needs to be cheaper, merging each cabinet into one multi-material mesh is
   the next move, and the reason it was not done here is that the glTF loader's
   mirrored root makes `MergeMeshes` a coin toss on winding order.
-- **The floor plan holds twelve machines.** Beyond that, games in `games.json`
-  simply do not get a cabinet. The slot list in `js/room.js` is a floor plan,
-  not a limit on the arcade.
+- **The floor plans hold seventeen machines** across four rooms. Beyond that a
+  game gets no cabinet. `SLOTS` in `js/room.js` is a floor plan, not a limit on
+  the arcade.
+- **Collision boxes are written by hand** to match `build_world.py`. Move a
+  bench in one and it walks through you in the other. They are next to each
+  other in both files and both say so, which is the best that a proof of
+  concept gets without deriving them from the mesh.
 - **The registry logic is duplicated** from `arcade.js` — about 70 lines. It is
   deliberate: `arcade.js` is a classic script on one IIFE and this is an ES
   module, so sharing means converting the working launcher. If this graduates,
@@ -143,9 +199,19 @@ These are honest, not oversights.
    The HUD is back, the URL hash is clear, no iframe is left behind.
 5. Back button from inside a game leaves it the same way.
 6. Jump, jump again — cloud. Fly over the machines. Land.
-7. Sound: the theme, plus blips from machines across the room, footsteps in
-   time with the feet, the coin, the tube striking. Both switches in the pause
-   menu do what they say and survive a reload. There is no drone — if you hear
-   a steady hum you are on a cached build, so reload.
-8. Walk out of the entrance. The room dims and you are at `/arcade/`.
-9. `#play=supermine` in the URL should land you straight in that game.
+7. Stand in the cage in the corner of the hall. It should set off by itself
+   after about half a second, ride down, and NOT immediately take you back up.
+   Walk out into the mine: dark, warm, ore glowing on the walls.
+8. Back in the cage, wait, ride up. Through the arch on the west side into the
+   aquarium: teal light, a tank the length of the wall, four stools.
+9. In the middle of the hall, take off and hold `Space`. Out through the
+   skylight, over the roof, and forward to the cloud deck. The sky should be
+   sky, not black.
+10. Sound: the theme, plus blips from machines across the room — but only in
+    the hall and the aquarium. Footsteps in time with the feet, the coin, the
+    tube striking, the cage clanking off. Both switches in the pause menu do
+    what they say and survive a reload. There is no drone anywhere; if you
+    hear a steady hum you are on a cached build, so reload.
+11. Walk out of the entrance. The room dims and you are at `/arcade/`.
+12. `#play=supermine` in the URL should land you straight in that game, which
+    now means straight into the mine.

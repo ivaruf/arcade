@@ -27,7 +27,7 @@
  * bezel the model already has.
  * ========================================================================== */
 
-import { container, footprintOf, blockerFor } from './room.js';
+import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, LEVEL } from './room.js';
 
 /** Kinds in rotation, and the accent material each one wears in the GLB. */
 const KINDS = [
@@ -250,8 +250,9 @@ function emissivePanel(name, texture, scene) {
  * camera goes when a coin drops.
  */
 async function machine(scene, shadows, held, spec, game, slot) {
+  const floor = slot.floor ?? 0;
   const holder = new BABYLON.TransformNode(`cabinet:${game ? game.slug : spec.kind}`, scene);
-  holder.position.set(slot.x, 0, slot.z);
+  holder.position.set(slot.x, floor, slot.z);
   holder.rotation.y = slot.yaw;
 
   const stamped = held.instantiateModelsToScene((name) => name, true);
@@ -294,7 +295,14 @@ async function machine(scene, shadows, held, spec, game, slot) {
     }
   }
 
-  const blockers = footprintOf(spec.kind).map((local) => blockerFor(slot, local));
+  // A blocker carries the floor it stands on, so a machine in the basement
+  // does not also block the hall five metres above it.
+  const blockers = footprintOf(spec.kind).map((local) => {
+    const b = blockerFor(slot, local);
+    b.top += floor;
+    b.base = floor;
+    return b;
+  });
   const cabinet = { game, kind: spec.kind, holder, slot, blockers, accent, screenMesh: null };
 
   if (!game) {
@@ -362,10 +370,12 @@ async function machine(scene, shadows, held, spec, game, slot) {
     // Not `false`: setLit refuses to redraw a screen that is already in the
     // state asked for, and the first call has to get through.
     lit: null,
-    stand: new BABYLON.Vector3(slot.x + front.x * spec.stand, 0, slot.z + front.z * spec.stand),
+    room: slot.room || 'hall',
+    floor,
+    stand: new BABYLON.Vector3(slot.x + front.x * spec.stand, floor, slot.z + front.z * spec.stand),
     screenPoint: new BABYLON.Vector3(
       slot.x + front.x * SCREEN.z,
-      SCREEN.y,
+      floor + SCREEN.y,
       slot.z + front.z * SCREEN.z,
     ),
     /** ArcRotateCamera pose that ends up dead in front of the glass. */
@@ -392,10 +402,32 @@ export function setLit(cabinet, lit) {
 }
 
 /**
+ * Give every game a standing. A game goes to the room PLACEMENT names for it,
+ * or the hall; if that room is full it falls back to the hall, and only if the
+ * hall is full too does it go without a machine. Returns slots tagged with
+ * their room and floor height.
+ */
+function floorPlan(games) {
+  const free = Object.fromEntries(Object.entries(SLOTS).map(([id, list]) => [id, [...list]]));
+  const plan = [];
+  for (const game of games) {
+    const wanted = PLACEMENT[game.slug] || 'hall';
+    const room = free[wanted]?.length ? wanted : 'hall';
+    const slot = free[room]?.shift();
+    if (!slot) {
+      console.info(`[cloudnine] no standing left for ${game.slug}; it has no machine`);
+      continue;
+    }
+    plan.push({ game, slot: { ...slot, room, floor: LEVEL[room] ?? 0 } });
+  }
+  return plan;
+}
+
+/**
  * Fill the floor plan. Machines are loaded one kind at a time and stamped as
  * many times as needed, so six cabinets cost three GLB downloads.
  */
-export async function placeCabinets(scene, shadows, games, slots) {
+export async function placeCabinets(scene, shadows, games) {
   const containers = new Map();
   const need = async (kind) => {
     if (!containers.has(kind)) containers.set(kind, await container(`machine-${kind}.glb`, scene));
@@ -403,12 +435,13 @@ export async function placeCabinets(scene, shadows, games, slots) {
   };
 
   const cabinets = [];
-  for (let i = 0; i < games.length && i < slots.length; i++) {
+  const plan = floorPlan(games);
+  for (let i = 0; i < plan.length; i++) {
     const spec = KINDS[i % KINDS.length];
     try {
-      cabinets.push(await machine(scene, shadows, await need(spec.kind), spec, games[i], slots[i]));
+      cabinets.push(await machine(scene, shadows, await need(spec.kind), spec, plan[i].game, plan[i].slot));
     } catch (err) {
-      console.error(`[cloudnine] could not stand up a cabinet for ${games[i].slug}`, err);
+      console.error(`[cloudnine] could not stand up a cabinet for ${plan[i].game.slug}`, err);
     }
   }
 
@@ -416,7 +449,9 @@ export async function placeCabinets(scene, shadows, games, slots) {
   try {
     const claw = await container('machine-claw.glb', scene);
     const spec = { kind: 'claw', accentMaterial: 'Periwinkle', stand: 1.2, cinema: 1.4 };
-    for (const slot of DECOR) cabinets.push(await machine(scene, shadows, claw, spec, null, slot));
+    for (const slot of DECOR) {
+      cabinets.push(await machine(scene, shadows, claw, spec, null, { ...slot, room: 'hall', floor: 0 }));
+    }
   } catch (err) {
     console.info('[cloudnine] no prize machines on the floor', err);
   }
