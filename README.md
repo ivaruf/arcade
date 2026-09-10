@@ -4,6 +4,13 @@ A launcher for every game on `ivaruf.github.io`, hosted as one more GitHub
 Pages site at **https://ivaruf.github.io/arcade/**. Static files only: no
 build step, no dependencies. It is also an installable PWA that works offline.
 
+There are two doors into the same set of games. This page is the grid, and it
+is the dependable one. **[CLOUD NINE](cloudnine/)** at `/arcade/cloudnine/` is
+a proof of concept of the other: an actual arcade floor you walk around as the
+gopher, where each machine is one of these games and putting a coin in one
+opens it out of the cabinet's screen. It has its own
+[README](cloudnine/README.md); nothing about it changes how this page works.
+
 ## How it finds the games
 
 `games.json` is the only thing you edit. Everything shown on a card is read at
@@ -88,6 +95,13 @@ versions are dropped when the new worker activates. A new build appears on
 the visit after it is deployed; the page is never reloaded underneath a
 running game.
 
+Two caches, and the split matters: `arcade-shell-<VERSION>` holds this
+launcher's own files plus the 3D floor's code, and is dropped on every version
+bump. `arcade-runtime` holds the games' manifests and icons and anything heavy
+in scope — the 3D floor's models and its theme — and survives version bumps,
+so a stylesheet change does not re-download nine megabytes of gopher.
+
 ## Icons
 
 `python3 tools/make-icons.py` regenerates `icons/` (needs Pillow).
+`python3 cloudnine/tools/make-icons.py` does the same for the 3D floor.

@@ -85,6 +85,32 @@ body::before {
   letter-spacing: 0.02em;
 }
 
+/* The door through to the 3D floor. Mint, because that is Cloud Nine's colour
+   rather than the launcher's violet: it should read as somewhere else. */
+.doorway {
+  margin: 18px 0 0;
+}
+
+.doorway a {
+  display: inline-block;
+  padding: 9px 18px;
+  border: 1px solid rgba(42, 209, 201, 0.4);
+  border-radius: 999px;
+  color: #b7f4ec;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.doorway a:hover,
+.doorway a:focus-visible {
+  border-color: #2ad1c9;
+  background: rgba(42, 209, 201, 0.12);
+  color: #e6fffb;
+}
+
 /* ---------- grid ---------- */
 
 main {

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#050810">
+<meta name="description" content="Walk the arcade floor as the gopher and play every machine from the inside.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CLOUD NINE — the arcade floor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0e1c'/><rect x='7' y='6' width='18' height='14' rx='2.5' fill='%2312d9b8'/><rect x='9.5' y='8.5' width='13' height='9' rx='1.5' fill='%23061018'/><rect x='12' y='21' width='8' height='5' rx='1.5' fill='%23f21e52'/></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="stage" tabindex="0"></canvas>
+
+<!-- Everything above the canvas is DOM: the floor is 3D, the words are not. -->
+
+<!-- The room's own signage, borrowed for the loading card. -->
+<div id="boot" class="card boot">
+  <p class="sign">CLOUD NINE</p>
+  <p class="sub">A R C A D E</p>
+  <p id="boot-line" class="line">unlocking the doors&hellip;</p>
+</div>
+
+<div id="title" class="card title" hidden>
+  <p class="sign">CLOUD NINE</p>
+  <p class="sub">A R C A D E</p>
+  <p class="blurb">Every machine on this floor is a real game. Walk up to one and put a coin in.</p>
+  <button id="walk-in" class="neon" type="button">Walk in</button>
+  <p class="fine">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
+    <kbd>Space</kbd> hop, again for the cloud &middot;
+    <kbd>E</kbd> play &middot;
+    drag to look
+  </p>
+</div>
+
+<!-- Floor HUD. Deliberately thin: the room is the interface. -->
+<div id="hud" class="hud" hidden>
+  <div class="hud-room">
+    <span class="hud-name">CLOUD NINE</span>
+    <span id="hud-count" class="hud-count"></span>
+  </div>
+  <button id="pause-btn" class="chip" type="button" aria-label="Pause">II</button>
+</div>
+
+<!-- The callout that floats over whatever the gopher is standing in front of. -->
+<div id="prompt" class="prompt" hidden aria-live="polite">
+  <span id="prompt-title" class="prompt-title"></span>
+  <span id="prompt-cue" class="prompt-cue"><kbd>E</kbd> insert coin</span>
+</div>
+
+<div id="pause" class="card pause" hidden>
+  <p class="sign small">Paused</p>
+  <button id="resume" class="neon" type="button">Back to the floor</button>
+  <button id="music" class="ghost" type="button" aria-pressed="true">Theme music: on</button>
+  <button id="sound" class="ghost" type="button" aria-pressed="true">Room sound: on</button>
+  <button id="leave" class="ghost" type="button">Leave the arcade</button>
+</div>
+
+<!-- Touch: a floating stick on the left, hop / sprint on the right, and a coin
+     button that only exists while a machine is within reach. -->
+<div id="touch" class="touch" hidden aria-hidden="true">
+  <div class="stick-zone">
+    <div class="stick-base"><div class="stick-knob"></div></div>
+  </div>
+  <button class="tbtn tbtn-sprint" type="button" aria-label="Sprint or sink">&raquo;</button>
+  <button class="tbtn tbtn-hop" type="button" aria-label="Hop">&#9650;</button>
+  <button id="tbtn-coin" class="tbtn tbtn-coin" type="button" aria-label="Insert coin" hidden>COIN</button>
+</div>
+
+<!-- The game itself. The clip-path starts as the CRT's rectangle on screen and
+     opens to the whole viewport, so the game grows out of the cabinet.
+     The iframe is not here: launcher.js builds a fresh one per game and
+     removes it afterwards — see its header for why that matters. -->
+<div id="cabinet" class="cabinet" hidden>
+  <div class="pill">
+    <button id="step-away" type="button" aria-label="Step away from the machine">&#9666; FLOOR</button>
+  </div>
+</div>
+
+<!-- Walking out of the door dims the room before the page changes. -->
+<div id="fade" class="fade" hidden></div>
+
+<noscript><p class="card boot">The arcade floor needs JavaScript.</p></noscript>
+
+<!--
+  Babylon from jsDelivr, pinned to an exact version and locked with an
+  integrity hash — the same pin fishtank ships, so a visitor who has played
+  that game already has these bytes. There is no local fallback copy here:
+  8 MB is not worth committing for a proof of concept, so the first visit
+  needs the network and boot.js says so plainly if the script never arrives.
+-->
+<script
+  src="https://cdn.jsdelivr.net/npm/babylonjs@8.56.2/babylon.js"
+  integrity="sha384-bJ7uvrJB0MXh1qhQouRHX/NbjOQywkt/ZxeFnrMiiFYG8InDFZlQdzVpAGaMhfwZ"
+  crossorigin="anonymous"
+></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@8.56.2/babylonjs.loaders.min.js"
+  integrity="sha384-u+jmBF3Ig/827G8UT4kF+dDbuY0uXakBSGip6BUjiZ7IHqxA44vGxcpx76wGLI3f"
+  crossorigin="anonymous"
+></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
