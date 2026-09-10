@@ -1,4 +1,8 @@
-# Cloud Nine — static arcade model kit
+# Gopher Cloud Arcade — 3D model kit
+
+The active cloud environment has been refined. See [ENVIRONMENT.md](ENVIRONMENT.md)
+for the current Blender scene, previews, Fishtank aquarium assets and rebuild
+instructions. The indoor room kit below remains available as a separate asset set.
 
 Editable scene: `arcade.blend`. Preview images: `previews/`.
 All assets are geometry and materials only. No gameplay, collision logic,

@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.3.0'; // GOPHER CLOUD ARCADE: the sky replaces the building
+const VERSION = 'v1.3.1'; // Larger mine island and peaceful aquarium swimming
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -49,6 +49,7 @@ const SHELL_FILES = [
   './cloudnine/manifest.webmanifest',
   './cloudnine/js/main.js',
   './cloudnine/js/room.js',
+  './cloudnine/js/aquarium.js',
   './cloudnine/js/cabinets.js',
   './cloudnine/js/gopher.js',
   './cloudnine/js/launcher.js',

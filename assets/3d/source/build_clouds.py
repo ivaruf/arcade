@@ -43,7 +43,7 @@ bpy.ops.object.delete(use_global=False)
 WELCOME = dict(x=0.0, y=0.0, z=0.0, hx=6.0, hz=5.0)
 RACE = dict(x=0.0, y=1.5, z=-17.0, hx=4.5, hz=4.0)
 WATER = dict(x=-17.0, y=-2.5, z=-5.0, hx=6.5, hz=5.0)
-MINE = dict(x=15.0, y=-5.5, z=-8.0, hx=6.0, hz=5.0)
+MINE = dict(x=15.0, y=-5.5, z=-8.0, hx=8.0, hz=6.0)
 CALM = dict(x=-5.0, y=10.0, z=-21.0, hx=4.5, hz=4.5)
 DECKS = [WELCOME, RACE, WATER, MINE, CALM]
 
@@ -264,7 +264,7 @@ def beacon(tag, d, accent, height=6.0):
     cylinder(f"{tag} mast", (x, y + height / 2, bz), 0.09, height, chrome)
     box(f"{tag} mast base", (x, y + 0.18, bz), (0.7, 0.36, 0.7), navy, 0.05)
     for i in range(4):
-        box(f"{tag} mast light", (x, y + 1.4 + i * 1.35, bz), (0.22, 0.1, 0.22), accent, 0.02)
+        box(f"{tag} mast light", (x, y + height * (i + 1) / 5, bz), (0.22, 0.1, 0.22), accent, 0.02)
 
 
 # ===========================================================================
@@ -430,6 +430,8 @@ for i in range(12):
         resolution=0.42,
         flat=0.45,
     )
+
+exec(compile((OUT / 'source' / 'polish_environment.py').read_text(), str(OUT / 'source' / 'polish_environment.py'), 'exec'), globals())
 
 members = [root] + list(root.children_recursive)
 bpy.ops.object.select_all(action="DESELECT")

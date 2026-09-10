@@ -1,3 +1,5 @@
+import { createAquariumSwimmers } from './aquarium.js';
+
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
  *
@@ -46,7 +48,7 @@ export const PLATFORMS = [
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
   { id: 'race', name: 'The speedway', x: [-4.5, 4.5], z: [-21, -13], y: 1.5 },
   { id: 'water', name: 'The aquarium', x: [-23.5, -10.5], z: [-10, 0], y: -2.5 },
-  { id: 'mine', name: 'The outcrop', x: [9, 21], z: [-13, -3], y: -5.5 },
+  { id: 'mine', name: 'The outcrop', x: [7, 23], z: [-14, -2], y: -5.5 },
   { id: 'calm', name: 'The quiet cloud', x: [-9.5, -0.5], z: [-25.5, -16.5], y: 10 },
 ];
 
@@ -71,7 +73,7 @@ export const SIGNPOST = { x: 2.6, y: 0, z: 1.4, top: 2.85 };
 export const BEACONS = {
   race: { x: 0, y: 1.5, z: -17.5, top: 5.0 },
   water: { x: -17, y: -2.5, z: -9.5, top: 5.4 },
-  mine: { x: 15, y: -5.5, z: -12.5, top: 5.2 },
+  mine: { x: 15, y: -5.5, z: -13.5, top: 5.2 },
   calm: { x: -5, y: 10, z: -25.0, top: 4.6 },
 };
 
@@ -225,10 +227,10 @@ const FURNITURE = [
   { x: -20.6, z: -5, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
   ...[-7.7, -5.9, -4.1, -2.3].map((z) => ({ x: -15.6, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
   // the outcrop: the headframe's legs, and the cart
-  ...[12.6, 17.4].flatMap((x) =>
-    [-10, -6].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
+  ...[9.1, 13.9].flatMap((x) =>
+    [-11, -7].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
   ),
-  { x: 15, z: -4.7, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
+  { x: 11.5, z: -5.7, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
   // the quiet cloud: pergola posts and two benches
   ...[-8, -2].flatMap((x) => [-24, -18].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 13.1, base: 10 }))),
   ...[[-7.2, -18.8], [-2.8, -18.8]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 10.4, base: 10 })),
@@ -241,9 +243,10 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb', scene);
+  const held = await container('cloud-world.glb?v=mine-swim-1', scene);
   held.addAllToScene();
 
+  const swimmers = createAquariumSwimmers(held);
   for (const mesh of held.meshes) {
     mesh.isPickable = false;
     mesh.receiveShadows = true;
@@ -257,8 +260,8 @@ export async function buildWorld(scene) {
       }
       mesh.material = dimmed.get(mat);
     }
-    mesh.freezeWorldMatrix();
+    if (!swimmers.movingMeshes.has(mesh)) mesh.freezeWorldMatrix();
   }
 
-  return { blockers: [...FURNITURE] };
+  return { blockers: [...FURNITURE], animate: swimmers.animate };
 }

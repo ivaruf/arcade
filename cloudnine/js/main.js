@@ -267,6 +267,7 @@ async function boot() {
   say('rolling out the clouds…');
   const machinesPromise = loadMachines();
   const world = await buildWorld(scene);
+  animateWorld = world.animate;
 
   say('reading the machines…');
   const machines = await machinesPromise;
@@ -928,6 +929,8 @@ function dressTheSky() {
 // The loop
 // ---------------------------------------------------------------------------
 
+let animateWorld = () => {};
+
 function render() {
   const dt = Math.min(engine.getDeltaTime() / 1000, MAX_DT);
   if (dt > 0) {
@@ -967,6 +970,7 @@ function render() {
     updateCamera(dt);
     if (gopher) gopher.animate(time, dt, state);
     animateCabinets(cabinets, near, time);
+    animateWorld(dt);
   }
   scene.render();
 }
