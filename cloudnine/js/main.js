@@ -28,9 +28,10 @@
 
 import { loadMachines } from './registry.js';
 import {
-  buildWorld, volumeAt, insideWorld, groundAt,
-  LEVEL, DOOR, MOODS, SPAWN, ROOF_HIDE_ABOVE,
+  buildWorld, groundAt, insideSky, platformNear,
+  SKY, SKY_LOOK, SPAWN, HOME,
 } from './room.js';
+import { raiseSigns } from './signs.js';
 import { placeCabinets, setLit, animateCabinets } from './cabinets.js';
 import { createGopher } from './gopher.js';
 import * as input from './controls.js';
@@ -64,9 +65,15 @@ const MAX_DT = 0.05;
 /** How close to a cabinet's mark counts as standing at it. */
 const REACH = 1.75;
 
-/** How far the ground may change under a walking gopher in one frame before
- *  it counts as having stepped off rather than walked down a slope. */
-const SLOPE_SNAP = 0.45;
+/**
+ * How long the gopher may fall before the cloud comes for it.
+ *
+ * This is the rule that makes the sky safe: there is no death, no damage and
+ * no reset, because this is a launcher and you should not be able to get
+ * stuck in one. Half a second is long enough for stepping off an edge to
+ * register as a mistake and short enough that it never becomes a fall.
+ */
+const CATCH_AFTER = 0.5;
 
 /**
  * The title shot orbits inside the room, so its radius has to be small enough
@@ -141,9 +148,8 @@ engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 2));
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0.02, 0.03, 0.05, 1);
 scene.ambientColor = new BABYLON.Color3(0.08, 0.1, 0.14);
-// Depth cue per room: the mine wants to swallow its far wall, the cloud deck
-// wants haze rather than a hard horizon. applyMood drives both the density
-// and the colour, and the colour is also what the camera sees past the world.
+// Haze rather than a hard horizon, and the same colour is what the camera
+// sees past the last cloud. dressTheSky() sets the real values at boot.
 scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
 scene.fogColor = new BABYLON.Color3(0.02, 0.03, 0.05);
 scene.fogDensity = 0;
@@ -227,11 +233,14 @@ const easeCamera = (beta, radius, seconds, alpha = null) => {
   ease = { until: time + seconds, beta, radius, alpha };
 };
 
-/** Set once the world is loaded; see room.js for why the roof is removable. */
-let roofMeshes = [];
+/** Which platform the gopher is over, for the HUD. */
+let platform = null;
 
-/** Which box of the building the gopher is in, and the one before it. */
-let volume = null;
+/** How long it has been falling with nothing underneath. */
+let falling = 0;
+
+/** True while the gopher is standing in the way-out ring. */
+let atTheDoor = false;
 
 let stepPhase = 0;
 let cabinets = [];
@@ -255,10 +264,9 @@ let atMachine = null;
 // ---------------------------------------------------------------------------
 
 async function boot() {
-  say('unlocking the doors…');
+  say('rolling out the clouds…');
   const machinesPromise = loadMachines();
   const world = await buildWorld(scene);
-  roofMeshes = world.roofMeshes;
 
   say('reading the machines…');
   const machines = await machinesPromise;
@@ -266,12 +274,14 @@ async function boot() {
   say(`wheeling in ${machines.length} cabinet${machines.length === 1 ? '' : 's'}…`);
   cabinets = await placeCabinets(scene, shadows, machines);
   blockers = [...world.blockers, ...cabinets.flatMap((c) => c.blockers)];
+  raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
   gopher = await createGopher(scene, shadows);
   gopher.pivot.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
   gopher.pivot.rotation.y = state.yaw;
-  volume = volumeAt(SPAWN.x, SPAWN.y, SPAWN.z);
+  platform = platformNear(SPAWN.x, SPAWN.z);
+  ui.hudRoom.textContent = platform?.name || '';
 
   // No environment map ships with this page, and a PBR material that is mostly
   // metal with nothing to reflect renders black. The kit only pushes past this
@@ -283,9 +293,10 @@ async function boot() {
     }
   }
 
-  ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines · 4 floors`;
+  ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines in the sky`;
   ui.boot.hidden = true;
 
+  dressTheSky();
   engine.runRenderLoop(render);
   window.addEventListener('resize', () => engine.resize());
 
@@ -345,7 +356,7 @@ function unpause() {
 /** Put the gopher on a cabinet's mark, facing it, at a standstill. */
 function standAt(cabinet) {
   gopher.pivot.position.set(cabinet.stand.x, cabinet.floor, cabinet.stand.z);
-  volume = volumeAt(cabinet.stand.x, cabinet.floor + 0.1, cabinet.stand.z) || volume;
+  platform = platformNear(cabinet.stand.x, cabinet.stand.z) || platform;
   state.yaw = cabinet.faceYaw;
   gopher.pivot.rotation.y = state.yaw;
   state.vx = state.vy = state.vz = 0;
@@ -583,21 +594,19 @@ function collide(pos, fromX, fromZ) {
 }
 
 /**
- * Keep the gopher inside the union of VOLUMES. Doors, arches, the stairwell
- * and the skylight are all just boxes in that union, so none of them needs a
- * case here — if the new position is inside any box it is legal, and if it is
- * not, we back out along whichever axis was the problem, so walking into a
- * wall at an angle slides along it instead of stopping dead.
+ * Keep the gopher inside the sky. One box now, where the building needed a
+ * union of nine: the only thing out here to be stopped by is the edge of the
+ * world, and it stops you softly on whichever axis you crossed so flying
+ * along the boundary slides rather than sticks.
  */
 function confine(pos, fromX, fromZ) {
-  if (insideWorld(pos.x, pos.y, pos.z)) return;
-
-  if (insideWorld(fromX, pos.y, pos.z)) {
+  if (insideSky(pos.x, pos.y, pos.z)) return;
+  if (insideSky(fromX, pos.y, pos.z)) {
     pos.x = fromX;
     state.vx = 0;
     return;
   }
-  if (insideWorld(pos.x, pos.y, fromZ)) {
+  if (insideSky(pos.x, pos.y, fromZ)) {
     pos.z = fromZ;
     state.vz = 0;
     return;
@@ -632,7 +641,9 @@ function land(silent = false) {
   state.grounded = true;
   state.vy = 0;
   state.vertical01 = 0;
-  gopher.pivot.position.y = groundAt(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y);
+  const under = groundAt(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y);
+  if (under !== -Infinity) gopher.pivot.position.y = under;
+  falling = 0;
   gopher.use('walk');
   gopher.squash();
   easeCamera(CAMERA.beta, CAMERA.radius, 1.8);
@@ -657,23 +668,31 @@ function updateWalk(dt) {
   }
 
   const ground = groundAt(pos.x, pos.z, pos.y);
-  if (state.grounded) {
-    // Walking a slope: the ground under a standing gopher is a different
-    // height every frame on the stairs, and as long as it has not moved far
-    // the right answer is to follow it rather than to start falling.
-    if (Math.abs(pos.y - ground) < SLOPE_SNAP) pos.y = ground;
-    else state.grounded = false;
-  }
+  if (state.grounded && ground === -Infinity) state.grounded = false;
+
   if (!state.grounded) {
     state.vy -= GRAVITY * dt;
     pos.y += state.vy * dt;
-    if (pos.y <= ground) {
+    if (ground !== -Infinity && pos.y <= ground) {
       pos.y = ground;
       state.vy = 0;
       state.grounded = true;
+      falling = 0;
       gopher.squash();
       sfx.land();
+    } else if (state.vy < 0) {
+      // Walked off a cloud. Fall for a beat so it registers as a mistake,
+      // then the cloud comes and you are flying — never a death, never a
+      // reset, because this is a launcher and you should not be able to get
+      // stuck in one.
+      falling += dt;
+      if (falling >= CATCH_AFTER) {
+        takeOff();
+        return;
+      }
     }
+  } else {
+    falling = 0;
   }
 
   const speed = faceTravel(dt, 0.3);
@@ -701,20 +720,26 @@ function updateFly(dt) {
   const down = input.sprintHeld();
   state.vy = damp(state.vy, up && !down ? ASCEND : down && !up ? -DESCEND : 0, VERTICAL_RATE, dt);
 
-  // The ceiling is whatever box you are in. Rising through the skylight is
-  // rising out of a box with a low lid into one with none, and needs no code
-  // beyond looking the box up again a few centimetres higher.
-  const wanted = pos.y + state.vy * dt;
-  const lid = (volumeAt(pos.x, wanted, pos.z) || volume)?.y[1] ?? 3.8;
-  pos.y = Math.min(wanted, lid);
-  if (pos.y === lid && state.vy > 0) state.vy = 0;
+  // No lids up here. The only limit is the top of the sky.
+  pos.y += state.vy * dt;
+  if (pos.y > SKY.y[1]) {
+    pos.y = SKY.y[1];
+    state.vy = Math.min(state.vy, 0);
+  }
 
   collide(pos, fromX, fromZ);
   const speed = faceTravel(dt, 0.3);
   state.speed01 = clamp(speed / FLY_SPEED, 0, 1);
   state.vertical01 = clamp(state.vy / ASCEND, -1, 1);
 
-  if (pos.y <= groundAt(pos.x, pos.z, pos.y)) land();
+  const under = groundAt(pos.x, pos.z, pos.y);
+  if (under !== -Infinity && pos.y <= under) land();
+  if (pos.y < SKY.y[0] + 0.5) {
+    // Nothing down here but sky. Stop the descent rather than let the world
+    // run out underneath somebody enjoying themselves.
+    pos.y = SKY.y[0] + 0.5;
+    state.vy = Math.max(state.vy, 0);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -752,9 +777,14 @@ function updatePrompt(dt) {
     gopher.pivot.rotation.y = state.yaw;
   }
 
-  // Leaving is simply "standing in the doorway", which the volume already
-  // knows — no second set of bounds to keep in step with the geometry.
-  const leaving = state.mode === 'walk' && volume?.id === 'door' && gopher.pivot.position.z > DOOR.warn;
+  // The way out is a ring on the welcome cloud rather than a door, because
+  // there is no street to walk out onto any more.
+  const pos = gopher.pivot.position;
+  const leaving =
+    state.mode === 'walk' &&
+    state.grounded &&
+    Math.hypot(pos.x - HOME.x, pos.z - HOME.z) < HOME.radius &&
+    Math.abs(pos.y - HOME.y) < 1.0;
 
   if (near) {
     ui.prompt.hidden = false;
@@ -766,15 +796,16 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.prompt.classList.add('leaving');
     ui.promptTitle.textContent = 'The way out';
-    ui.promptCue.textContent = 'keep walking to leave the arcade';
-    ui.coinBtn.hidden = true;
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd> to leave' : '<kbd>E</kbd> to leave the arcade';
+    ui.coinBtn.hidden = !input.IS_TOUCH;
   } else {
     ui.prompt.hidden = true;
     ui.coinBtn.hidden = true;
   }
 
-  // Actually walking out of the door.
-  if (leaving && gopher.pivot.position.z >= DOOR.exitZ - 0.02) leaveArcade();
+  // Standing in the ring is an offer, not a trapdoor: you leave when you say
+  // so. Walking through a doorway could be an accident; pressing a key cannot.
+  atTheDoor = leaving;
 }
 
 function leaveArcade() {
@@ -825,8 +856,6 @@ scene.onPointerObservable.add((info) => {
 });
 
 function updateCamera(dt) {
-  for (const mesh of roofMeshes) mesh.setEnabled(camera.position.y < ROOF_HIDE_ABOVE);
-
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'diving' || phase === 'playing' || phase === 'rising') return;
@@ -856,8 +885,6 @@ function updateCamera(dt) {
   cameraTarget.position.z = damp(cameraTarget.position.z, p.z, rate, dt);
   cameraTarget.position.y = damp(cameraTarget.position.y, p.y + CAMERA.height, Math.min(rate, 8), dt);
 
-  fitCamera(dt);
-
   // Drift toward the framing this activity wants, unless the player is
   // dragging the camera themselves — then it is theirs.
   if (time < ease.until && !dragging) {
@@ -868,84 +895,33 @@ function updateCamera(dt) {
 }
 
 /**
- * Keep the camera out of the walls.
- *
- * The building is a union of boxes and the camera is a point, so "is there
- * wall between me and the gopher" is answered by walking out along the chase
- * direction until the sample leaves the union. Only the horizontal question is
- * asked — the sample is taken at the gopher's height, not the camera's —
- * because a camera legitimately rides above the volume's flight ceiling and we
- * do not want that read as a wall.
- *
- * It clamps in hard the moment something is in the way, and eases back out to
- * the room's own chase distance once nothing is. That does mean a manual zoom
- * drifts back after a second or two, which is the right trade: every room
- * knows the distance that suits it and the player should not have to.
+ * Which platform the gopher is over. Only the HUD cares now — there are no
+ * per-room camera distances or lighting presets left to switch, which is most
+ * of what deleting the walls bought.
  */
-function fitCamera(dt) {
-  if (!volume || volume.mood === 'sky') return; // outdoors there is nothing to hit
-
-  const target = cameraTarget.position;
-  const eye = gopher.pivot.position.y + 0.35;
-  const dir = camera.position.subtract(target);
-  const length = dir.length();
-  if (length < 0.05) return;
-  dir.scaleInPlace(1 / length);
-
-  const STEP = 0.3;
-  let clear = 0.9; // never closer than this, however tight the space
-  while (clear + STEP <= volume.cam) {
-    const d = clear + STEP;
-    if (!insideWorld(target.x + dir.x * d, eye, target.z + dir.z * d)) break;
-    clear = d;
+function updatePlatform() {
+  const found = platformNear(gopher.pivot.position.x, gopher.pivot.position.z);
+  const name = found ? found.name : 'The open sky';
+  if (found !== platform || ui.hudRoom.textContent !== name) {
+    platform = found;
+    ui.hudRoom.textContent = name;
   }
-
-  if (camera.radius > clear) camera.radius = clear;
-  else if (!dragging && time >= ease.until) camera.radius = damp(camera.radius, clear, 2.2, dt);
 }
 
 /**
- * Moving from one space to another. Every volume carries the chase distance
- * that fits it — five metres is right in an 18 metre hall and inside the wall
- * on a staircase — and it is applied as an ease rather than every frame, so
- * it never fights the player's own zoom.
+ * The sky, applied once. The building damped a lighting preset per room; up
+ * here there is one set of weather and the platforms differ by their own
+ * materials, so this runs at boot and never again.
  */
-function enterVolume(next) {
-  const before = volume;
-  volume = next;
-  if (!before) return;
-  if (before.cam !== next.cam) easeCamera(state.mode === 'fly' ? 1.42 : CAMERA.beta, next.cam, 1.3);
-  if (before.name !== next.name) ui.hudRoom.textContent = next.name;
-}
-
-/**
- * Light is what tells you which room you are in before you have read a sign,
- * so it is damped rather than switched: walking through the arch, the hall's
- * cold blue turns over into the tank's green across about a second, which is
- * roughly how long the walk takes.
- */
-const airColour = new BABYLON.Color3();
-function applyMood(dt) {
-  const mood = MOODS[volume?.mood || 'hall'];
-  if (!mood) return;
-  const rate = 1.8;
-
-  hemi.intensity = damp(hemi.intensity, mood.hemi, rate, dt);
-  sun.intensity = damp(sun.intensity, mood.sun, rate, dt);
-  glow.intensity = damp(glow.intensity, mood.glow, rate, dt);
-
-  const toward = (colour, target) => {
-    colour.r = damp(colour.r, target[0], rate, dt);
-    colour.g = damp(colour.g, target[1], rate, dt);
-    colour.b = damp(colour.b, target[2], rate, dt);
-  };
-  toward(hemi.diffuse, mood.hemiColor);
-  toward(hemi.groundColor, mood.ground);
-  toward(airColour, mood.air);
-
-  scene.fogDensity = damp(scene.fogDensity, mood.fog, rate, dt);
-  scene.fogColor.copyFrom(airColour);
-  scene.clearColor.set(airColour.r, airColour.g, airColour.b, 1);
+function dressTheSky() {
+  hemi.intensity = SKY_LOOK.hemi;
+  hemi.diffuse = BABYLON.Color3.FromArray(SKY_LOOK.hemiColour);
+  hemi.groundColor = BABYLON.Color3.FromArray(SKY_LOOK.groundColour);
+  sun.intensity = SKY_LOOK.sun;
+  glow.intensity = SKY_LOOK.glow;
+  scene.fogDensity = SKY_LOOK.fog;
+  scene.fogColor = BABYLON.Color3.FromArray(SKY_LOOK.air);
+  scene.clearColor = new BABYLON.Color4(...SKY_LOOK.air, 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -966,21 +942,20 @@ function render() {
     if (phase === 'floor') {
       if (state.mode === 'fly') updateFly(dt);
       else updateWalk(dt);
-      // Which box we are in decides the camera, the light and the sound, and
-      // it is only ever re-read here. A position briefly outside every box —
-      // one frame mid-transition — keeps the last answer rather than flapping.
-      const found = volumeAt(gopher.pivot.position.x, gopher.pivot.position.y + 0.15, gopher.pivot.position.z);
-      if (found && found !== volume) enterVolume(found);
+      updatePlatform();
       updatePrompt(dt);
       // Read the coin edge unconditionally, even with nothing in reach. Guarding
       // the read behind `near` short-circuits it, which banks the press: hit E in
       // the middle of the room and the next machine you walk up to would start
       // by itself.
+      // One read of the coin edge, wherever the gopher is standing: guarding
+      // it behind `near` short-circuits and banks the press for later.
       const coin = input.tookCoin();
       if (near && coin) startDive(near);
-      // Other people's machines are a hall and aquarium sound. The mine is
-      // supposed to be quiet and the cloud deck is supposed to be calm.
-      if (volume?.mood === 'hall' || volume?.mood === 'water') sfx.tickAmbience(dt);
+      else if (atTheDoor && coin) leaveArcade();
+      // Other machines carry across the sky from the platforms that have
+      // them; the quiet cloud is supposed to be quiet.
+      if (platform?.id !== 'calm') sfx.tickAmbience(dt);
     } else if (phase === 'diving' || phase === 'rising') {
       if (dive) updateDive(dt);
     } else {
@@ -990,7 +965,6 @@ function render() {
     }
 
     updateCamera(dt);
-    applyMood(dt);
     if (gopher) gopher.animate(time, dt, state);
     animateCabinets(cabinets, near, time);
   }

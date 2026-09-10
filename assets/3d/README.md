@@ -17,11 +17,10 @@ input handlers, navigation, or animation clips are included.
 | `machine-claw.glb` | CLOUD CATCH open-frame prize machine with toys and claw |
 | `gopher-scarf.glb` | Original grounded scarf gopher |
 | `gopher-scarf-cloud.glb` | Original cloud-riding scarf gopher |
-| `arcade-props.glb` | Set dressing added for the CLOUD NINE game: token machine, planters, bin, entrance mat, A-frame sign, wall posters, bunting, and the street outside the entrance. Placed at final room positions — load it at the origin |
+| `cloud-world.glb` | The whole sky for GOPHER CLOUD ARCADE: five cloud platforms with their structures at final positions. Clouds are metaball surfaces, not spheres — see `source/build_clouds.py` |
+| `arcade-props.glb` | Set dressing from the earlier indoor version: token machine, planters, bin, entrance mat, A-frame sign, wall posters, bunting, and the street outside the entrance. Placed at final room positions — load it at the origin |
 | `hall-patch.glb` | The hall surfaces the game replaces: floor with the lift pit cut out, west wall with an arch through to the wing, roof with a skylight, plus the roof as a walkable place |
 | `level-basement.glb` | The mine under the hall: rock, ore seams, pit props, cart and rails |
-| `wing-aquarium.glb` | The water room west of the hall: wall-length tank, stools, marquee |
-| `deck-cloud.glb` | The platform in the sky, reachable only by flying |
 | `lift-cage.glb` | The cage between hall and mine. Exported at the origin because the runtime moves it |
 
 Choose the assembled environment OR the room plus individual machines to avoid

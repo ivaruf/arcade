@@ -1,68 +1,58 @@
-# CLOUD NINE — the arcade floor
+# GOPHER CLOUD ARCADE
 
-A proof of concept: the same games the 2D launcher lists, in a building you
-walk around as the scarf gopher. Walk up to a machine and press play, and the
-camera pushes into the cabinet's screen until the real game grows out of it.
+A proof of concept: the same games the 2D launcher lists, each on its own cloud
+in an open sky. Jump twice to ride the cloud, fly to whichever machine you
+fancy, land, and press play — the camera pushes into the cabinet's screen until
+the real game grows out of it.
 
 Live at `/arcade/cloudnine/`. The 2D grid at `/arcade/` is untouched and
-remains the dependable launcher; this is the other door into the same room.
+remains the dependable launcher; this is the other way in.
 
-![the arcade floor](../assets/3d/previews/arcade-interior.png)
-
-## Four floors
+## The sky
 
 ```
-        ╔═══════════════════════╗
-        ║  CLOUD DECK     +9m   ║  swirls — open sky, fly up to it
-        ╚══════════╦════════════╝
-                   ║  skylight
- ╔═════════════╗ ╔═╩═════════════════╗
- ║  AQUARIUM   ╠═╣  MAIN HALL    0m  ║  maxgear, the door to the street
- ║  fishtank   ║ ║                   ║
- ║  dam_break  ║ ╚═════════╦═════════╝
- ╚═════════════╝           ║  stairs
-        ╔══════════════════╩════╗
-        ║  LOWER LEVEL  -3.8m   ║  supermine, supermine_adventure
-        ╚═══════════════════════╝
+                    THE QUIET CLOUD  +10 m          swirls
+                          (pergola, nothing in it)
+
+   THE AQUARIUM  -2.5 m                    THE SPEEDWAY  +1.5 m
+   fishtank, dam_break                     maxgear
+   (glass tank, four stools)               (chevrons and barriers)
+
+                    THE WELCOME CLOUD  0 m
+                    arch, signpost, way out
+
+                          THE OUTCROP  -5.5 m
+                          supermine, supermine_adventure
+                          (rock slung under the cloud, a headframe)
 ```
 
-Each space has its own light, its own air and its own sound. The mine is dark,
-warm and fogged and lit mostly by its own ore; the aquarium is lit by the tank;
-the cloud deck is bright, hazy and quiet, with no machines going off across the
-room because that is not what it is for.
+Every platform is 17 to 22 m from the welcome cloud — three or four seconds of
+flight. Small on purpose: you can see all of them from where you arrive, so
+finding a game is never the puzzle. The flying is the fun.
 
 ## What it does
 
-- **Six cabinets, six real games.** `../games.json` is still the registry. A
-  slug added there gets a machine, wearing that game's own name on the
-  marquee, that game's own icon on the CRT, and a neon tint derived from it.
-  Nothing is hardcoded per game. Which room it goes in is one line in
-  `PLACEMENT`; anything not named there lands in the hall.
-- **Walk down to the mine.** One straight flight in the corner of the hall.
-  The basement sits 3.8 m down rather than 5 because that is what turns a 40
-  degree ladder into a staircase; the mine keeps 3.4 m of headroom either way.
-- **Every machine is the same upright**, in that game's own colour. The kit
-  also ships a racer with a seat and a dance kind with a floor pad, and both
-  were in rotation until the hall got crowded — a seat and a pad stick a metre
-  and a half into the room each, which is a lot of furniture to say "different
-  game" when the marquee, the screen and the neon already say it.
-- **Fly up to the deck.** The middle of the hall's roof is open. Take off, rise
-  through it, and the building drops away — the cloud deck is the only room
-  with no other way in.
-- **Play the machine.** `E` (or the on-screen PLAY button, or X on a pad) at a
-  machine drops a coin, flies the camera to the glass, boots the tube, and then
-  the game — the actual game, in an iframe — appears *on the cabinet screen* at
-  cabinet size for a beat before it opens out to fill the viewport. Stepping
-  away reverses the whole move.
-- **Ride the cloud.** Jump, then jump again in the air, and the gopher swaps to
-  the cloud-riding model and flies over the machines. Hold `Space` to rise,
-  `Shift` to sink, touch the floor to land.
-- **Walk out.** The entrance is a real exit: walk through it and you are back
-  at the 2D launcher.
+- **Six machines, six real games.** `../games.json` is still the registry. A
+  slug added there gets a machine wearing that game's own name on the marquee,
+  its own icon on the CRT, and a neon tint derived from it. Which cloud it
+  lands on is one line in `PLACEMENT`; anything unnamed takes the first free
+  standing anywhere.
+- **The cloud always comes back.** Walk off an edge and you fall for half a
+  second — long enough to register as a mistake — and then the cloud is under
+  you and you are flying. There is no damage, no reset and no way to get
+  stuck, because this is a launcher and you should not be able to lose in one.
+- **Signs, because a sky has no corridors.** A signpost on the welcome cloud
+  with one arm per platform, each turned to point at the real thing, and a
+  name board on every platform's mast big enough to read from where you
+  started. Both are drawn at runtime, since only `games.json` knows what they
+  should say.
+- **The way out is a ring** on the welcome cloud rather than a door. Standing
+  in it offers; pressing the key leaves. Walking through a doorway could be an
+  accident.
 
 ## Controls
 
-| Input | On foot | On the cloud |
+| Input | On a cloud | In the air |
 | --- | --- | --- |
 | `W` `A` `S` `D` / arrows | Walk, relative to the camera | Fly |
 | `Space` | Hop. Again in the air to take off | Hold to rise |
@@ -71,8 +61,8 @@ room because that is not what it is for.
 | `Escape` | Pause; or leave a running game | Pause |
 | Drag / wheel | Orbit / zoom | Same |
 
-The stairs need nothing but walking. The cloud deck needs no stairs: it is up
-through the skylight and there is no other way.
+Flying is the only way between platforms, which is the point. Landing is the
+only way to play a machine, which is why walking still matters.
 
 Touch gets a floating stick on the left half, hop and sprint on the right, and
 a PLAY button that only exists while a machine is within reach. A gamepad
@@ -120,26 +110,20 @@ standing between you and a CLOUD NINE sign behind your head. Everything the
 game added since is authored in game coordinates by `build_world.py` and
 converted on the way out, so those numbers and room.js's are the same numbers.
 
-### The world is a union of boxes
+### The world is platforms and one box
 
-There is no navmesh and no physics engine. `VOLUMES` are boxes you may be
-inside — the gaps between them are the walls — and `PLATFORMS` are rectangles
-at a height, the highest one below you being the ground. That is the whole
-model, and it is why none of the interesting bits needed special cases:
+There is no navmesh and no physics engine, and since the walls went there is
+barely a world model at all. `PLATFORMS` are rectangles at heights — the
+highest one at or below you is the ground, and off the edge there is simply
+nothing, which is what the cloud-catch exists to answer. `SKY` is a single box
+you cannot leave.
 
-- an **archway** is a small box bridging two rooms;
-- a **hole in the floor** is three rectangles that do not cover it;
-- **falling through the skylight** into the hall is the ground query finding
-  the hall floor because the roof rectangles have a gap;
-- the **stairs** are one rectangle whose height interpolates along z. The
-  sixteen treads are for looking at: real per-step collision would make
-  climbing sixteen hops, because a 24 cm riser is taller than the tolerance
-  that keeps a walker attached to the floor it is on.
-
-The camera uses the same union: it walks out along its own chase direction
-until the sample leaves the boxes, and stops there. Rooms carry the chase
-distance that suits them, so a 5 m camera in the hall becomes 3 m in the shaft
-without anyone noticing it happen.
+That is it. The previous version of this file described nine interlocking
+volumes, arches, a skylight, a stairwell, a ceiling height per room, a roof to
+hide when the camera rose past it, and a routine that walked the volume union
+to stop the chase camera filming from inside a wall. Every one of those
+existed because flight had been bolted onto a place with walls. Making the sky
+the level deleted all of them, and nothing replaced them.
 
 ### The one thing that is not real
 
@@ -156,14 +140,22 @@ that moved was a clip. `js/launcher.js` explains the mechanics.
 Models come from `../assets/3d/`, which is a static kit with its own
 [README](../assets/3d/README.md):
 
-- `arcade-room.glb`, `arcade-ceiling.glb` — the building
-- `machine-classic.glb`, `machine-racer.glb`, `machine-dance.glb` — the three
-  cabinet kinds, cycled across the games and stamped out of one `AssetContainer`
-  each with materials cloned so a per-cabinet tint is possible
-- `machine-claw.glb` — prize machines, scenery only
+- `cloud-world.glb` — the whole sky: five platforms and their structures at
+  final positions, built by `../assets/3d/source/build_clouds.py`
+- `machine-classic.glb` — the one cabinet kind, stamped out of an
+  `AssetContainer` with materials cloned so each machine can take its game's
+  colour. The kit's racer and dance cabinets are not used: a seat and a floor
+  pad each stick a metre and a half into a nine-metre platform.
 - `gopher-scarf.glb`, `gopher-scarf-cloud.glb` — the player, in both forms
-- `arcade-props.glb` — set dressing added for this game, built by
-  `../assets/3d/source/build_extras.py`
+
+**The clouds are metaballs, not spheres.** This is the one place in the hub
+where primitives were not good enough: scattered UV spheres read as a heap of
+balls however many you use, because each keeps its own silhouette, and a flat
+slab with spheres round the rim reads as a table with a doily. Metaball
+elements merge into a single surface with soft saddles between the lobes,
+which is what makes a thing look like cloud. Their radius has to exceed their
+spacing or they never fuse — that is the whole trick, and getting it wrong
+gives you the heap of lumps you were trying to avoid.
 
 `audio/theme.m4a` is the room's theme, looped with `loopStart` set past the
 decoder's priming silence so the seam is inaudible. It has its own switch in

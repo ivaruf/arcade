@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.2.1'; // CLOUD NINE: stairs to the mine, one cabinet kind
+const VERSION = 'v1.3.0'; // GOPHER CLOUD ARCADE: the sky replaces the building
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -55,6 +55,7 @@ const SHELL_FILES = [
   './cloudnine/js/registry.js',
   './cloudnine/js/controls.js',
   './cloudnine/js/audio.js',
+  './cloudnine/js/signs.js',
 ];
 
 /** Big binaries live in the unversioned cache. See the header. */

@@ -1,7 +1,7 @@
 {
-  "name": "CLOUD NINE — the arcade floor",
-  "short_name": "Cloud Nine",
-  "description": "Walk the arcade floor as the gopher, ride a cloud over the machines, and put a coin in any one of them.",
+  "name": "GOPHER CLOUD ARCADE — the sky is the arcade",
+  "short_name": "Gopher Cloud",
+  "description": "Fly between cloud platforms as the gopher and play any machine in the sky. Fall off and the cloud comes back for you.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

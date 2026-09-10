@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#050810">
-<meta name="description" content="Walk the arcade floor as the gopher and play every machine from the inside.">
+<meta name="description" content="Fly between cloud platforms as the gopher and play every machine in the sky.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>CLOUD NINE — the arcade floor</title>
+<title>GOPHER CLOUD ARCADE — the sky is the arcade</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -23,29 +23,29 @@
 
 <!-- The room's own signage, borrowed for the loading card. -->
 <div id="boot" class="card boot">
-  <p class="sign">CLOUD NINE</p>
+  <p class="sign">GOPHER CLOUD</p>
   <p class="sub">A R C A D E</p>
-  <p id="boot-line" class="line">unlocking the doors&hellip;</p>
+  <p id="boot-line" class="line">rolling out the clouds&hellip;</p>
 </div>
 
 <div id="title" class="card title" hidden>
-  <p class="sign">CLOUD NINE</p>
+  <p class="sign">GOPHER CLOUD</p>
   <p class="sub">A R C A D E</p>
-  <p class="blurb">Four floors of real games. The mine is down the stairs, and the cloud deck you have to fly to.</p>
+  <p class="blurb">Every machine is on its own cloud. Jump twice to ride the cloud, and fly to whichever one you fancy.</p>
   <button id="walk-in" class="neon" type="button">Walk in</button>
   <p class="fine">
     <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
     <kbd>Space</kbd> hop, again for the cloud &middot;
     <kbd>E</kbd> play &middot;
     drag to look
-    <br>stairs down to the mine &middot; fly up through the skylight
+    <br>fall off a cloud and the cloud comes back for you
   </p>
 </div>
 
 <!-- Floor HUD. Deliberately thin: the room is the interface. -->
 <div id="hud" class="hud" hidden>
   <div class="hud-room">
-    <span class="hud-name">CLOUD NINE</span>
+    <span class="hud-name">GOPHER CLOUD</span>
     <span id="hud-room" class="hud-where">Main hall</span>
     <span id="hud-count" class="hud-count"></span>
   </div>

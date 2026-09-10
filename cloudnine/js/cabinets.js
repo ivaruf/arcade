@@ -27,7 +27,7 @@
  * bezel the model already has.
  * ========================================================================== */
 
-import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, LEVEL } from './room.js';
+import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, PLATFORMS } from './room.js';
 
 /**
  * One cabinet, in whatever colour the game is.
@@ -439,16 +439,20 @@ export function setLit(cabinet, lit) {
  */
 function floorPlan(games) {
   const free = Object.fromEntries(Object.entries(SLOTS).map(([id, list]) => [id, [...list]]));
+  const heightOf = (id) => PLATFORMS.find((p) => p.id === id)?.y ?? 0;
   const plan = [];
   for (const game of games) {
-    const wanted = PLACEMENT[game.slug] || 'hall';
-    const room = free[wanted]?.length ? wanted : 'hall';
+    // Its own platform if PLACEMENT names one and it has room; otherwise the
+    // first platform anywhere with a free standing, so a slug added to
+    // games.json still gets a machine without anybody editing a floor plan.
+    const wanted = PLACEMENT[game.slug];
+    const room = free[wanted]?.length ? wanted : Object.keys(free).find((id) => free[id].length);
     const slot = free[room]?.shift();
     if (!slot) {
       console.info(`[cloudnine] no standing left for ${game.slug}; it has no machine`);
       continue;
     }
-    plan.push({ game, slot: { ...slot, room, floor: LEVEL[room] ?? 0 } });
+    plan.push({ game, slot: { ...slot, room, floor: heightOf(room) } });
   }
 
   // Colour is the only thing telling two identical uprights apart, so no two
