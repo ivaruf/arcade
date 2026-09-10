@@ -1,19 +1,19 @@
 /* =============================================================================
  * audio.js — the room, synthesized, and the one piece of music that is not.
  *
- * An arcade is mostly a sound: a low mains hum you stop hearing after a minute,
- * and other people's machines going off across the room. Both are here, and the
- * second one is what makes 18 x 14 metres of empty floor feel occupied — a blip
- * panned hard left is a machine over there, playing without you. All of it is
- * WebAudio oscillators and filtered noise, per house rule.
+ * An arcade is other people's machines going off across the room, and that is
+ * what is synthesized here: footsteps, a coin, a tube striking, and the
+ * occasional blip from a cabinet somebody else is playing. A blip panned hard
+ * left is a machine over there, and that is what makes 18 x 14 metres of floor
+ * feel occupied. All of it is WebAudio oscillators and filtered noise, per
+ * house rule.
  *
  * The exception is the theme, which is a real file the owner wrote. It gets its
  * own bus and its own switch, because "I want the room but not the tune" and
  * "I want the tune but not the beeping" are both reasonable, and one volume
  * control cannot say either.
  *
- *      one-shots ─┐
- *      ambience ──┴─> sfx ──┐
+ *      one-shots ────> sfx ──┐
  *                           ├─> master ─> destination
  *      theme ─────────────> music ──┘
  *
@@ -35,8 +35,7 @@ let ctx = null;
 let master = null;
 let sfxBus = null; // one-shots and ambience
 let musicBus = null; // the theme, and only the theme
-let room = null; // ambience sits a little under the one-shots
-let ambience = null; // { stop() } while the hum is running
+let ambience = false; // is the room live enough to make its own noises?
 let enabled = read(KEY);
 let musicOn = read(MUSIC_KEY);
 let blipTimer = 0;
@@ -78,10 +77,6 @@ export function unlock() {
     musicBus = ctx.createGain();
     musicBus.gain.value = musicOn ? MUSIC_LEVEL : 0;
     musicBus.connect(master);
-
-    room = ctx.createGain();
-    room.gain.value = 0.5;
-    room.connect(sfxBus);
   }
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   return ctx;
@@ -195,6 +190,7 @@ export const back = () => tone({ freq: 700, to: 320, type: 'triangle', hold: 0.0
 let themeBuffer = null;
 let themeLoading = null;
 let themeSource = null;
+let themeFailed = false;
 
 async function loadTheme() {
   if (themeBuffer) return themeBuffer;
@@ -204,10 +200,16 @@ async function loadTheme() {
         const res = await fetch(THEME_URL);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         themeBuffer = await ctx.decodeAudioData(await res.arrayBuffer());
+        themeFailed = false;
         return themeBuffer;
       } catch (err) {
-        // A missing or undecodable theme costs the room its music, nothing else.
-        console.info('[cloudnine] no theme music:', err.message);
+        // A missing or undecodable theme costs the room its music and nothing
+        // else — but it says so in the pause menu rather than only in the
+        // console, because "the music is not playing" is otherwise a mystery
+        // with no way in. A stale service worker serving a build that asks for
+        // a file that has since been renamed lands exactly here.
+        console.warn('[cloudnine] no theme music:', err.message, THEME_URL);
+        themeFailed = true;
         themeLoading = null;
         return null;
       }
@@ -228,6 +230,10 @@ function firstSound(buffer, floor = 0.002) {
 
 export const isMusicEnabled = () => musicOn;
 
+/** False once the theme has been tried and could not be had. */
+export const isMusicAvailable = () => !themeFailed;
+
+/** Resolves when there is either music playing or a reason there is not. */
 export async function startMusic() {
   if (!ctx || themeSource) return;
   const buffer = await loadTheme();
@@ -270,46 +276,27 @@ export function setMusicEnabled(on) {
 
 // ---------------------------------------------------------------------------
 // Ambience
+//
+// There WAS a mains hum here — detuned saws at 50 Hz under a low-pass, on the
+// theory that a room full of CRTs drones. It went, for two good reasons: it
+// sits exactly where the theme's bass lives and muddies it, and a drone you
+// cannot switch off separately is just noise on top of somebody's music.
+// A room with a tune in it does not need a hum to feel occupied.
+//
+// What is left is the part that was doing the real work: other people's
+// machines going off across the floor. A blip panned hard left is a machine
+// over there, playing without you, and that is what makes 18 x 14 metres feel
+// occupied rather than empty.
 // ---------------------------------------------------------------------------
 
-/**
- * Two saws a few cents apart under a low-pass, which beat against each other
- * slowly and never settle into a pitch you can name. Plus mains buzz at 50 Hz,
- * because that is what a room full of CRTs sounds like.
- */
+/** Not a node any more, just "the room is live and may make a noise". */
 export function startAmbience() {
-  if (!ctx || ambience) return;
-  const nodes = [];
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 210;
-  filter.Q.value = 0.6;
-
-  const bed = ctx.createGain();
-  bed.gain.value = 0;
-  bed.gain.setTargetAtTime(0.09, ctx.currentTime, 1.5);
-  filter.connect(bed).connect(room);
-
-  for (const freq of [49.8, 50.6, 100.4]) {
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.value = freq;
-    osc.connect(filter);
-    osc.start();
-    nodes.push(osc);
-  }
-
-  ambience = {
-    stop() {
-      bed.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
-      for (const osc of nodes) osc.stop(ctx.currentTime + 2);
-      ambience = null;
-    },
-  };
+  if (!ctx) return;
+  ambience = true;
 }
 
 export function stopAmbience() {
-  ambience?.stop();
+  ambience = false;
 }
 
 /**

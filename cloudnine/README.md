@@ -1,7 +1,7 @@
 # CLOUD NINE — the arcade floor
 
 A proof of concept: the same games the 2D launcher lists, on a floor you walk
-around as the scarf gopher. Walk up to a machine, put a coin in, and the
+around as the scarf gopher. Walk up to a machine and press play, and the
 camera pushes into the cabinet's screen until the real game grows out of it.
 
 Live at `/arcade/cloudnine/`. The 2D grid at `/arcade/` is untouched and
@@ -15,7 +15,7 @@ remains the dependable launcher; this is the other door into the same room.
   slug added there gets a machine here, wearing that game's own name on the
   marquee, that game's own icon on the CRT, and a neon tint derived from it.
   Nothing is hardcoded per game.
-- **Put a coin in.** `E` (or the on-screen COIN button, or X on a pad) at a
+- **Play the machine.** `E` (or the on-screen PLAY button, or X on a pad) at a
   machine drops a coin, flies the camera to the glass, boots the tube, and then
   the game — the actual game, in an iframe — appears *on the cabinet screen* at
   cabinet size for a beat before it opens out to fill the viewport. Stepping
@@ -33,13 +33,13 @@ remains the dependable launcher; this is the other door into the same room.
 | `W` `A` `S` `D` / arrows | Walk, relative to the camera | Fly |
 | `Space` | Hop. Again in the air to take off | Hold to rise |
 | `Shift` | Sprint | Hold to sink |
-| `E` / `Enter` | Insert a coin at the machine you are at | — |
+| `E` / `Enter` | Play the machine you are standing at | — |
 | `Escape` | Pause; or leave a running game | Pause |
 | Drag / wheel | Orbit / zoom | Same |
 
 Touch gets a floating stick on the left half, hop and sprint on the right, and
-a COIN button that only exists while a machine is within reach. A gamepad
-works too: left stick walks, right stick looks, A hops, X or B is the coin,
+a PLAY button that only exists while a machine is within reach. A gamepad
+works too: left stick walks, right stick looks, A hops, X or B plays,
 Start pauses.
 
 ## Running it
@@ -137,14 +137,15 @@ These are honest, not oversights.
 1. Title card shows over the room, camera drifting. **Walk in.**
 2. Walk to a back-wall machine — the mark under you lights, the callout names
    the game, the gopher turns to face it and reaches up.
-3. `E`. Coin, camera to the glass, the game appears **on the cabinet screen**,
+3. `E`. Coin drops, camera to the glass, the game appears **on the cabinet screen**,
    then opens out. Play it.
 4. `◂ FLOOR`. The game shrinks back into the cabinet and the camera pulls out.
    The HUD is back, the URL hash is clear, no iframe is left behind.
 5. Back button from inside a game leaves it the same way.
 6. Jump, jump again — cloud. Fly over the machines. Land.
-7. Sound: room hum plus distant blips, footsteps in time with the feet, coin,
-   tube strike. Both switches in the pause menu do what they say and survive a
-   reload.
+7. Sound: the theme, plus blips from machines across the room, footsteps in
+   time with the feet, the coin, the tube striking. Both switches in the pause
+   menu do what they say and survive a reload. There is no drone — if you hear
+   a steady hum you are on a cached build, so reload.
 8. Walk out of the entrance. The room dims and you are at `/arcade/`.
 9. `#play=supermine` in the URL should land you straight in that game.

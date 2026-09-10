@@ -300,7 +300,7 @@ function enterFloor(withSound = true) {
   if (withSound) {
     sfx.unlock();
     sfx.startAmbience();
-    sfx.startMusic();
+    sfx.startMusic().then(paintAudio);
     sfx.duckMusic(false);
   }
 }
@@ -704,7 +704,7 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.prompt.classList.remove('leaving');
     ui.promptTitle.textContent = near.game.title;
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>COIN</kbd>' : '<kbd>E</kbd> insert coin';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
     ui.coinBtn.hidden = !input.IS_TOUCH;
   } else if (leaving) {
     ui.prompt.hidden = false;
@@ -880,7 +880,16 @@ const paintToggle = (el, label, on) => {
 };
 const paintAudio = () => {
   paintToggle(ui.sound, 'Room sound', sfx.isEnabled());
-  paintToggle(ui.music, 'Theme music', sfx.isMusicEnabled());
+  if (sfx.isMusicAvailable()) {
+    ui.music.disabled = false;
+    paintToggle(ui.music, 'Theme music', sfx.isMusicEnabled());
+  } else {
+    // The theme could not be fetched or decoded. Saying so beats a switch that
+    // claims to be on over silence.
+    ui.music.disabled = true;
+    ui.music.textContent = 'Theme music: unavailable';
+    ui.music.setAttribute('aria-pressed', 'false');
+  }
 };
 paintAudio();
 
@@ -900,6 +909,7 @@ ui.music.addEventListener('click', () => {
   sfx.unlock();
   sfx.setMusicEnabled(!sfx.isMusicEnabled());
   paintAudio();
+  sfx.startMusic().then(paintAudio);
   sfx.click();
 });
 

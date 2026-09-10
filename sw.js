@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.1.0'; // CLOUD NINE: the walkable 3D floor at /cloudnine/
+const VERSION = 'v1.1.1'; // CLOUD NINE: theme is .m4a now, and the hum is gone
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

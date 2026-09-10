@@ -17,8 +17,9 @@
  * Drawing "once" is the point. Six CRTs redrawn every frame is six canvas
  * uploads a frame for art that changes twice in a visit, so each screen has
  * exactly two states — attract, and lit up because the gopher is standing
- * there — and the living part of the look is done for free by the glow layer
- * plus a sine on emissiveIntensity.
+ * there, which differ in brightness rather than in wording — and the living
+ * part of the look is done for free by the glow layer plus a sine on
+ * emissiveIntensity.
  *
  * Coordinates: everything below is cabinet-local and in this scene's axes, so
  * read the conversion block at the top of room.js before changing a number.
@@ -119,7 +120,7 @@ function loadIcon(src) {
   });
 }
 
-/** The attract screen, and the same screen with the coin slot begging. */
+/** The attract screen, and the same screen once somebody is standing there. */
 function drawScreen(ctx, w, h, game, accent, icon, lit) {
   const tint = css(accent);
   ctx.clearRect(0, 0, w, h);
@@ -175,7 +176,7 @@ function drawScreen(ctx, w, h, game, accent, icon, lit) {
 
   ctx.fillStyle = lit ? '#ffd08a' : 'rgba(250,145,16,.55)';
   ctx.font = `700 ${Math.round(h * 0.07)}px system-ui, sans-serif`;
-  ctx.fillText(lit ? 'PRESS  E' : 'INSERT  COIN', w / 2, h * 0.93);
+  ctx.fillText('PLAY  GAME', w / 2, h * 0.93);
 
   // Scanlines and a soft tube edge, baked in rather than animated.
   ctx.fillStyle = 'rgba(0,0,0,.22)';

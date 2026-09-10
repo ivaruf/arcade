@@ -188,6 +188,15 @@ kbd {
 .ghost:hover { color: var(--ink); border-color: rgba(255, 255, 255, .24); }
 .ghost[aria-pressed="false"] { color: #6a7480; }
 
+/* A switch for something that is not there should look unavailable, not off. */
+.ghost:disabled {
+  color: #4d545d;
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.ghost:disabled:hover { color: #4d545d; border-color: rgba(255, 255, 255, .12); }
+
 #leave { color: rgba(242, 30, 82, .85); border-color: rgba(242, 30, 82, .3); }
 #leave:hover { color: #ff5c85; border-color: rgba(242, 30, 82, .6); }
 
