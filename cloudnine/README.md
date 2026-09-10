@@ -105,7 +105,7 @@ Models come from `../assets/3d/`, which is a static kit with its own
 - `arcade-props.glb` — set dressing added for this game, built by
   `../assets/3d/source/build_extras.py`
 
-`audio/theme.mp3` is the room's theme, looped with `loopStart` set past the
+`audio/theme.m4a` is the room's theme, looped with `loopStart` set past the
 decoder's priming silence so the seam is inaudible. It has its own switch in
 the pause menu, separate from the room's synthesized sound, and it ducks
 rather than restarts while a game has the machine.

@@ -26,7 +26,7 @@ const KEY = 'arcade.cloudnine.sound.v1';
 const MUSIC_KEY = 'arcade.cloudnine.music.v1';
 
 /** Module-relative, so the path does not depend on where the page lives. */
-const THEME_URL = new URL('../audio/theme.mp3', import.meta.url).href;
+const THEME_URL = new URL('../audio/theme.m4a', import.meta.url).href;
 
 /** Loud enough to be the room's music, quiet enough to talk over. */
 const MUSIC_LEVEL = 0.34;
