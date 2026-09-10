@@ -412,6 +412,14 @@
     dimTimer = setTimeout(() => pill.classList.add('dim'), 2500);
   }
 
+  // The way out, published for the game inside the frame: arcade/exit.js draws
+  // a tab inside the game (which the pill cannot be, since a game that takes
+  // fullscreen on its own element paints over everything we drew) and calls
+  // this. It has to be our function rather than history.back(): `stop` knows
+  // whether there is an entry of ours to unwind, and on a deep link straight
+  // to #play=<slug> there is not.
+  window.arcadeLeave = stop;
+
   exitBtn.addEventListener('click', stop);
   pill.addEventListener('pointerenter', wakePill);
   pill.addEventListener('focusin', wakePill);

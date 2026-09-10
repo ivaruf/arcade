@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.3.1'; // Larger mine island and peaceful aquarium swimming
+const VERSION = 'v1.6.0'; // the in-game exit tab, PWA install + fullscreen, the gopher icon
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -39,6 +39,7 @@ const SHELL_FILES = [
   './index.html',
   './arcade.css',
   './arcade.js',
+  './exit.js',
   './games.json',
   './manifest.webmanifest',
   './icons/icon-192.png',

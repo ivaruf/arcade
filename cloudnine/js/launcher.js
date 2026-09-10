@@ -204,6 +204,13 @@ export const hashSlug = () => {
 };
 
 export function pushSlug(slug) {
+  // A deep link arrives with the hash already set and the dive it triggers
+  // ends here like any other, so pushing would stack a second identical entry.
+  // Leave it alone in that case: the entry is already the one we want, and
+  // marking it as ours would tell leaveGame() to unwind an entry that is the
+  // first in the session — taking the player out of the arcade rather than
+  // back to the sky. `dropSlug` handles the unmarked entry correctly.
+  if (hashSlug() === slug) return;
   history.pushState({ cloudnine: true }, '', `#play=${encodeURIComponent(slug)}`);
 }
 

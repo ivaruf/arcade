@@ -75,6 +75,70 @@ Once a game has been opened, its card shows an **offline ready** badge:
 `navigator.serviceWorker.getRegistrations()` lists every worker on the origin,
 so the arcade can see which games are cached.
 
+## Giving a game its own way out
+
+The launcher's "◂ ARCADE" pill lives outside the iframe, so a game that takes
+fullscreen on one of its own elements paints over it — the fullscreen element
+belongs to the top-level document and covers everything the arcade drew. A
+player in a fullscreen game then has no way back but the browser's own gesture.
+
+One line in the game's `<head>` fixes that, and does nothing at all when the
+game is played standalone:
+
+```html
+<script src="../arcade/exit.js" defer></script>
+```
+
+It is a **classic script, not a module**, on purpose: a game loading it takes a
+runtime dependency on this repo, and a failed fetch inside a module graph
+aborts the whole graph. Deferred and classic, `/arcade/` being unreachable
+costs the game a button and nothing else.
+
+### Where it sits
+
+A tab welded to the middle of the game's **left edge**, collapsed to an arrow
+after saying its own name for a few seconds. That placement was measured, not
+chosen: there is no free corner in this hub. Every game hangs its HUD off the
+corners of one full-viewport `fixed` root, and in gameplay at 1280×800
+`dam_break` occupies **all four** — level name top-left, budget top-right,
+materials bottom-left, RELEASE WATER bottom-right. `supermine`'s top bar spans
+1260 px, taking both top corners. The middle of the left edge is free in every
+one of them, and it is also the direction "back" means.
+
+### How leaving works
+
+Each launcher publishes its own way out as `window.arcadeLeave`, and the tab
+calls it. Both launchers are in this repository beside `exit.js`, so that is
+one repo's contract rather than seven — and it has to be their function rather
+than plain `history.back()`, because leaving is not one thing:
+
+- arriving by PLAY, or by flying to a machine, **pushes** a `#play=<slug>`
+  entry, and the way out is to unwind it so the pill, Escape and the back
+  button all leave the same trail;
+- arriving by **deep link** (`…/arcade/#play=swirls`) pushes nothing, so
+  `history.back()` would take the player out of the arcade altogether — the
+  opposite of what the button says. `stop()` in `arcade.js` and `leaveGame()`
+  in `cloudnine/js/main.js` each check `history.state`, clear the hash where it
+  stands and unload directly in that case.
+
+`history.back()` remains the fallback. It is the older contract, and it is what
+a launcher served from a cache older than `exit.js` still understands — the
+shell and the games are cached by separate service workers, so an old launcher
+framing a new game is a real state during a rollout.
+
+A game with its own pause menu should put the item there instead and suppress
+the default button:
+
+```html
+<script src="../arcade/exit.js" defer data-no-button></script>
+```
+
+`window.ArcadeExit` then offers `framed()`, `inArcade()` and `leave()`. It is
+published whether or not the button is drawn, so the menu item can appear only
+when there is an arcade to go back to. `fishtank` is the one game doing this
+today: it already had a quit that knew it might be framed, so it passes
+`data-no-button` and calls `ArcadeExit.leave()` from that.
+
 ## Developing locally
 
 ```sh

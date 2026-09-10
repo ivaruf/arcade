@@ -497,9 +497,26 @@ async function stepAway() {
  */
 function leaveGame() {
   if (phase !== 'playing') return;
-  if (history.state?.cloudnine) dropSlug(); // popstate calls stepAway
-  else stepAway();
+  if (history.state?.cloudnine) {
+    dropSlug(); // popstate calls stepAway
+    return;
+  }
+  // A deep link straight to #play=<slug> pushed nothing, so there is no entry
+  // of ours to unwind and going back would leave the arcade altogether. Clear
+  // the hash where it stands — or the URL keeps claiming a game while the
+  // gopher is on the cloud, and a reload drops the player straight back in —
+  // and then step away directly, since no popstate is coming to do it for us.
+  dropSlug();
+  stepAway();
 }
+
+// Published for the game inside the cabinet: ../exit.js draws a tab on the
+// game's own left edge — which the pill cannot be, since a game that takes
+// fullscreen on one of its own elements paints over everything out here — and
+// calls this to get back to the sky. It has to be this function and not
+// history.back(): the branch above is the whole point, and a deep link
+// straight to #play=<slug> has no entry of ours to unwind.
+window.arcadeLeave = leaveGame;
 
 const launcher = createLauncher({
   engine,
