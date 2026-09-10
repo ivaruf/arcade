@@ -29,7 +29,7 @@
 import { loadMachines } from './registry.js';
 import {
   buildWorld, volumeAt, insideWorld, groundAt,
-  LEVEL, LIFT, DOOR, MOODS, SPAWN, ROOF_HIDE_ABOVE,
+  LEVEL, DOOR, MOODS, SPAWN, ROOF_HIDE_ABOVE,
 } from './room.js';
 import { placeCabinets, setLit, animateCabinets } from './cabinets.js';
 import { createGopher } from './gopher.js';
@@ -64,9 +64,9 @@ const MAX_DT = 0.05;
 /** How close to a cabinet's mark counts as standing at it. */
 const REACH = 1.75;
 
-/** How far a moving floor may shift under a standing gopher before it counts
- *  as having fallen off rather than ridden down. */
-const RIDE_SNAP = 0.6;
+/** How far the ground may change under a walking gopher in one frame before
+ *  it counts as having stepped off rather than walked down a slope. */
+const SLOPE_SNAP = 0.45;
 
 /**
  * The title shot orbits inside the room, so its radius has to be small enough
@@ -233,12 +233,6 @@ let roofMeshes = [];
 /** Which box of the building the gopher is in, and the one before it. */
 let volume = null;
 
-/**
- * The cage. `y` is where its deck is; `armed` is cleared when it sets off and
- * set again only once the gopher has stepped off, so arriving somewhere does
- * not immediately send you back.
- */
-const lift = { node: null, y: LIFT.top, target: LIFT.top, moving: false, dwell: 0, armed: true };
 let stepPhase = 0;
 let cabinets = [];
 let gopher = null;
@@ -265,7 +259,6 @@ async function boot() {
   const machinesPromise = loadMachines();
   const world = await buildWorld(scene);
   roofMeshes = world.roofMeshes;
-  lift.node = world.cage;
 
   say('reading the machines…');
   const machines = await machinesPromise;
@@ -590,7 +583,7 @@ function collide(pos, fromX, fromZ) {
 }
 
 /**
- * Keep the gopher inside the union of VOLUMES. Doors, arches, the lift shaft
+ * Keep the gopher inside the union of VOLUMES. Doors, arches, the stairwell
  * and the skylight are all just boxes in that union, so none of them needs a
  * case here — if the new position is inside any box it is legal, and if it is
  * not, we back out along whichever axis was the problem, so walking into a
@@ -639,7 +632,7 @@ function land(silent = false) {
   state.grounded = true;
   state.vy = 0;
   state.vertical01 = 0;
-  gopher.pivot.position.y = groundAt(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y, lift);
+  gopher.pivot.position.y = groundAt(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y);
   gopher.use('walk');
   gopher.squash();
   easeCamera(CAMERA.beta, CAMERA.radius, 1.8);
@@ -663,12 +656,12 @@ function updateWalk(dt) {
     }
   }
 
-  const ground = groundAt(pos.x, pos.z, pos.y, lift);
+  const ground = groundAt(pos.x, pos.z, pos.y);
   if (state.grounded) {
-    // Riding: the lift moves the floor out from under a standing gopher, and
-    // as long as it has not moved far in one frame the right answer is to go
-    // with it rather than to start falling.
-    if (Math.abs(pos.y - ground) < RIDE_SNAP) pos.y = ground;
+    // Walking a slope: the ground under a standing gopher is a different
+    // height every frame on the stairs, and as long as it has not moved far
+    // the right answer is to follow it rather than to start falling.
+    if (Math.abs(pos.y - ground) < SLOPE_SNAP) pos.y = ground;
     else state.grounded = false;
   }
   if (!state.grounded) {
@@ -721,63 +714,7 @@ function updateFly(dt) {
   state.speed01 = clamp(speed / FLY_SPEED, 0, 1);
   state.vertical01 = clamp(state.vy / ASCEND, -1, 1);
 
-  if (pos.y <= groundAt(pos.x, pos.z, pos.y, lift)) land();
-}
-
-// ---------------------------------------------------------------------------
-// The cage
-//
-// Stand on it and it takes you to the other end; stand in the shaft when it is
-// not there and it comes to you. `armed` is what stops it yo-yoing: it is
-// cleared the moment the cage sets off and set again only once you step out,
-// so arriving in the mine does not immediately carry you back up.
-// ---------------------------------------------------------------------------
-
-const inShaft = (pos) =>
-  pos.x > LIFT.x[0] && pos.x < LIFT.x[1] && pos.z > LIFT.z[0] && pos.z < LIFT.z[1];
-
-function updateLift(dt) {
-  if (!lift.node) return;
-  const pos = gopher.pivot.position;
-  const inside = inShaft(pos);
-  const midway = (LIFT.top + LIFT.bottom) / 2;
-
-  if (!inside) {
-    lift.armed = true;
-    lift.dwell = 0;
-  }
-
-  if (lift.moving) {
-    const remaining = lift.target - lift.y;
-    lift.y += Math.sign(remaining) * Math.min(LIFT.speed * dt, Math.abs(remaining));
-    if (Math.abs(lift.target - lift.y) < 1e-3) {
-      lift.y = lift.target;
-      lift.moving = false;
-      sfx.land();
-    }
-  } else if (inside && state.grounded) {
-    const riding = Math.abs(pos.y - lift.y) < 0.3;
-    if (riding && lift.armed) {
-      lift.dwell += dt;
-      if (lift.dwell >= LIFT.dwell) {
-        lift.target = lift.y > midway ? LIFT.bottom : LIFT.top;
-        lift.moving = true;
-        lift.armed = false;
-        lift.dwell = 0;
-        sfx.liftStart();
-      }
-    } else if (!riding) {
-      // Standing in the shaft with the cage at the other end: call it down or up.
-      const called = pos.y > midway ? LIFT.top : LIFT.bottom;
-      if (Math.abs(called - lift.y) > 0.1) {
-        lift.target = called;
-        lift.moving = true;
-        sfx.click();
-      }
-    }
-  }
-
-  lift.node.position.y = lift.y;
+  if (pos.y <= groundAt(pos.x, pos.z, pos.y)) land();
 }
 
 // ---------------------------------------------------------------------------
@@ -969,8 +906,8 @@ function fitCamera(dt) {
 
 /**
  * Moving from one space to another. Every volume carries the chase distance
- * that fits it — five metres is right in an 18 metre hall and inside the rock
- * in a lift shaft — and it is applied as an ease rather than every frame, so
+ * that fits it — five metres is right in an 18 metre hall and inside the wall
+ * on a staircase — and it is applied as an ease rather than every frame, so
  * it never fights the player's own zoom.
  */
 function enterVolume(next) {
@@ -1034,7 +971,6 @@ function render() {
       // one frame mid-transition — keeps the last answer rather than flapping.
       const found = volumeAt(gopher.pivot.position.x, gopher.pivot.position.y + 0.15, gopher.pivot.position.z);
       if (found && found !== volume) enterVolume(found);
-      updateLift(dt);
       updatePrompt(dt);
       // Read the coin edge unconditionally, even with nothing in reach. Guarding
       // the read behind `near` short-circuits it, which banks the press: hit E in

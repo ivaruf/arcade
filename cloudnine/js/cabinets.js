@@ -29,12 +29,17 @@
 
 import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, LEVEL } from './room.js';
 
-/** Kinds in rotation, and the accent material each one wears in the GLB. */
-const KINDS = [
-  { kind: 'classic', accentMaterial: 'Mint neon', stand: 1.3, cinema: 1.25 },
-  { kind: 'racer', accentMaterial: 'Honey yellow', stand: 2.1, cinema: 1.55 },
-  { kind: 'dance', accentMaterial: 'Coral neon', stand: 2.4, cinema: 1.6 },
-];
+/**
+ * One cabinet, in whatever colour the game is.
+ *
+ * The kit ships a racer with a seat and a dance kind with a floor pad, and
+ * both were in rotation until the floor got crowded: a seat and a pad stick a
+ * metre and a half into the room each, which is a lot of furniture to say
+ * "this is a different game" when the marquee, the screen and the neon
+ * already say it in that game's own colours. So every machine is the upright
+ * now, and the variety is the tint.
+ */
+const KINDS = [{ kind: 'classic', accentMaterial: 'Mint neon', stand: 1.3, cinema: 1.25 }];
 
 /** The CRT, read off build_arcade.py's `Display` box and converted. */
 const SCREEN = { y: 1.5, z: 0.288, width: 0.7, height: 0.49, tilt: 0.1396 };
@@ -42,11 +47,13 @@ const SCREEN = { y: 1.5, z: 0.288, width: 0.7, height: 0.49, tilt: 0.1396 };
 /** The marquee box's front face, just in front of the lettering we remove. */
 const MARQUEE = { y: 2.012, z: 0.337, width: 1.0, height: 0.2 };
 
-/** Claw machines carry no game; they are here so the floor is not a corridor. */
-const DECOR = [
-  { x: -4.6, z: 3.4, yaw: 2.4 },
-  { x: 4.6, z: 3.4, yaw: -2.4 },
-];
+/**
+ * One prize machine, by the door. There were two, in the middle of the floor,
+ * and they were the main thing making the hall feel cluttered — scenery
+ * belongs against a wall where you walk past it, not in the space you walk
+ * through.
+ */
+const DECOR = [{ x: -6.4, z: 6.1, yaw: Math.PI }];
 
 const TAU = Math.PI * 2;
 
@@ -61,15 +68,46 @@ const TAU = Math.PI * 2;
  * rejected in favour of a hue hashed off the slug. Same input, same colour,
  * every visit.
  */
-export function accentFor(game) {
+export function hueFor(game) {
   const stated = parseHex(game.accent) || parseHex(game.theme);
   if (stated) {
     const { h, s, l } = toHsl(stated);
-    if (s > 0.22 && l > 0.16 && l < 0.82) return BABYLON.Color3.FromHSV(h * 360, Math.min(1, s * 1.15), 1);
+    if (s > 0.22 && l > 0.16 && l < 0.82) return h * 360;
   }
   let hash = 0;
   for (const c of game.slug) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-  return BABYLON.Color3.FromHSV(hash % 360, 0.72, 1);
+  return hash % 360;
+}
+
+export const accentFor = (game) => BABYLON.Color3.FromHSV(hueFor(game), 0.72, 1);
+
+/**
+ * Push hues apart within a room.
+ *
+ * Now that every machine is the same upright, colour is the ONLY thing
+ * distinguishing two cabinets standing side by side — and fishtank and
+ * dam_break both derive a green, which under the aquarium's teal light became
+ * two identical lime boxes. So each room's hues are separated to at least
+ * SPREAD degrees, walking the list in floor-plan order and nudging any hue
+ * that lands too near one already placed. Deterministic, and it only ever
+ * moves the later machine, so the first game in a room keeps its own colour.
+ */
+const SPREAD = 42;
+function spreadHues(hues) {
+  const placed = [];
+  return hues.map((hue) => {
+    let h = ((hue % 360) + 360) % 360;
+    for (let guard = 0; guard < 12; guard++) {
+      const clash = placed.find((p) => {
+        const d = Math.abs(p - h);
+        return Math.min(d, 360 - d) < SPREAD;
+      });
+      if (clash === undefined) break;
+      h = (h + SPREAD) % 360;
+    }
+    placed.push(h);
+    return h;
+  });
 }
 
 function parseHex(value) {
@@ -258,7 +296,7 @@ async function machine(scene, shadows, held, spec, game, slot) {
   const stamped = held.instantiateModelsToScene((name) => name, true);
   for (const root of stamped.rootNodes) root.parent = holder;
 
-  const accent = game ? accentFor(game) : null;
+  const accent = game ? BABYLON.Color3.FromHSV(slot.hue ?? hueFor(game), 0.72, 1) : null;
   for (const node of holder.getChildMeshes()) {
     node.isPickable = false;
     node.receiveShadows = true;
@@ -278,14 +316,6 @@ async function machine(scene, shadows, held, spec, game, slot) {
       // bright: at full value the glow layer blooms a whole cabinet into one
       // white slab. This much is still unmistakably neon.
       mat.emissiveColor = accent.scale(0.42);
-    }
-    // The dance kind's pad is a metre and a half of accent laid flat on the
-    // floor, which even at 0.42 reads as a lit swimming pool. It gets its own
-    // copy so the cabinet above it keeps its glow.
-    if (accent && /^(Step tile|Arrow|Dance stage)/.test(node.name)) {
-      node.material = mat.clone(`${mat.name} (pad)`);
-      node.material.albedoColor = accent.scale(0.7);
-      node.material.emissiveColor = accent.scale(0.12);
     }
     // The model's own screen glass sits behind our plane; darken it so the two
     // do not both glow through each other at a grazing angle.
@@ -419,6 +449,16 @@ function floorPlan(games) {
       continue;
     }
     plan.push({ game, slot: { ...slot, room, floor: LEVEL[room] ?? 0 } });
+  }
+
+  // Colour is the only thing telling two identical uprights apart, so no two
+  // machines in one room are allowed to share a hue.
+  for (const room of new Set(plan.map((e) => e.slot.room))) {
+    const here = plan.filter((e) => e.slot.room === room);
+    const hues = spreadHues(here.map((e) => hueFor(e.game)));
+    here.forEach((entry, i) => {
+      entry.slot.hue = hues[i];
+    });
   }
   return plan;
 }

@@ -2,13 +2,12 @@
 
     /Applications/Blender.app/Contents/MacOS/Blender --background --python source/build_world.py
 
-Writes five GLBs and touches nothing else:
+Writes four GLBs and touches nothing else:
 
     hall-patch.glb      the pieces of the main hall that had to change
     level-basement.glb  the mine under it
     wing-aquarium.glb   the water room off its west side
     deck-cloud.glb      the platform in the sky above it
-    lift-cage.glb       the cage that moves between hall and basement
 
 `build_arcade.py` and `build_extras.py` are untouched and can be re-run in any
 order. The hall still comes from the kit's `arcade-room.glb`; three of its
@@ -42,7 +41,7 @@ cabinet at yaw 0 faces +Z. The building then stacks:
     y =  9      cloud deck        open sky, reached only by flying
     y = 5.75    roof              walkable, with a skylight at the middle
     y =  0      hall  +  wing     the arcade you arrive in
-    y = -5      basement          the mine, reached by the cage lift
+    y = -3.8    basement          the mine, down the stairs
 """
 
 import bpy
@@ -61,14 +60,19 @@ bpy.ops.object.delete(use_global=False)
 # if you move one, move both.
 # ---------------------------------------------------------------------------
 HALL = dict(x0=-9.0, x1=9.0, z0=-7.0, z1=7.0, wall=5.5, thick=0.22)
-PIT = dict(x0=4.2, x1=8.6, z0=-5.4, z1=-1.0)          # hole in the hall floor
+# The stairwell: a hole in the hall floor with one straight flight down it.
+# BASE_Y is where it is because of the STAIRS and not the other way round —
+# 5 m down over this run was a 40 degree ladder; 3.8 m is a staircase you can
+# walk. The mine keeps 3.4 m of headroom, more than the 2.3 m cabinets need.
+WELL = dict(x0=5.4, x1=8.6, z0=-6.7, z1=-0.3)
+STAIR = dict(x0=5.9, x1=8.1, z_top=-0.6, z_bottom=-6.4, steps=16)
 SKY_HOLE = dict(x0=-3.0, x1=3.0, z0=-3.0, z1=3.0)     # hole in the roof
 ARCH = dict(z0=-2.5, z1=2.5, top=3.4)                 # opening in the west wall
 ROOF_Y, ROOF_T = 5.5, 0.25                            # underside, thickness
-BASE_Y = -5.0                                         # basement floor top
+BASE_Y = -3.8                                         # basement floor top
+HEADROOM = -0.35 - BASE_Y                             # floor to the hall underside
 WING = dict(x0=-21.0, x1=-8.89, z0=-6.0, z1=6.0, wall=5.0)
 DECK = dict(x0=-8.0, x1=8.0, z0=-10.0, z1=-1.0, y=9.0)
-LIFT = dict(cx=6.4, cz=-3.2, half=0.9)                # cage, at the pit's middle
 
 # ---------------------------------------------------------------------------
 # Materials. The kit's palette, unchanged, plus what a mine and a tank need.
@@ -247,20 +251,20 @@ def export(name):
 start("Hall_patch")
 
 # ---- floor, with the lift pit cut out of it ----
-plate_with_hole("Hall floor", HALL["x0"], HALL["x1"], HALL["z0"], HALL["z1"], PIT, 0.0, 0.3, floor_m)
+plate_with_hole("Hall floor", HALL["x0"], HALL["x1"], HALL["z0"], HALL["z1"], WELL, 0.0, 0.3, floor_m)
 
 # The kit draws floor seams as thin chrome lines; ours stop at the pit rather
 # than hanging over it, which is the whole reason the originals are hidden.
 for x in (-8, -4, 0, 4, 8):
-    if PIT["x0"] < x < PIT["x1"]:
-        box("Floor seam", (x, 0.008, (HALL["z1"] + PIT["z1"]) / 2), (0.018, 0.008, HALL["z1"] - PIT["z1"]), chrome, 0)
-        box("Floor seam", (x, 0.008, (HALL["z0"] + PIT["z0"]) / 2), (0.018, 0.008, PIT["z0"] - HALL["z0"]), chrome, 0)
+    if WELL["x0"] < x < WELL["x1"]:
+        box("Floor seam", (x, 0.008, (HALL["z1"] + WELL["z1"]) / 2), (0.018, 0.008, HALL["z1"] - WELL["z1"]), chrome, 0)
+        box("Floor seam", (x, 0.008, (HALL["z0"] + WELL["z0"]) / 2), (0.018, 0.008, WELL["z0"] - HALL["z0"]), chrome, 0)
     else:
         box("Floor seam", (x, 0.008, 0), (0.018, 0.008, 13.8), chrome, 0)
 for z in (-6, -3, 0, 3, 6):
-    if PIT["z0"] < z < PIT["z1"]:
-        box("Floor seam", ((HALL["x0"] + PIT["x0"]) / 2 + 0.1, 0.008, z), (PIT["x0"] - HALL["x0"] - 0.2, 0.008, 0.018), chrome, 0)
-        box("Floor seam", ((PIT["x1"] + HALL["x1"]) / 2, 0.008, z), (HALL["x1"] - PIT["x1"], 0.008, 0.018), chrome, 0)
+    if WELL["z0"] < z < WELL["z1"]:
+        box("Floor seam", ((HALL["x0"] + WELL["x0"]) / 2 + 0.1, 0.008, z), (WELL["x0"] - HALL["x0"] - 0.2, 0.008, 0.018), chrome, 0)
+        box("Floor seam", ((WELL["x1"] + HALL["x1"]) / 2, 0.008, z), (HALL["x1"] - WELL["x1"], 0.008, 0.018), chrome, 0)
     else:
         box("Floor seam", (0, 0.008, z), (17.8, 0.008, 0.018), chrome, 0)
 
@@ -308,33 +312,37 @@ text("Roof sign", "CLOUD NINE", (0, ROOF_Y + ROOF_T + 1.25, -6.08), 0.62, cyan)
 for i, x in enumerate((-7.4, -6.2, 6.2, 7.4)):
     box("Roof vent", (x, ROOF_Y + ROOF_T + 0.35, 4.4 + (i % 2) * 1.4), (0.9, 0.7, 0.9), chrome, 0.04)
 
-# ---- the pit ----
+# ---- the stairs ----
 #
-# A COLLAR, not a tube. Lining the shaft all the way down would be truer to a
-# mineshaft and is wrong here for one reason: the chase camera rides three
-# metres behind the gopher, and three metres behind a gopher in a 4.4 m shaft
-# is inside the rock. Opening the shaft into the mine costs nothing — the mine
-# is right there — and turns the ride down into the room arriving around you.
-for side, x in (("west", PIT["x0"]), ("east", PIT["x1"])):
-    box(f"Pit collar {side}", (x, -0.2, (PIT["z0"] + PIT["z1"]) / 2), (0.24, 0.42, PIT["z1"] - PIT["z0"]), rock, 0)
-for side, z in (("south", PIT["z0"]), ("north", PIT["z1"])):
-    box(f"Pit collar {side}", ((PIT["x0"] + PIT["x1"]) / 2, -0.2, z), (PIT["x1"] - PIT["x0"], 0.42, 0.24), rock, 0)
-# Guide rails the cage runs on, thin enough to see the mine past.
-for x in (LIFT["cx"] - LIFT["half"] - 0.12, LIFT["cx"] + LIFT["half"] + 0.12):
-    for z in (LIFT["cz"] - LIFT["half"] - 0.12, LIFT["cz"] + LIFT["half"] + 0.12):
-        box("Lift guide", (x, BASE_Y / 2, z), (0.1, -BASE_Y, 0.1), chrome, 0.02)
-box("Winch beam", (LIFT["cx"], 0.34, LIFT["cz"]), (2.4, 0.2, 0.2), chrome, 0.03)
-for y in (-1.6, -3.4):
-    box("Shaft lamp", (PIT["x1"] - 0.3, y, PIT["z1"] - 0.3), (0.16, 0.16, 0.16), gold, 0.03)
-# A kerb round the opening so nobody walks in by accident in the dark.
-for x in (PIT["x0"], PIT["x1"]):
-    box("Pit kerb", (x, 0.09, (PIT["z0"] + PIT["z1"]) / 2), (0.18, 0.18, PIT["z1"] - PIT["z0"] + 0.18), chrome, 0.03)
-for z in (PIT["z0"], PIT["z1"]):
-    box("Pit kerb", ((PIT["x0"] + PIT["x1"]) / 2, 0.09, z), (PIT["x1"] - PIT["x0"] + 0.18, 0.18, 0.18), chrome, 0.03)
-for x in (PIT["x0"] + 0.35, PIT["x1"] - 0.35):
-    for z in (PIT["z0"] + 0.35, PIT["z1"] - 0.35):
-        box("Pit hazard", (x, 0.2, z), (0.12, 0.22, 0.12), gold, 0.02)
-text("Pit lettering", "TO THE MINE", ((PIT["x0"] + PIT["x1"]) / 2, 0.30, PIT["z1"] + 0.42), 0.17, white)
+# Stepped to look at, ramped to walk on: room.js gives the gopher a smooth
+# incline while the eye gets treads. Per-step collision would turn climbing
+# into a series of hops, because a 24 cm riser is taller than the tolerance
+# that keeps a walker attached to the floor it is on.
+rise = (0 - BASE_Y) / STAIR["steps"]
+going = (STAIR["z_top"] - STAIR["z_bottom"]) / STAIR["steps"]
+width = STAIR["x1"] - STAIR["x0"]
+mid_x = (STAIR["x0"] + STAIR["x1"]) / 2
+
+for i in range(STAIR["steps"]):
+    y = -(i + 1) * rise
+    z0 = STAIR["z_top"] - (i + 1) * going
+    z1 = STAIR["z_top"] - i * going
+    box("Stair tread", (mid_x, y - 0.12, (z0 + z1) / 2), (width, 0.24, going), floor_m, 0.015)
+    # A lit nosing on every tread: the one thing that makes a dark stair read.
+    box("Stair nosing", (mid_x, y + 0.008, z1 - 0.03), (width - 0.14, 0.014, 0.05), cyan, 0)
+    for side in (STAIR["x0"] - 0.17, STAIR["x1"] + 0.17):
+        box("Stair parapet", (side, y + 0.48, (z0 + z1) / 2), (0.26, 0.96, going), navy, 0.02)
+        box("Parapet cap", (side, y + 0.99, (z0 + z1) / 2), (0.32, 0.06, going), chrome, 0.01)
+
+# The opening's edge in the hall floor, and a newel either side of the top.
+for x in (WELL["x0"], WELL["x1"]):
+    box("Well kerb", (x, 0.05, (WELL["z0"] + WELL["z1"]) / 2), (0.16, 0.16, WELL["z1"] - WELL["z0"]), chrome, 0.02)
+box("Well kerb", (mid_x, 0.05, WELL["z1"]), (WELL["x1"] - WELL["x0"], 0.16, 0.16), chrome, 0.02)
+for side in (STAIR["x0"] - 0.17, STAIR["x1"] + 0.17):
+    box("Newel", (side, 0.55, STAIR["z_top"] + 0.16), (0.32, 1.1, 0.32), navy, 0.03)
+    box("Newel lamp", (side, 1.15, STAIR["z_top"] + 0.16), (0.24, 0.12, 0.24), cyan, 0.02)
+text("Stair lettering", "LOWER LEVEL", (mid_x, 0.30, WELL["z1"] + 0.36), 0.19, white)
+
 export("hall-patch")
 
 # ===========================================================================
@@ -346,9 +354,9 @@ B = dict(x0=HALL["x0"], x1=HALL["x1"], z0=HALL["z0"], z1=HALL["z1"])
 
 slab("Mine floor", B["x0"], B["x1"], B["z0"], B["z1"], BASE_Y, 0.4, rock)
 for side, x in (("west", B["x0"]), ("east", B["x1"])):
-    box(f"Mine wall {side}", (x, BASE_Y + 2.4, 0), (0.3, 4.8, B["z1"] - B["z0"]), rock, 0)
+    box(f"Mine wall {side}", (x, BASE_Y + HEADROOM / 2, 0), (0.3, HEADROOM, B["z1"] - B["z0"]), rock, 0)
 for side, z in (("south", B["z0"]), ("north", B["z1"])):
-    box(f"Mine wall {side}", (0, BASE_Y + 2.4, z), (B["x1"] - B["x0"], 4.8, 0.3), rock, 0)
+    box(f"Mine wall {side}", (0, BASE_Y + HEADROOM / 2, z), (B["x1"] - B["x0"], HEADROOM, 0.3), rock, 0)
 
 # Rough it up: boulders and cut faces along the walls so it is not a cellar.
 for i in range(26):
@@ -365,24 +373,24 @@ for i in range(26):
 for i in range(22):
     wall_side = i % 4
     if wall_side == 0:
-        p = (B["x0"] + 0.22, random.uniform(BASE_Y + 0.5, BASE_Y + 3.4), random.uniform(B["z0"] + 1, B["z1"] - 1))
+        p = (B["x0"] + 0.22, random.uniform(BASE_Y + 0.5, BASE_Y + HEADROOM - 0.6), random.uniform(B["z0"] + 1, B["z1"] - 1))
         s = (0.08, random.uniform(0.1, 0.3), random.uniform(0.2, 0.7))
     elif wall_side == 1:
-        p = (B["x1"] - 0.22, random.uniform(BASE_Y + 0.5, BASE_Y + 3.4), random.uniform(B["z0"] + 1, B["z1"] - 1))
+        p = (B["x1"] - 0.22, random.uniform(BASE_Y + 0.5, BASE_Y + HEADROOM - 0.6), random.uniform(B["z0"] + 1, B["z1"] - 1))
         s = (0.08, random.uniform(0.1, 0.3), random.uniform(0.2, 0.7))
     elif wall_side == 2:
-        p = (random.uniform(B["x0"] + 1, B["x1"] - 1), random.uniform(BASE_Y + 0.5, BASE_Y + 3.4), B["z0"] + 0.22)
+        p = (random.uniform(B["x0"] + 1, B["x1"] - 1), random.uniform(BASE_Y + 0.5, BASE_Y + HEADROOM - 0.6), B["z0"] + 0.22)
         s = (random.uniform(0.2, 0.7), random.uniform(0.1, 0.3), 0.08)
     else:
-        p = (random.uniform(B["x0"] + 1, B["x1"] - 1), random.uniform(BASE_Y + 0.5, BASE_Y + 3.4), B["z1"] - 0.22)
+        p = (random.uniform(B["x0"] + 1, B["x1"] - 1), random.uniform(BASE_Y + 0.5, BASE_Y + HEADROOM - 0.6), B["z1"] - 0.22)
         s = (random.uniform(0.2, 0.7), random.uniform(0.1, 0.3), 0.08)
     box("Ore seam", p, s, ore, 0.02)
 
 # Pit props holding the roof up, clear of the machines and the cage.
 for x in (-5.6, -1.4, 2.8):
     for z in (-3.4, 2.4):
-        box("Pit prop", (x, BASE_Y + 1.85, z), (0.34, 3.7, 0.34), timber, 0.03)
-        box("Prop cap", (x, BASE_Y + 3.78, z), (0.9, 0.22, 0.5), timber, 0.03)
+        box("Pit prop", (x, BASE_Y + HEADROOM / 2, z), (0.34, HEADROOM, 0.34), timber, 0.03)
+        box("Prop cap", (x, BASE_Y + HEADROOM - 0.11, z), (0.9, 0.22, 0.5), timber, 0.03)
 
 # Cart rails running the length of the room, and a cart parked on them.
 for x in (-0.45, 0.45):
@@ -399,11 +407,11 @@ for dz in (-0.5, 0.5):
 
 # Lamps: warm, low, and few. A mine is dark and the ore should be what glows.
 for x, z in ((-6.4, -5.4), (-6.4, 4.6), (6.4, 4.6), (0, -6.2)):
-    box("Lamp bracket", (x, BASE_Y + 2.6, z), (0.12, 0.5, 0.12), chrome, 0.02)
-    sphere("Mine lamp", (x, BASE_Y + 2.3, z), 0.17, gold)
+    box("Lamp bracket", (x, BASE_Y + HEADROOM - 0.8, z), (0.12, 0.5, 0.12), chrome, 0.02)
+    sphere("Mine lamp", (x, BASE_Y + HEADROOM - 1.1, z), 0.17, gold)
 
-text("Mine sign", "LOWER LEVEL", (0, BASE_Y + 3.3, B["z0"] + 0.2), 0.46, white)
-text("Mine sub", "M I N D   Y O U R   H E A D", (0, BASE_Y + 2.85, B["z0"] + 0.2), 0.17, ore)
+text("Mine sign", "LOWER LEVEL", (0, BASE_Y + HEADROOM - 0.6, B["z0"] + 0.2), 0.46, white)
+text("Mine sub", "M I N D   Y O U R   H E A D", (0, BASE_Y + HEADROOM - 1.05, B["z0"] + 0.2), 0.17, ore)
 export("level-basement")
 
 # ===========================================================================
@@ -515,28 +523,5 @@ for i in range(16):
     sphere("Drifting cloud", (math.cos(a) * d, D["y"] + random.uniform(-3.5, 3.0), (D["z0"] + D["z1"]) / 2 + math.sin(a) * d),
            random.uniform(1.1, 2.4), cloudy, scale=(1.5, 0.55, 1.2))
 export("deck-cloud")
-
-# ===========================================================================
-# 5. LIFT CAGE — exported at the origin because the runtime moves it
-# ===========================================================================
-start("Lift_cage")
-H = LIFT["half"]
-
-box("Cage deck", (0, -0.06, 0), (H * 2, 0.12, H * 2), chrome, 0.02)
-box("Cage tread", (0, 0.008, 0), (H * 2 - 0.14, 0.02, H * 2 - 0.14), black, 0)
-for dx in (-H, H):
-    for dz in (-H, H):
-        box("Cage post", (dx, 1.05, dz), (0.09, 2.1, 0.09), chrome, 0.02)
-# Three sides caged, the fourth left open to step through.
-for dz in (-H, H):
-    for y in (0.45, 0.95, 1.45, 1.95):
-        box("Cage bar", (0, y, dz), (H * 2, 0.05, 0.05), chrome, 0.01)
-for y in (0.45, 0.95, 1.45, 1.95):
-    box("Cage bar", (-H, y, 0), (0.05, 0.05, H * 2), chrome, 0.01)
-box("Cage roof", (0, 2.14, 0), (H * 2 + 0.12, 0.1, H * 2 + 0.12), chrome, 0.02)
-box("Cage lamp", (0, 2.02, 0), (0.34, 0.09, 0.34), gold, 0.02)
-for dz in (-H + 0.12, H - 0.12):
-    box("Cage chevron", (H - 0.02, 1.2, dz), (0.05, 1.5, 0.14), gold, 0.01)
-export("lift-cage")
 
 print("ARCADE_WORLD_COMPLETE")

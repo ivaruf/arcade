@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.2.0'; // CLOUD NINE: four floors, a lift and a cloud deck
+const VERSION = 'v1.2.1'; // CLOUD NINE: stairs to the mine, one cabinet kind
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

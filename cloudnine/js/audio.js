@@ -171,12 +171,6 @@ export function boot() {
 
 export const click = () => tone({ freq: 880, type: 'square', hold: 0.008, release: 0.05, peak: 0.07 });
 
-/** The cage setting off: a gate clanking shut, then the winch taking up. */
-export function liftStart() {
-  noise({ duration: 0.16, peak: 0.13, from: 2600, to: 320, q: 1.6 });
-  tone({ freq: 140, to: 96, type: 'sawtooth', at: 0.12, attack: 0.06, hold: 0.5, release: 0.5, peak: 0.07 });
-  tone({ freq: 70, to: 48, type: 'triangle', at: 0.12, attack: 0.08, hold: 0.5, release: 0.5, peak: 0.09 });
-}
 export const back = () => tone({ freq: 700, to: 320, type: 'triangle', hold: 0.01, release: 0.16, peak: 0.09 });
 
 // ---------------------------------------------------------------------------

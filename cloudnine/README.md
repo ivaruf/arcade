@@ -20,9 +20,9 @@ remains the dependable launcher; this is the other door into the same room.
  ║  AQUARIUM   ╠═╣  MAIN HALL    0m  ║  maxgear, the door to the street
  ║  fishtank   ║ ║                   ║
  ║  dam_break  ║ ╚═════════╦═════════╝
- ╚═════════════╝           ║  cage lift
+ ╚═════════════╝           ║  stairs
         ╔══════════════════╩════╗
-        ║  LOWER LEVEL    -5m   ║  supermine, supermine_adventure
+        ║  LOWER LEVEL  -3.8m   ║  supermine, supermine_adventure
         ╚═══════════════════════╝
 ```
 
@@ -38,9 +38,14 @@ room because that is not what it is for.
   marquee, that game's own icon on the CRT, and a neon tint derived from it.
   Nothing is hardcoded per game. Which room it goes in is one line in
   `PLACEMENT`; anything not named there lands in the hall.
-- **Ride the cage down.** Step into the lift in the corner of the hall, stand
-  still for a beat, and it takes you to the mine. Step in when it is at the
-  other end and it comes to you.
+- **Walk down to the mine.** One straight flight in the corner of the hall.
+  The basement sits 3.8 m down rather than 5 because that is what turns a 40
+  degree ladder into a staircase; the mine keeps 3.4 m of headroom either way.
+- **Every machine is the same upright**, in that game's own colour. The kit
+  also ships a racer with a seat and a dance kind with a floor pad, and both
+  were in rotation until the hall got crowded — a seat and a pad stick a metre
+  and a half into the room each, which is a lot of furniture to say "different
+  game" when the marquee, the screen and the neon already say it.
 - **Fly up to the deck.** The middle of the hall's roof is open. Take off, rise
   through it, and the building drops away — the cloud deck is the only room
   with no other way in.
@@ -66,8 +71,8 @@ room because that is not what it is for.
 | `Escape` | Pause; or leave a running game | Pause |
 | Drag / wheel | Orbit / zoom | Same |
 
-The lift needs no button: stand on the cage and wait. The cloud deck needs no
-lift: it is up through the skylight and there is no other way.
+The stairs need nothing but walking. The cloud deck needs no stairs: it is up
+through the skylight and there is no other way.
 
 Touch gets a floating stick on the left half, hop and sprint on the right, and
 a PLAY button that only exists while a machine is within reach. A gamepad
@@ -126,7 +131,10 @@ model, and it is why none of the interesting bits needed special cases:
 - a **hole in the floor** is three rectangles that do not cover it;
 - **falling through the skylight** into the hall is the ground query finding
   the hall floor because the roof rectangles have a gap;
-- the **lift** is one extra platform whose height changes.
+- the **stairs** are one rectangle whose height interpolates along z. The
+  sixteen treads are for looking at: real per-step collision would make
+  climbing sixteen hops, because a 24 cm riser is taller than the tolerance
+  that keeps a walker attached to the floor it is on.
 
 The camera uses the same union: it walks out along its own chase direction
 until the sample leaves the boxes, and stops there. Rooms carry the chase
@@ -199,17 +207,17 @@ These are honest, not oversights.
    The HUD is back, the URL hash is clear, no iframe is left behind.
 5. Back button from inside a game leaves it the same way.
 6. Jump, jump again — cloud. Fly over the machines. Land.
-7. Stand in the cage in the corner of the hall. It should set off by itself
-   after about half a second, ride down, and NOT immediately take you back up.
-   Walk out into the mine: dark, warm, ore glowing on the walls.
-8. Back in the cage, wait, ride up. Through the arch on the west side into the
+7. Walk down the stairs in the corner of the hall — the descent should be
+   smooth, no hopping between treads. The mine: dark, warm, ore glowing on the
+   walls.
+8. Back up the stairs. Through the arch on the west side into the
    aquarium: teal light, a tank the length of the wall, four stools.
 9. In the middle of the hall, take off and hold `Space`. Out through the
    skylight, over the roof, and forward to the cloud deck. The sky should be
    sky, not black.
 10. Sound: the theme, plus blips from machines across the room — but only in
     the hall and the aquarium. Footsteps in time with the feet, the coin, the
-    tube striking, the cage clanking off. Both switches in the pause menu do
+    tube striking, the stairs underfoot. Both switches in the pause menu do
     what they say and survive a reload. There is no drone anywhere; if you
     hear a steady hum you are on a cached build, so reload.
 11. Walk out of the entrance. The room dims and you are at `/arcade/`.

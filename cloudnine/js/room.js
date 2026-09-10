@@ -38,14 +38,14 @@
  *
  * Order matters in VOLUMES: the first box containing you wins, so the tight
  * connectors are listed before the rooms they join. Each carries the camera
- * distance that fits it, because a chase camera 5 m back does not belong in a
- * lift shaft.
+ * distance that fits it, because a chase camera 5 m back does not belong on a
+ * staircase.
  * ========================================================================== */
 
 const ASSETS = '../assets/3d/';
 
 /** Floor heights, so the numbers below read as levels rather than magic. */
-export const LEVEL = { basement: -5, ground: 0, roof: 5.75, deck: 9 };
+export const LEVEL = { basement: -3.8, ground: 0, roof: 5.75, deck: 9 };
 
 /**
  * Boxes you may occupy: [minX, maxX], [minZ, maxZ], [minY, maxY].
@@ -55,11 +55,11 @@ export const LEVEL = { basement: -5, ground: 0, roof: 5.75, deck: 9 };
 export const VOLUMES = [
   // -- connectors -----------------------------------------------------------
   { id: 'door', x: [-4.4, 4.4], z: [6.2, 7.7], y: [-0.2, 3.0], cam: 4.2, mood: 'hall', name: 'Main hall' },
-  { id: 'pit', x: [4.2, 8.6], z: [-5.4, -1.0], y: [-5.2, 0.2], cam: 3.0, mood: 'mine', name: 'Lift shaft' },
+  { id: 'stairs', x: [5.4, 8.6], z: [-6.9, -0.3], y: [-4.0, 0.4], cam: 3.8, mood: 'mine', name: 'The stairs' },
   { id: 'skylight', x: [-3.2, 3.2], z: [-3.2, 3.2], y: [2.0, 6.4], cam: 3.4, mood: 'hall', name: 'Main hall' },
   { id: 'arch', x: [-9.5, -8.4], z: [-2.4, 2.4], y: [-0.2, 3.2], cam: 3.2, mood: 'water', name: 'The aquarium' },
   // -- rooms ----------------------------------------------------------------
-  { id: 'basement', x: [-8.6, 8.6], z: [-6.6, 6.6], y: [-5.2, -0.4], cam: 5.0, mood: 'mine', name: 'Lower level' },
+  { id: 'basement', x: [-8.6, 8.6], z: [-6.6, 6.6], y: [-4.0, -0.45], cam: 5.0, mood: 'mine', name: 'Lower level' },
   { id: 'hall', x: [-8.5, 8.5], z: [-6.5, 6.5], y: [-0.2, 3.8], cam: 5.0, mood: 'hall', name: 'Main hall' },
   { id: 'wing', x: [-20.6, -9.2], z: [-5.6, 5.6], y: [-0.2, 3.8], cam: 5.0, mood: 'water', name: 'The aquarium' },
   // -- outdoors. `deck` is listed before `sky` so standing on the platform
@@ -73,11 +73,14 @@ export const VOLUMES = [
 /** Walkable rectangles. The highest one at or below you is the ground. */
 export const PLATFORMS = [
   { x: [-9, 9], z: [-7, 7], y: LEVEL.basement },
-  // The hall floor, as the four pieces around the lift pit.
-  { x: [-9, 4.2], z: [-7, 7], y: LEVEL.ground },
+  // The hall floor, as the three pieces around the stairwell.
+  { x: [-9, 5.4], z: [-7, 7], y: LEVEL.ground },
   { x: [8.6, 9], z: [-7, 7], y: LEVEL.ground },
-  { x: [4.2, 8.6], z: [-7, -5.4], y: LEVEL.ground },
-  { x: [4.2, 8.6], z: [-1.0, 7], y: LEVEL.ground },
+  { x: [5.4, 8.6], z: [-0.3, 7], y: LEVEL.ground },
+  // The flight itself, as one incline. The treads are for looking at: walking
+  // sixteen 24 cm risers would be sixteen hops, because a step taller than the
+  // stick-to-the-floor tolerance reads as a wall.
+  { x: [5.9, 8.1], z: [-6.4, -0.6], y0: LEVEL.basement, y1: LEVEL.ground, along: 'z' },
   { x: [-21, -8.89], z: [-6, 6], y: LEVEL.ground },
   { x: [-5, 5], z: [7, 7.9], y: LEVEL.ground }, // the step out onto the street
   // The roof, as the four pieces around the skylight.
@@ -87,17 +90,6 @@ export const PLATFORMS = [
   { x: [-3, 3], z: [3, 7], y: LEVEL.roof },
   { x: [-8, 8], z: [-10, -1], y: LEVEL.deck },
 ];
-
-/** The cage, its shaft, and how fast it runs. Matches build_world.py's LIFT. */
-export const LIFT = {
-  x: [5.5, 7.3],
-  z: [-4.1, -2.3],
-  top: LEVEL.ground,
-  bottom: LEVEL.basement,
-  speed: 2.1,
-  /** How long you stand on it before it decides you meant it. */
-  dwell: 0.65,
-};
 
 /** The street door, still the way out of the building entirely. */
 export const DOOR = { halfX: 4.4, z: 6.5, exitZ: 7.5, warn: 5.7 };
@@ -216,19 +208,26 @@ export const insideWorld = (x, y, z) => volumeAt(x, y, z) !== null;
 
 /**
  * The ground under a point: the highest platform at or below it, with a little
- * tolerance so standing exactly on a surface still finds it. `extra` carries
- * the lift's moving deck, which is a platform that is not in the list.
- *
- * Returns -Infinity when there is nothing below, which the caller treats as
+ * tolerance so standing exactly on a surface still finds it.
+ *  * Returns -Infinity when there is nothing below, which the caller treats as
  * "keep falling" — though the volumes are shaped so it should not happen.
  */
-export function groundAt(x, z, y, extra = null) {
+export function groundAt(x, z, y) {
   let best = -Infinity;
   for (const p of PLATFORMS) {
-    if (p.y <= y + 0.25 && p.y > best && inRect(p, x, z)) best = p.y;
+    if (!inRect(p, x, z)) continue;
+    const h = heightOf(p, x, z);
+    if (h <= y + 0.25 && h > best) best = h;
   }
-  if (extra && extra.y <= y + 0.25 && extra.y > best && inRect(LIFT, x, z)) best = extra.y;
   return best;
+}
+
+/** A flat platform has `y`; an incline interpolates between y0 and y1. */
+function heightOf(p, x, z) {
+  if (p.y !== undefined) return p.y;
+  const [a, b] = p[p.along];
+  const t = Math.min(1, Math.max(0, ((p.along === 'z' ? z : x) - a) / (b - a)));
+  return p.y0 + (p.y1 - p.y0) * t;
 }
 
 /**
@@ -293,7 +292,7 @@ const BROAD_FACTOR = 0.2;
 
 /**
  * Kit meshes the new building replaces. The hall's floor needed a hole for the
- * lift, its west wall an arch through to the wing, and its side light strips
+ * stairs, its west wall an arch through to the wing, and its side light strips
  * would otherwise run straight across that arch. `hall-patch.glb` supplies all
  * three again in pieces. Matched on name, then on which side of the room the
  * mesh actually sits, because the kit has one strip mesh per side and only the
@@ -328,15 +327,12 @@ const FURNITURE = [
   // hall (from the kit and the props file)
   { x: -8, z: 5, hx: 0.48, hz: 0.87, top: 0.64 },
   { x: 8, z: 5, hx: 0.48, hz: 0.87, top: 0.64 },
-  { x: -7.4, z: 6.1, hx: 0.54, hz: 0.44, top: 1.46 },
-  { x: 6.6, z: 6.2, hx: 0.36, hz: 0.36, top: 1.15 },
-  { x: -5.6, z: 6.2, hx: 0.36, hz: 0.36, top: 1.15 },
-  { x: 4.9, z: 6.25, hx: 0.28, hz: 0.28, top: 0.7 },
-  { x: 2.6, z: 5.4, hx: 0.42, hz: 0.3, top: 1.0 },
+  { x: -7.4, z: 6.1, hx: 0.54, hz: 0.44, top: 1.46 }, // token machine
+  { x: 6.6, z: 6.2, hx: 0.36, hz: 0.36, top: 1.15 }, // planter
   // basement
-  { x: 0, z: 4.1, hx: 0.62, hz: 0.82, top: -4.0, base: -5 }, // ore cart
+  { x: 0, z: 4.1, hx: 0.62, hz: 0.82, top: LEVEL.basement + 1.0, base: LEVEL.basement },
   ...[-5.6, -1.4, 2.8].flatMap((x) =>
-    [-3.4, 2.4].map((z) => ({ x, z, hx: 0.22, hz: 0.22, top: -1.2, base: -5 })),
+    [-3.4, 2.4].map((z) => ({ x, z, hx: 0.22, hz: 0.22, top: LEVEL.basement + 3.4, base: LEVEL.basement })),
   ),
   // wing
   { x: -20.0, z: 0, hx: 1.0, hz: 4.7, top: 4.2 }, // the tank
@@ -349,7 +345,7 @@ const FURNITURE = [
 
 /**
  * Bring the building in. Static geometry gets its world matrix frozen and
- * picking turned off: nothing here moves except the lift, and the gopher's
+ * picking turned off: nothing in the building moves, and the gopher's
  * collisions are our own arithmetic rather than ray casts.
  */
 export async function buildWorld(scene) {
@@ -392,26 +388,8 @@ export async function buildWorld(scene) {
     }
   }
 
-  // The lift is the one thing in the building that moves, so it stays unfrozen
-  // and keeps its own root to slide up and down.
-  let cage = null;
-  try {
-    const held = await container('lift-cage.glb', scene);
-    const stamped = held.instantiateModelsToScene((n) => n, false);
-    cage = new BABYLON.TransformNode('lift', scene);
-    cage.position.set((LIFT.x[0] + LIFT.x[1]) / 2, LIFT.top, (LIFT.z[0] + LIFT.z[1]) / 2);
-    for (const node of stamped.rootNodes) node.parent = cage;
-    for (const mesh of cage.getChildMeshes()) {
-      mesh.isPickable = false;
-      mesh.receiveShadows = true;
-    }
-  } catch (err) {
-    console.warn('[cloudnine] no lift cage; the mine is unreachable', err);
-  }
-
   return {
     blockers: [...FURNITURE],
-    cage,
     /**
      * The roof is its own file for exactly this reason. Fly high enough and the
      * camera ends up above it looking at its top face, which is opaque and

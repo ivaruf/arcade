@@ -145,7 +145,7 @@ cylinder("Token knob", (TX - 0.26, TY - 0.42, 0.6), 0.06, 0.05, chrome, (math.pi
 # Two planters. Nobody in an arcade has ever looked at these, which is exactly
 # what makes a room feel real.
 # ---------------------------------------------------------------------------
-for i, (px, py) in enumerate([(-6.6, -6.2), (5.6, -6.2)]):
+for i, (px, py) in enumerate([(-6.6, -6.2)]):
     tag = f"Planter{i}"
     cylinder(f"{tag} pot", (px, py, 0.26), 0.3, 0.52, clay)
     cylinder(f"{tag} rim", (px, py, 0.5), 0.32, 0.06, clay)
@@ -160,12 +160,11 @@ for i, (px, py) in enumerate([(-6.6, -6.2), (5.6, -6.2)]):
         o.rotation_euler = (0, 0, a)
 
 # ---------------------------------------------------------------------------
-# A bin, and the mat everybody wipes their feet on.
+# The mat everybody wipes their feet on. The bin, the second planter and the
+# A-frame sign that used to live here are gone: the hall reads as a lobby now
+# rather than a room somebody is still moving into, and a sign saying THIS WAY
+# is not needed in a room with one way in.
 # ---------------------------------------------------------------------------
-cylinder("Bin body", (-4.9, -6.25, 0.33), 0.24, 0.66, navy)
-cylinder("Bin rim", (-4.9, -6.25, 0.66), 0.26, 0.05, chrome)
-cylinder("Bin mouth", (-4.9, -6.25, 0.665), 0.21, 0.03, black)
-
 box("Entrance mat", (0, -6.4, 0.012), (3.4, 1.1, 0.024), black, 0.01)
 # The trim is a BORDER, not a filled panel. A 3 x 0.9 m slab of the neon
 # material reads as a lightbox let into the floor once a glow layer gets hold
@@ -174,46 +173,14 @@ for dx, dy, w, d in ((0, 0.42, 3.1, 0.03), (0, -0.42, 3.1, 0.03), (1.53, 0, 0.03
     box("Mat trim", (dx, -6.4 + dy, 0.026), (w, d, 0.006), cyan, 0)
 
 # ---------------------------------------------------------------------------
-# An A-frame sign pointing the way in, because the room has a direction and
-# nothing in it said so.
-# ---------------------------------------------------------------------------
-SX, SY = -2.6, -5.4
-for sign, tilt in ((1, 0.22), (-1, -0.22)):
-    box(
-        f"Sign board {sign}",
-        (SX, SY + sign * 0.14, 0.52),
-        (0.8, 0.04, 0.92),
-        navy,
-        0.015,
-        rot=(tilt, 0, 0),
-    )
-box("Sign hinge", (SX, SY, 0.96), (0.82, 0.14, 0.05), chrome, 0.015)
-text("Sign lettering", "THIS WAY", (SX, SY - 0.19, 0.64), 0.1, white, rot=(math.pi / 2 - 0.22, 0, 0))
-o = box("Sign arrow", (SX, SY - 0.215, 0.42), (0.2, 0.02, 0.2), cyan, 0.01, rot=(-0.22, 0, math.pi / 4))
-
-# ---------------------------------------------------------------------------
-# Wall posters, and bunting nobody took down. Both are flat and neither has a
-# collision box: the walls already stop you.
+# Wall posters. Flat, out of reach, no collision box: the walls already stop
+# you. The bunting that used to hang over the entrance went with the clutter.
 # ---------------------------------------------------------------------------
 for i, (wx, wy, accent) in enumerate([(-8.84, 2.4, pink), (-8.84, -1.6, cyan), (8.84, 1.2, gold), (8.84, -3.2, blue)]):
     side = 1 if wx < 0 else -1
     box(f"Poster{i} back", (wx + side * 0.07, wy, 2.5), (0.05, 1.15, 1.6), navy, 0.01)
     box(f"Poster{i} art", (wx + side * 0.1, wy, 2.62), (0.02, 0.92, 1.1), accent, 0.01)
     box(f"Poster{i} caption", (wx + side * 0.1, wy, 1.86), (0.02, 0.92, 0.16), white, 0.01)
-
-for i in range(13):
-    x = -4.2 + i * 0.7
-    drop = 0.12 + 0.1 * math.sin(i * 0.9)
-    flag = box(
-        f"Bunting{i}",
-        (x, -6.86, 4.6 - drop),
-        (0.26, 0.01, 0.3),
-        [cyan, pink, gold][i % 3],
-        0,
-        rot=(0, 0, 0),
-    )
-    flag.rotation_euler = (0, math.radians(45), 0)
-box("Bunting line", (0, -6.86, 4.78), (9.2, 0.012, 0.012), chrome, 0)
 
 # ---------------------------------------------------------------------------
 # Outside.
