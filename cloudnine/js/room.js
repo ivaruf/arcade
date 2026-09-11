@@ -46,7 +46,7 @@ const ASSETS = '../assets/3d/';
  */
 export const PLATFORMS = [
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
-  { id: 'race', name: 'The speedway', x: [-4.5, 4.5], z: [-21, -13], y: 1.5 },
+  { id: 'race', name: 'The steamworks', x: [-4.5, 4.5], z: [-21, -13], y: 1.5 },
   { id: 'water', name: 'The aquarium', x: [-23.5, -10.5], z: [-10, 0], y: -2.5 },
   { id: 'mine', name: 'The outcrop', x: [7, 23], z: [-14, -2], y: -5.5 },
   { id: 'calm', name: 'The quiet cloud', x: [-9.5, -0.5], z: [-25.5, -16.5], y: 10 },
@@ -217,6 +217,8 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  // Steamworks boiler, between the machines at the back of the island.
+  { x: 0, z: -20.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
   // welcome cloud: two benches, the arch posts, the signpost
   { x: -4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
@@ -243,7 +245,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=mine-swim-1', scene);
+  const held = await container('cloud-world.glb?v=steamworks-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

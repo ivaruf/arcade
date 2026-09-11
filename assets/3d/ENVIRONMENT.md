@@ -82,3 +82,16 @@ node cloudnine/tools/check-aquarium.mjs ../fishtank/node_modules
 It imports the real GLB into Babylon's NullEngine without materials and simulates
 a minute of swimming, checking that every fish mesh remains within the tank.
 This checks transforms and containment, not browser rendering.
+
+## Maxgear steamworks
+
+The racing cloud is now a copper-and-cedar steam workshop: riveted decking,
+a banded boiler with pressure gauge and furnace grille, chimney, perimeter
+pipes and valves, and exposed flywheels below the landing deck. The two cabinet
+positions and open central approach are preserved. A boiler collision box is
+included. Gears and boiler are decorative, without mechanical gameplay.
+
+`source/steampunk_island.py` applies this finish during the environment build.
+Use `source/render_environment.py -- --no-render` with Blender to regenerate
+the GLB and editable scene without spending time on preview renders. Existing
+preview PNGs predate this steampunk update. No playtest was run for this update.

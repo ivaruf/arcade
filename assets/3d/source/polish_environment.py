@@ -304,3 +304,5 @@ for o in root.children_recursive:
         gx,gz=-center.x,-center.y
         o.location.x -= 2.2 if gx>MX else -2.2
         o.location.y -= 1.0 if gz>MZ else -1.0
+
+exec(compile((OUT / 'source' / 'steampunk_island.py').read_text(), str(OUT / 'source' / 'steampunk_island.py'), 'exec'), globals())
