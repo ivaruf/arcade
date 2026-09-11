@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.4.0'; // the aquarium is the island you arrive facing; machines look back at the hub
+const VERSION = 'v2.4.2'; // Rotating gears and signs at the rear of the islands
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -46,6 +46,7 @@ const SHELL_FILES = [
   './js/main.js',
   './js/room.js',
   './js/aquarium.js',
+  './js/gears.js',
   './js/cabinets.js',
   './js/gopher.js',
   './js/launcher.js',

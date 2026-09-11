@@ -26,7 +26,8 @@ ring('Workshop compass inlay',(X(),RY-.004,RZ+1.15),1.42,.025,bronze)
 for i in range(12):
     a=i*math.tau/12
     o=box('Compass tick',(X(1.25*math.cos(a)),RY+.003,RZ+1.15+1.25*math.sin(a)),(.12,.016,.028),bronze,.005);o.rotation_euler.z=-a
-# The engine occupies the back centre, between (not in front of) the machines.
+# The boiler is authored centrally, then moved into the southwest corner.
+boiler_before = set(root.children_recursive)
 BZ=RZ-3.05
 box('Boiler foundation',(X(),RY+.12,BZ),(1.55,.24,1.45),iron,.09)
 cylinder('Copper boiler',(X(),RY+1.04,BZ),.58,1.55,copper)
@@ -49,9 +50,13 @@ for dx in [-.15,-.075,0,.075,.15]:box('Furnace grille',(X(dx),RY+.68,BZ+.6),(.02
 for i in range(16):
     a=i*math.tau/16
     for yy in [.4,1.72]:sphere('Boiler rivet',(X(.59*math.cos(a)),RY+yy,BZ+.59*math.sin(a)),.026,bronze,segs=12)
+# Game offset (-3, 0, +5.05): rear corner, clear of east-facing cabinets.
+for o in set(root.children_recursive) - boiler_before:
+    o.location.x += 3.0
+    o.location.y -= 5.05
 # Rounded copper services hug the perimeter. Flanges, valves and sockets give
 # the pipes real joints; no overhead crossbeam through the cabinet view.
-for side in [-1,1]:
+for side in [-1]:
     x=X(side*3.87)
     tube('Copper perimeter pipe',[(x,RY+.18,RZ+3.3),(x,RY+.5,RZ+3.3),(x,RY+.62,RZ+3.17),(x,RY+.62,RZ-2.8),(x,RY+.5,RZ-2.95),(x,RY+.18,RZ-2.95)],.07,copper)
     for dz in [-2.5,-.7,1.1,2.8]:
@@ -62,6 +67,7 @@ for side in [-1,1]:
         beam('Valve spoke',(x,RY+.97-.2*math.cos(a),RZ+1.2-.2*math.sin(a)),(x,RY+.97+.2*math.cos(a),RZ+1.2+.2*math.sin(a)),.025,bronze)
 # A pair of exposed flywheels hangs under the deck, visible during flight.
 def cog(name,x,y,z,r,teeth):
+    before = set(root.children_recursive)
     ring(name+' rim',(x,y,z),r*.79,r*.12,bronze,axis='z')
     cylinder(name+' hub',(x,y,z),r*.18,.18,iron,axis='z')
     for i in range(teeth):
@@ -70,6 +76,17 @@ def cog(name,x,y,z,r,teeth):
     for i in range(6):
         a=i*math.tau/6
         beam(name+' spoke',(x,y,z),(x+r*.71*math.cos(a),y+r*.71*math.sin(a),z),r*.07,copper)
+    # One centred rotor per gear: rim, teeth and spokes turn as a unit.
+    parts = set(root.children_recursive) - before
+    rotor = bpy.data.objects.new('GearRotor ' + name, None)
+    bpy.context.collection.objects.link(rotor)
+    rotor.parent = root
+    rotor.location = bl(x,y,z)
+    bpy.context.view_layer.update()
+    for part in parts:
+        world = part.matrix_world.copy()
+        part.parent = rotor
+        part.matrix_world = world
 cog('Main flywheel',X(-1.1),RY-1.05,RZ+3.72,.90,16)
 cog('Companion cog',X(.38),RY-.76,RZ+3.72,.57,12)
 for x in [-1.1,.38]:beam('Engine hanger',(X(x),RY-.1,RZ+3.75),(X(x),RY-1.1,RZ+3.75),.12,iron)
@@ -79,3 +96,26 @@ for o in root.children_recursive:
     elif o.name.startswith('Race mast light'):paint(o,amber)
     elif o.name.startswith('Race mast'):paint(o,copper)
 print('MAXGEAR_STEAMPUNK_COMPLETE')
+
+# A visible bank of exposed gears at the southern edge. The eastern approach
+# and the space in front of both hub-facing cabinets remain completely open.
+GZ=RZ+3.48
+box('Gearbank base',(X(.65),RY+.15,GZ),(3.7,.3,.46),iron,.055)
+for dx,yy,r,teeth in [(-.6,1.14,.84,18),(.82,1.07,.57,12),(1.80,1.07,.40,9)]:
+    cog('Perimeter gear '+str(teeth),X(dx),RY+yy,GZ,r,teeth)
+    beam('Gearbank bearing support',(X(dx),RY+.26,GZ+.13),(X(dx),RY+yy,GZ+.13),.10,copper)
+    cylinder('Gearbank axle',(X(dx),RY+yy,GZ),.10,.48,iron,axis='z')
+    cylinder('Gearbank axle cap',(X(dx),RY+yy,GZ-.255),.135,.04,patina,axis='z')
+for dx in [-1.03,2.30]:
+    for dz in [-.15,.15]:cylinder('Gearbank base bolt',(X(dx),RY+.32,GZ+dz),.045,.035,bronze)
+# Paired piston cylinders tucked beside the boiler, connected with copper lines.
+for dx in [-3.0,-2.50]:
+    cylinder('Steam piston foot',(X(dx),RY+.12,RZ+.72),.22,.24,iron)
+    cylinder('Steam piston barrel',(X(dx),RY+.55,RZ+.72),.17,.70,copper)
+    for yy in [.25,.85]:ring('Piston brass collar',(X(dx),RY+yy,RZ+.72),.185,.035,bronze)
+    cylinder('Piston rod',(X(dx),RY+1.08,RZ+.72),.06,.55,chrome)
+    sphere('Piston rod joint',(X(dx),RY+1.37,RZ+.72),.10,iron,segs=16)
+beam('Piston crosshead',(X(-3),RY+1.37,RZ+.72),(X(-2.5),RY+1.37,RZ+.72),.09,bronze)
+tube('Boiler delivery line',[(X(-3),RY+.45,RZ+1.7),(X(-3),RY+.45,RZ+1.15),(X(-2.5),RY+.45,RZ+1.15),(X(-2.5),RY+.45,RZ+.72)],.045,copper)
+# Narrow service plate and bolt heads give the rear plant a finished mounting.
+box('Piston mounting plate',(X(-2.75),RY+.03,RZ+.72),(1.05,.06,.75),iron,.04)

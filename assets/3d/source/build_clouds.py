@@ -274,16 +274,13 @@ def beacon(tag, d, accent, height=6.0):
     """A pylon you can see from the welcome cloud. The name board that goes on
     it is drawn at runtime, because the names come from games.json.
 
-    The mast stands on whichever edge of its island faces the hub. That used to
-    be hard-wired to the -Z edge, which was the same thing only while every
-    island sat north of the welcome cloud; now that they ring it, an island to
-    the east would have hung its board off its far side and shown the welcome
-    cloud the back of it."""
+    Place the mast on the far edge, away from the hub-facing entrance.
+    The runtime board still faces the welcome cloud."""
     x, y, z, hx, hz = d["x"], d["y"], d["z"], d["hx"], d["hz"]
     if abs(x) >= abs(z):
-        bx, bz = x - math.copysign(hx - 0.5, x), z
+        bx, bz = x + math.copysign(hx - 0.5, x), z
     else:
-        bx, bz = x, z - math.copysign(hz - 0.5, z)
+        bx, bz = x, z + math.copysign(hz - 0.5, z)
     x = bx
     cylinder(f"{tag} mast", (x, y + height / 2, bz), 0.09, height, chrome)
     box(f"{tag} mast base", (x, y + 0.18, bz), (0.7, 0.36, 0.7), navy, 0.05)

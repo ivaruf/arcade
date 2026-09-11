@@ -1,4 +1,5 @@
 import { createAquariumSwimmers } from './aquarium.js';
+import { createGearAnimation } from './gears.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -68,10 +69,10 @@ export const HOME = { x: -3.6, y: 0, z: 2.2, radius: 1.5 };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
-  water: { x: 0, y: -2.5, z: -14.5, top: 5.4 },
-  race: { x: -15, y: 1.5, z: 0, top: 5.0 },
-  mine: { x: 12.5, y: -5.5, z: 0, top: 5.2 },
-  calm: { x: 0, y: 6, z: 14.0, top: 4.6 },
+  water: { x: 0, y: -2.5, z: -23.5, top: 5.4 },
+  race: { x: -23, y: 1.5, z: 0, top: 5.0 },
+  mine: { x: 27.5, y: -5.5, z: 0, top: 5.2 },
+  calm: { x: 0, y: 6, z: 22.0, top: 4.6 },
 };
 
 /**
@@ -218,8 +219,10 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
-  // Steamworks boiler, between the machines at the back of the island.
-  { x: -19, z: -3.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
+  // Steamworks plant stays at the west/south perimeter, clear of cabinet fronts.
+  { x: -22, z: 2, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
+  { x: -21.75, z: .72, hx: .55, hz: .4, top: 3, base: 1.5 },
+  { x: -18.35, z: 3.48, hx: 2.15, hz: .3, top: 3.6, base: 1.5 },
   // welcome cloud: two benches and the side welcome board. The signpost's
   // blocker went with the signpost — the islands ring the hub now, so there is
   // nothing left to point at.
@@ -246,10 +249,11 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=aquarium-north', scene);
+  const held = await container('cloud-world.glb?v=rotating-gears-rear-signs', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);
+  const gears = createGearAnimation(held);
   for (const mesh of held.meshes) {
     mesh.isPickable = false;
     mesh.receiveShadows = true;
@@ -263,8 +267,11 @@ export async function buildWorld(scene) {
       }
       mesh.material = dimmed.get(mat);
     }
-    if (!swimmers.movingMeshes.has(mesh)) mesh.freezeWorldMatrix();
+    if (!swimmers.movingMeshes.has(mesh) && !gears.movingMeshes.has(mesh)) mesh.freezeWorldMatrix();
   }
 
-  return { blockers: [...FURNITURE], animate: swimmers.animate };
+  return {
+    blockers: [...FURNITURE],
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); },
+  };
 }

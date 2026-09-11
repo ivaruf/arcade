@@ -128,3 +128,23 @@ clouds elsewhere in the sky are unchanged.
 `source/island_flooring.py` runs at the end of the environment build. Floor
 pieces are grouped into shared meshes by material. No gameplay coordinates
 changed. This update was exported without playtesting or preview renders.
+
+## Maxgear cabinet clearance
+
+The boiler now occupies the southwest corner, and piping on the eastern
+approach side has been removed. Three large exposed brass gears and bearing
+supports sit at the southern edge; paired steam pistons sit beside the boiler.
+Their collision bounds follow the new positions. Cabinet locations and
+orientation are unchanged. The gears are decorative static geometry.
+Rebuilt the environment and editable Blender scene without playtesting or
+preview rendering.
+
+## Moving gears and rear signs
+
+All five Maxgear gears now have centred rotor nodes in the GLB. `js/gears.js`
+rotates them slowly, with adjacent gears turning in opposite directions and
+smaller gears turning faster. Fixed axles, supports and the deck stay still.
+
+All four game-island signs and their physical masts now stand at the far edge
+relative to the central welcome cloud, leaving each entrance open. The sign
+faces still point toward the hub. No playtesting or preview rendering was run.
