@@ -32,7 +32,7 @@ import { createAquariumSwimmers } from './aquarium.js';
  * The welcome cloud is the origin, and a cabinet at yaw 0 faces +Z.
  * ========================================================================== */
 
-const ASSETS = '../assets/3d/';
+const ASSETS = './assets/3d/';
 
 /**
  * The platforms. Each is a rectangle you can stand on with nothing but air

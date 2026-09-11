@@ -21,7 +21,7 @@
  * form change because the wind lives out here, not on the character.
  * ========================================================================== */
 
-const ASSETS = '../assets/3d/';
+const ASSETS = './assets/3d/';
 const TAU = Math.PI * 2;
 
 /** The node names we animate. Missing ones are skipped, not an error. */

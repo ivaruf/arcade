@@ -1,42 +1,83 @@
-# ARCADE
+# GOPHER CLOUD ARCADE
 
-A launcher for every game on `ivaruf.github.io`, hosted as one more GitHub
-Pages site at **https://ivaruf.github.io/arcade/**. Static files only: no
-build step, no dependencies. It is also an installable PWA that works offline.
+**https://ivaruf.github.io/arcade/** — one launcher for every game on the hub,
+and it is a place rather than a page. Each game is a machine on its own cloud
+in an open sky. Jump twice to ride the cloud, fly to whichever machine you
+fancy, land, and press play: the camera pushes into the cabinet's screen until
+the real game grows out of it.
 
-There are two doors into the same set of games. This page is the grid, and it
-is the dependable one. **[CLOUD NINE](cloudnine/)** at `/arcade/cloudnine/` is
-a proof of concept of the other: an actual arcade floor you walk around as the
-gopher, where each machine is one of these games and putting a coin in one
-opens it out of the cabinet's screen. It has its own
-[README](cloudnine/README.md); nothing about it changes how this page works.
+Static files only — no build step, no dependencies, no backend. It is also an
+installable PWA.
+
+There used to be two doors: a grid of cards here and the sky one level down at
+`/arcade/cloudnine/`. There is one door now. The grid is deleted and the sky
+moved up; `/arcade/cloudnine/` is a redirect so old links still land.
+
+## The sky
+
+```
+                    THE QUIET CLOUD  +10 m          swirls
+                          (pergola, nothing in it)
+
+   THE AQUARIUM  -2.5 m                    THE STEAMWORKS  +1.5 m
+   fishtank, dam_break                     maxgear
+   (glass tank, four stools)               (brass, rivets and steam)
+
+                    THE WELCOME CLOUD  0 m
+                    arch, signpost, prize machine
+
+                          THE OUTCROP  -5.5 m
+                          supermine, supermine_adventure
+                          (rock slung under the cloud, a headframe)
+```
+
+Every platform is 17 to 22 m from the welcome cloud — three or four seconds of
+flight. Small on purpose: you can see all of them from where you arrive, so
+finding a game is never the puzzle. The flying is the fun.
+
+## What it does
+
+- **Six machines, six real games.** `games.json` is the registry. A slug added
+  there gets a machine wearing that game's own name on the marquee, its own
+  icon on the CRT, and a neon tint derived from it. Which cloud it lands on is
+  one line in `PLACEMENT`; anything unnamed takes the first free standing.
+- **The cloud always comes back.** Walk off an edge and you fall for half a
+  second — long enough to register as a mistake — and then the cloud is under
+  you and you are flying. No damage, no reset, no way to get stuck, because
+  this is a launcher and you should not be able to lose in one.
+- **Signs, because a sky has no corridors.** A signpost on the welcome cloud
+  with one arm per platform, each turned to point at the real thing, and a name
+  board on every platform's mast big enough to read from where you started.
+  Both are drawn at runtime, since only `games.json` knows what they say.
 
 ## How it finds the games
 
-`games.json` is the only thing you edit. Everything shown on a card is read at
+`games.json` is the only thing you edit. Everything on a machine is read at
 runtime from the game's own hosted files, in this order:
 
-1. `https://ivaruf.github.io/<slug>/manifest.webmanifest`: name, description,
-   theme colour, icons, start URL.
-2. Otherwise the page at `/<slug>/`: its `<link rel="manifest">`, or a
-   meta-refresh / canonical redirect that is followed once (this is how
-   fishtank, which lives at `/fishtank/client/`, is found), or its `<title>`,
-   `<meta name="description">`, `<meta name="theme-color">` and `<link rel="icon">`.
+1. `<base>/manifest.webmanifest` — name, description, theme colour, icons.
+2. Otherwise the page at `<base>/`: its `<link rel="manifest">`, or a
+   meta-refresh / canonical redirect followed once (this is how fishtank,
+   which lives at `/fishtank/client/`, is found), or its `<title>` and
+   `<meta name="description">` / `theme-color`.
 3. Otherwise the slug, prettified (`dam_break` becomes "Dam Break").
 
-The card's glow colour is sampled from the game's icon. Resolved metadata is
-kept in `localStorage`, so the second visit paints instantly and offline and
-refreshes in the background.
+It degrades at every step, so a missing field gives a worse machine, never a
+broken one. A game with no resolvable icon still gets a cabinet.
+
+**Where** the games are is resolved differently, and it is what makes
+localhost work with no configuration: they are siblings of `/arcade/`, so one
+level up from this page — true both on `ivaruf.github.io` and under
+`python3 -m http.server` in `~/projects/games`. That is tried first, and
+`games.json`'s `origin` is the fallback when nothing answers locally.
 
 ### Adding a game
-
-Add its Pages path to `games.json`:
 
 ```json
 "games": ["fishtank", "swirls", "my_new_game"]
 ```
 
-An entry can also be an object when the automatic answer is wrong:
+An entry can be an object when the automatic answer is wrong:
 
 ```json
 { "slug": "my_new_game", "path": "my_new_game/dist/", "name": "Nicer Name",
@@ -44,38 +85,27 @@ An entry can also be an object when the automatic answer is wrong:
   "accent": "#ff3fa4", "icon": "https://…/icon.png", "url": "https://…/play/" }
 ```
 
-Every field is optional except `slug`. `path` is where to look for the game
-(relative to `origin`), `url` is what PLAY opens if different.
+Every field is optional except `slug`.
 
 ## One PWA opening another
 
-PLAY opens the game **inside the arcade**, in a full-window iframe, with a
-small "◂ ARCADE" pill to get back. This works because every game is on the
-same origin as the arcade, so:
+A machine opens its game **inside the arcade**, in a same-origin iframe, so:
 
 - the game's own service worker registers and serves it exactly as it would
-  standalone, and an already-installed game plays offline inside the arcade;
-- the game's `localStorage` and IndexedDB are the same ones it uses standalone,
-  and the same ones the arcade sees. A future shared inventory (skins, items)
-  can live in one namespaced key on this origin and be read by every game;
-- fullscreen, gamepad, wake lock, pointer lock and motion sensors are delegated
-  to the iframe through its `allow` attribute.
+  standalone, and an already-installed game plays offline in here;
+- its `localStorage` and IndexedDB are the same ones it uses standalone, and
+  the same ones the arcade sees — a future shared inventory can live in one
+  namespaced key on this origin and be read by every game;
+- fullscreen, gamepad, wake lock, pointer lock and motion sensors are
+  delegated through the iframe's `allow` attribute.
 
-The URL hash (`#play=swirls`) is the source of truth for the player, so the
-browser back button and Android's back gesture leave the game, Escape does
-too, and `…/arcade/#play=swirls` deep-links straight into a game.
+`#play=<slug>` is the source of truth, so the back button and Android's back
+gesture leave a game, and `…/arcade/#play=swirls` deep-links straight into one.
 
-Two things do not cross the frame boundary: the game's own install prompt
-(install it from its own page, via the ↗ button) and its manifest `display`
-mode (the arcade's applies). The ↗ button opens the game on its own page; from
-the installed arcade that is an in-app browser sheet on iOS and a Custom Tab
-on Android, both with a way back.
+What does not cross the frame: the game's own install prompt, and its manifest
+`display` mode (the arcade's applies).
 
-Once a game has been opened, its card shows an **offline ready** badge:
-`navigator.serviceWorker.getRegistrations()` lists every worker on the origin,
-so the arcade can see which games are cached.
-
-## Giving a game its own way out
+## Every game's own way out
 
 Every game in the arcade has a quit of its own, in its own colours and its own
 words. What they share is one line in the `<head>`:
@@ -100,7 +130,7 @@ checks for `window.ArcadeExit` before building one.
 
 | how it was opened | what quit means |
 | --- | --- |
-| in the arcade | an iframe with the launcher behind it — hand the player back to the floor |
+| in the arcade | an iframe with the launcher behind it — hand the player back to the sky |
 | installed | its own PWA window — close it |
 | an ordinary tab | a script may not close it, so say so honestly |
 
@@ -122,82 +152,232 @@ if (window.ArcadeExit) {
 }
 ```
 
-`framed()`, `inArcade()`, `standalone()` and `leave()` are there too, for a
-game wiring something more specific — `fishtank` uses `leave()` from the quit
-it already had.
+`framed()`, `inArcade()`, `standalone()` and `leave()` are there too. The
+arcade loads `exit.js` itself for `standalone()` alone: an installed window can
+be closed and a tab cannot, and that is what decides whether the way-out ring
+on the welcome cloud exists at all.
 
-### The launcher pills are a fallback now
+Where each game puts its button: `supermine` and `supermine_adventure` in the
+pause card under a hairline (the adventure arms it twice, like everything there
+that throws a run away); `dam_break` on the title and level screens;
+`maxgear` on the title and pause menus; `swirls` across the foot of the gear
+panel; `fishtank` in the pause menu it already had.
 
-Both launchers still carry their own pill, but it starts `hidden`. After the
-iframe loads, each asks the framed game whether it has `ArcadeExit` and shows
-the pill **only if it does not**. In normal play the pill is gone, because the
-game's own quit is better dressed and better worded than ours could be. But
-`games.json` is open: a slug can be added whose repo has never heard of
-`exit.js`, and a game with no way out and no pill is a trap rather than a worse
-card.
+### The FLOOR pill is a fallback
+
+The launcher still carries its own `◂ FLOOR` pill, but it starts `hidden`.
+After the iframe loads, the launcher asks the framed game whether it has
+`ArcadeExit` and shows the pill **only if it does not**. In normal play the
+pill is gone, because the game's own quit is better dressed and better worded
+than ours could be. But `games.json` is open: a slug can be added whose repo
+has never heard of `exit.js`, and a game with no way out and no pill is a trap
+rather than a worse card.
 
 ### How leaving works
 
-Each launcher publishes its own way out as `window.arcadeLeave`, and `leave()`
-calls it. Both launchers are in this repository beside `exit.js`, so that is
-one repo's contract rather than seven — and it has to be their function rather
-than plain `history.back()`, because leaving is not one thing:
+The launcher publishes its own way out as `window.arcadeLeave`, and `leave()`
+calls it. Both live in this repository, so that is one repo's contract rather
+than seven — and it has to be the launcher's function rather than plain
+`history.back()`, because leaving is not one thing:
 
-- arriving by PLAY, or by flying to a machine, **pushes** a `#play=<slug>`
-  entry, and the way out is to unwind it so the pill, Escape and the back
-  button all leave the same trail;
-- arriving by **deep link** (`…/arcade/#play=swirls`) pushes nothing, so
-  `history.back()` would take the player out of the arcade altogether — the
-  opposite of what the button says. `stop()` in `arcade.js` and `leaveGame()`
-  in `cloudnine/js/main.js` each check `history.state`, clear the hash where it
-  stands and unload directly in that case.
+- arriving by flying to a machine **pushes** a `#play=<slug>` entry, and the
+  way out is to unwind it so the back button, Escape and the game's own quit
+  all leave the same trail;
+- arriving by **deep link** pushes nothing, and `history.back()` would take the
+  player out of the arcade altogether. `leaveGame()` in `js/main.js` checks
+  `history.state`, clears the hash where it stands, and unloads directly.
 
-`history.back()` remains the fallback. It is the older contract, and it is what
-a launcher served from a cache older than `exit.js` still understands — the
-shell and the games are cached by separate service workers, so an old launcher
-framing a new game is a real state during a rollout.
+`history.back()` remains the fallback, for a launcher served from a cache older
+than `exit.js` — the shell and the games are cached by separate workers, so an
+old launcher framing a new game is a real state during a rollout.
 
-Where each game puts it, as of now: `supermine` and `supermine_adventure` in
-the pause card under a hairline (the adventure arms it twice, like everything
-else there that throws a run away); `dam_break` on the title and level screens,
-so leaving is never three taps deep; `maxgear` on the title and pause menus;
-`swirls` across the foot of the gear panel; `fishtank` in the pause menu it
-already had.
+## Controls
 
-## Developing locally
+| Input | On a cloud | In the air |
+| --- | --- | --- |
+| `W` `A` `S` `D` / arrows | Walk, relative to the camera | Fly |
+| `Space` | Hop. Again in the air to take off | Hold to rise |
+| `Shift` | Sprint | Hold to sink |
+| `E` / `Enter` | Play the machine you are standing at | — |
+| `Escape` | Pause; or leave a running game | Pause |
+| Drag / wheel | Orbit / zoom | Same |
+
+Flying is the only way between platforms, which is the point. Landing is the
+only way to play a machine, which is why walking still matters.
+
+Touch gets a floating stick on the left half, hop and sprint on the right, and
+a PLAY button that only exists while a machine is within reach. A gamepad works
+too: left stick walks, right stick looks, A hops, X or B plays, Start pauses.
+
+## Running it
+
+Nothing to build. Serve the hub and open the page:
 
 ```sh
-python3 -m http.server 8123
-# open http://localhost:8123/
+cd ~/projects/games
+python3 -m http.server 8000
+# http://127.0.0.1:8000/arcade/
 ```
 
-The launcher fetches the games' manifests from the live site; GitHub Pages
-sends `access-control-allow-origin: *`, so that works from localhost too. The
-in-arcade player also works locally. The offline badges do not, because the
-games' service workers live on the other origin.
+Babylon.js comes from jsDelivr, pinned to 8.56.2 with an integrity hash — the
+same pin fishtank ships, so a visitor who has played that already has the
+bytes. There is no vendored copy, so **the first visit needs the network**; the
+boot card says so plainly if the script never arrives.
+
+## How it is put together
+
+| File | Owns |
+| --- | --- |
+| `js/main.js` | Phases, movement, collision, the camera, the coin |
+| `js/room.js` | The platforms, the sky box, the placements, the mood |
+| `js/cabinets.js` | One machine per game: tint, marquee, CRT art, floor mark |
+| `js/gopher.js` | Two models, one pivot, and all the procedural animation |
+| `js/launcher.js` | The handover from cabinet screen to running game |
+| `js/registry.js` | `games.json` → titles, icons, colours, URLs |
+| `js/signs.js` | The signpost's arms and each platform's name board |
+| `js/controls.js` | Keyboard, touch stick, gamepad, all answering the same questions |
+| `js/audio.js` | The sky synthesized, plus the theme on its own bus |
+| `js/screen.js` | Fullscreen, the landscape lock, and the worker registration |
+| `js/aquarium.js` | The fish in the tank |
+
+Read the header of `js/room.js` before touching any coordinate. Blender is Z-up
+and the glTF loader mirrors X, and the two together are the only thing standing
+between you and a sign facing backwards. Everything is authored in game
+coordinates by `assets/3d/source/build_clouds.py` and converted on the way out,
+so those numbers and `room.js`'s are the same numbers.
+
+### The world is platforms and one box
+
+There is no navmesh and no physics engine. `PLATFORMS` are rectangles at
+heights — the highest one at or below you is the ground, and off the edge there
+is simply nothing, which is what the cloud-catch exists to answer. `SKY` is a
+single box you cannot leave. That is the whole world model.
+
+An earlier version of this file described nine interlocking volumes, arches, a
+skylight, a stairwell, a ceiling height per room and a roof to hide when the
+camera rose past it. Every one existed because flight had been bolted onto a
+place with walls. Making the sky the level deleted all of them.
+
+### The one thing that is not real
+
+You cannot texture an iframe onto a mesh — WebGL cannot sample a live document,
+and no trick makes it possible. So the game is never *on* the model. The CRT's
+corners are projected from 3D into screen pixels and the game's iframe is
+revealed through a `clip-path` matching that rectangle, scaled down to fit it,
+then both animate away. The cabinet screen becomes the game's screen becomes
+the whole screen, and the only thing that moved was a clip. `js/launcher.js`
+explains the mechanics.
+
+## Assets
+
+Models come from `assets/3d/`, which is a static kit with its own
+[README](assets/3d/README.md):
+
+- `cloud-world.glb` — the whole sky: five platforms and their structures at
+  final positions, built by `assets/3d/source/build_clouds.py`
+- `machine-classic.glb` — the one cabinet kind, stamped out of an
+  `AssetContainer` with materials cloned so each machine takes its game's
+  colour. The kit's racer and dance cabinets are not used: a seat and a floor
+  pad each stick a metre and a half into a nine-metre platform.
+- `machine-claw.glb` — the prize machine on the welcome cloud, which is not a
+  game and never will be
+- `gopher-scarf.glb`, `gopher-scarf-cloud.glb` — the player, in both forms
+
+**The clouds are metaballs, not spheres.** This is the one place in the hub
+where primitives were not good enough: scattered UV spheres read as a heap of
+balls however many you use, because each keeps its own silhouette, and a flat
+slab with spheres round the rim reads as a table with a doily. Metaball
+elements merge into a single surface with soft saddles between the lobes, which
+is what makes a thing look like cloud. Their radius has to exceed their spacing
+or they never fuse — that is the whole trick.
+
+`audio/theme.m4a` is the theme, looped with `loopStart` set past the decoder's
+priming silence so the seam is inaudible. It has its own switch in the pause
+menu, separate from the synthesized sound, and it ducks rather than restarts
+while a game has the machine.
+
+## Installing it
+
+Manifest, icons, and one service worker at `/arcade/`. `display: fullscreen`,
+`orientation: landscape`. On a touch device held upright you get a rotate
+prompt instead of a squeezed sky, and its button goes fullscreen *and* pins
+landscape in one tap — a page may only pin its orientation while fullscreen,
+which is why `js/screen.js` owns both. Where a browser cannot pin, only the
+button's label changes; where there is no fullscreen at all, both buttons hide
+and the prompt stands on its own.
+
+Installed, the way-out ring on the welcome cloud closes the app. In a tab there
+is nothing a script may close, so the ring is not there at all.
 
 ## Deploying
 
-Push to `main` and serve GitHub Pages from the root of the branch. Bump
-`VERSION` in `sw.js` on every deploy: the shell is cached per version and old
-versions are dropped when the new worker activates. A new build appears on
-the visit after it is deployed; the page is never reloaded underneath a
-running game.
+Push to `main`; Pages serves the root of the branch. **Bump `VERSION` in
+`sw.js` on every deploy** and keep the one-line comment describing the release.
 
-Two caches, and the split matters: `arcade-shell-<VERSION>` holds this
-launcher's own files plus the 3D floor's code, and is dropped on every version
-bump. `arcade-runtime` holds the games' manifests and icons and anything heavy
-in scope — the 3D floor's models and its theme — and survives version bumps,
-so a stylesheet change does not re-download nine megabytes of gopher.
+Two caches, and the split matters: `arcade-shell-<VERSION>` holds the page, its
+modules, its stylesheet and its icons, and is dropped on every bump.
+`arcade-runtime` holds the games' manifests and icons and everything heavy in
+scope — the models, the theme, Babylon — and survives bumps, so a stylesheet
+change does not re-download nine megabytes of gopher.
+
+Both are stale-while-revalidate: answer from cache at once, refresh in the
+background. A new build appears on the visit *after* it is deployed, and the
+page is never reloaded underneath a running game.
 
 ## Icons
 
-`python3 tools/make-icons.py` regenerates this launcher's `icons/` — a motif
-drawn procedurally, per §4 of the hub rules (needs Pillow).
+```sh
+python3 tools/make-icons.py
+```
 
-`python3 cloudnine/tools/make-icons.py` regenerates the cloud arcade's, and is
-the exception: its motif is the owner's drawing of the gopher on a cloud,
-committed at `cloudnine/icons/source/gopher-cloud.png`. Pillow cannot draw
-that, so the script crops, masks, pads and resizes instead. The icon set is
-still reproducible from committed inputs by one command, which was the point of
-the rule; the drawing-it-ourselves part was not.
+The motif is the owner's drawing of the gopher on a cloud, committed at
+`icons/source/gopher-cloud.png`, and the script crops, masks, pads and resizes
+rather than drawing. That is a deliberate exception to §4 of the hub rules: the
+icon set is still reproducible from committed inputs by one command, which was
+the point of the rule; Pillow drawing it was not.
+
+## Known limits
+
+These are honest, not oversights.
+
+- **One online visit before it works offline**, because Babylon is not vendored
+  and the models are 2.5 MB. This matters more than it used to: there is no
+  longer a lightweight grid to fall back to, so a device that cannot reach
+  jsDelivr, or cannot run WebGL, cannot reach the games from here at all.
+- **Nothing is merged.** About 400 meshes, world matrices frozen and picking
+  off, one glow pass. Comfortable on a laptop and fine on a recent tablet; if it
+  needs to be cheaper, merging each cabinet into one multi-material mesh is the
+  next move, and the reason it was not done is that the glTF loader's mirrored
+  root makes `MergeMeshes` a coin toss on winding order.
+- **`SLOTS` in `js/room.js` is a floor plan, not a limit on the arcade.** It
+  holds two machines per platform; beyond that a game gets no cabinet.
+- **Collision boxes are written by hand** to match `build_clouds.py`. Move a
+  bench in one and it walks through you in the other. They sit next to each
+  other in both files and both say so.
+- **`Escape` only leaves a game when this page has focus**, which it usually
+  does not once the game has loaded. The game's own quit is the way out, and
+  the back button works too.
+
+## Playtest checklist
+
+1. Title card over the sky, camera drifting. **Walk in.**
+2. Read the signpost on the welcome cloud: one arm per platform, each pointing
+   at the real thing, none of them mirrored.
+3. Jump, jump again — the cloud comes under you and you are flying. Walk off an
+   edge instead: you fall for about half a second and it catches you.
+4. Fly to a machine and land. The mark under you lights, the callout names the
+   game, the gopher turns to face it.
+5. `E`. Coin drops, camera to the glass, the game appears **on the cabinet
+   screen**, then opens out. Play it.
+6. Quit from inside the game, using the game's own button. It shrinks back into
+   the cabinet, the HUD returns, the URL hash is clear and no iframe is left.
+   No `◂ FLOOR` pill should have been on screen while it was running.
+7. Back button from inside a game leaves it the same way.
+8. `…/arcade/#play=supermine` lands straight in that game; quitting puts you at
+   the outcrop rather than throwing you out of the arcade.
+9. On a phone: drag anywhere to look around. No text selection, no magnifier.
+   Held upright you get the rotate prompt; its button goes fullscreen and turns
+   the sky in one tap.
+10. Sound: the theme, plus blips from machines near you. Both switches in the
+    pause menu do what they say and survive a reload.
+11. `…/arcade/cloudnine/` still arrives here.

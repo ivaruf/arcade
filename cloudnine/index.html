@@ -2,163 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#050810">
-<meta name="description" content="Fly between cloud platforms as the gopher and play every machine in the sky.">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>GOPHER CLOUD ARCADE — the sky is the arcade</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="stylesheet" href="css/style.css">
+<!--
+  The gopher cloud arcade used to live here, one level down, while a 2D grid
+  of cards sat at /arcade/. There is one door now and this is not it — the sky
+  IS the arcade. This page exists only so that a link someone already has, or
+  an installed shortcut pointing at the old path, still arrives somewhere.
+
+  A meta refresh rather than a script, so it works with JavaScript off, and a
+  canonical link beside it because the arcade's own registry follows exactly
+  those two hints when it resolves a game's real home (see js/registry.js).
+  Nothing here needs to be pretty; nobody should see it for more than a blink.
+-->
+<meta http-equiv="refresh" content="0; url=../">
+<link rel="canonical" href="../">
+<meta name="robots" content="noindex">
+<title>GOPHER CLOUD ARCADE — moved up a level</title>
+<style>
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #050810;
+    color: #cfe0ef;
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+    padding: 24px;
+  }
+  a { color: #f9c66b; }
+</style>
 </head>
 <body>
-
-<canvas id="stage" tabindex="0"></canvas>
-
-<!-- Everything above the canvas is DOM: the floor is 3D, the words are not. -->
-
-<!-- The room's own signage, borrowed for the loading card. -->
-<div id="boot" class="card boot">
-  <p class="sign">GOPHER CLOUD</p>
-  <p class="sub">A R C A D E</p>
-  <p id="boot-line" class="line">rolling out the clouds&hellip;</p>
-</div>
-
-<div id="title" class="card title" hidden>
-  <p class="sign">GOPHER CLOUD</p>
-  <p class="sub">A R C A D E</p>
-  <p class="blurb">Every machine is on its own cloud. Jump twice to ride the cloud, and fly to whichever one you fancy.</p>
-  <button id="walk-in" class="neon" type="button">Walk in</button>
-  <p class="fine">
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
-    <kbd>Space</kbd> hop, again for the cloud &middot;
-    <kbd>E</kbd> play &middot;
-    drag to look
-    <br>fall off a cloud and the cloud comes back for you
-  </p>
-</div>
-
-<!-- Floor HUD. Deliberately thin: the room is the interface. -->
-<div id="hud" class="hud" hidden>
-  <div class="hud-room">
-    <span class="hud-name">GOPHER CLOUD</span>
-    <span id="hud-room" class="hud-where">The welcome cloud</span>
-    <span id="hud-count" class="hud-count"></span>
-  </div>
-  <div class="hud-tools">
-    <button id="fullscreen" class="chip" type="button" aria-label="Go fullscreen" aria-pressed="false" title="Go fullscreen" hidden>&#10530;</button>
-    <button id="pause-btn" class="chip" type="button" aria-label="Pause">II</button>
-  </div>
-</div>
-
-<!-- The callout that floats over whatever the gopher is standing in front of. -->
-<div id="prompt" class="prompt" hidden aria-live="polite">
-  <span id="prompt-title" class="prompt-title"></span>
-  <span id="prompt-cue" class="prompt-cue"><kbd>E</kbd> play game</span>
-</div>
-
-<div id="pause" class="card pause" hidden>
-  <p class="sign small">Paused</p>
-  <button id="resume" class="neon" type="button">Back to the floor</button>
-  <button id="music" class="ghost" type="button" aria-pressed="true">Theme music: on</button>
-  <button id="sound" class="ghost" type="button" aria-pressed="true">Room sound: on</button>
-  <button id="leave" class="ghost" type="button">Leave the arcade</button>
-</div>
-
-<!-- Touch: a floating stick on the left, hop / sprint on the right, and a
-     PLAY button that only exists while a machine is within reach. -->
-<div id="touch" class="touch" hidden aria-hidden="true">
-  <div class="stick-zone">
-    <div class="stick-base"><div class="stick-knob"></div></div>
-  </div>
-  <button class="tbtn tbtn-sprint" type="button" aria-label="Sprint or sink">&raquo;</button>
-  <button class="tbtn tbtn-hop" type="button" aria-label="Hop">&#9650;</button>
-  <button id="tbtn-coin" class="tbtn tbtn-coin" type="button" aria-label="Play game" hidden>PLAY</button>
-</div>
-
-<!-- The game itself. The clip-path starts as the CRT's rectangle on screen and
-     opens to the whole viewport, so the game grows out of the cabinet.
-     The iframe is not here: launcher.js builds a fresh one per game and
-     removes it afterwards — see its header for why that matters. -->
-<div id="cabinet" class="cabinet" hidden>
-  <!-- Hidden by default: every game in the arcade has its own quit, in its own
-       colours, and a second generic control over the top of it was clutter.
-       launcher.js reveals this only for a game that turns out not to have one
-       (see offerPillIfTheGameHasNoQuit), so nobody is ever stuck inside. -->
-  <div class="pill" hidden>
-    <button id="step-away" type="button" aria-label="Step away from the machine">&#9666; FLOOR</button>
-  </div>
-</div>
-
-<!-- A phone held upright gets this instead of a squeezed sky. Pure CSS to
-     show, so it works even if the modules never load; the button inside is
-     the only part screen.js touches, and it stays hidden where the browser
-     has no fullscreen to offer. -->
-<div id="rotate" class="rotate" role="dialog" aria-live="polite">
-  <svg class="rotate-art" viewBox="0 0 240 240" aria-hidden="true">
-    <path class="rotate-arrow" d="M52 168 A90 90 0 0 1 182 66" fill="none" stroke="#12d9b8" stroke-width="12" stroke-linecap="round"/>
-    <path d="M150 42 L196 60 L178 106 Z" fill="#12d9b8"/>
-    <g class="rotate-phone">
-      <rect x="92" y="70" width="56" height="100" rx="12" fill="#0a0e1c" stroke="#8e9aa8" stroke-width="6"/>
-      <rect x="102" y="84" width="36" height="66" rx="3" fill="#132038"/>
-    </g>
-  </svg>
-  <h2>Turn your device sideways</h2>
-  <p>The sky is wider than it is tall.</p>
-  <button id="rotate-go" class="neon rotate-go" type="button" hidden>
-    <b id="rotate-go-label">Or play fullscreen</b> <span aria-hidden="true">&rarr;</span>
-  </button>
-  <p id="rotate-note" class="rotate-note" hidden></p>
-</div>
-
-<!-- Leaving the sky dims it before the page changes. -->
-<div id="fade" class="fade" hidden></div>
-
-<noscript><p class="card boot">The arcade floor needs JavaScript.</p></noscript>
-
-<!--
-  Babylon from jsDelivr, pinned to an exact version and locked with an
-  integrity hash — the same pin fishtank ships, so a visitor who has played
-  that game already has these bytes. There is no local fallback copy here:
-  8 MB is not worth committing for a proof of concept, so the first visit
-  needs the network and boot.js says so plainly if the script never arrives.
--->
-<script
-  src="https://cdn.jsdelivr.net/npm/babylonjs@8.56.2/babylon.js"
-  integrity="sha384-bJ7uvrJB0MXh1qhQouRHX/NbjOQywkt/ZxeFnrMiiFYG8InDFZlQdzVpAGaMhfwZ"
-  crossorigin="anonymous"
-></script>
-<script
-  src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@8.56.2/babylonjs.loaders.min.js"
-  integrity="sha384-u+jmBF3Ig/827G8UT4kF+dDbuY0uXakBSGip6BUjiZ7IHqxA44vGxcpx76wGLI3f"
-  crossorigin="anonymous"
-></script>
-<!--
-  The boot card's text is plain HTML, so if the module below never RUNS the
-  page sits on "unlocking the doors…" for ever with nothing to go on. That is
-  not hypothetical: opened over file:// the browser blocks ES modules by CORS,
-  Babylon still loads because it is a classic script, and the page looks like
-  it is thinking rather than broken.
-
-  This is the only classic script on the page and its whole job is to notice.
--->
-<script>
-  window.__cloudnineBooted = false;
-  setTimeout(function () {
-    if (window.__cloudnineBooted) return;
-    var line = document.getElementById('boot-line');
-    if (!line) return;
-    line.className = 'line warn';
-    line.innerHTML =
-      location.protocol === 'file:'
-        ? 'The floor has to be served over HTTP &mdash; browsers refuse to load ES modules from a file:// page.<br><br><code>cd ~/projects/games &amp;&amp; python3 -m http.server 8000</code><br>then open <code>localhost:8000/arcade/cloudnine/</code>'
-        : 'The floor did not start. Check the browser console \u2014 and note that a module script reports its whole graph through this one tag, so the error names js/main.js even when the file that actually failed is one of its imports.';
-  }, 5000);
-</script>
-<script type="module" src="js/main.js"></script>
+  <p>The arcade is up a level now.<br><a href="../">Take me to the sky</a></p>
 </body>
 </html>

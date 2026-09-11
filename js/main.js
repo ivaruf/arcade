@@ -169,7 +169,13 @@ camera.pinchDeltaPercentage = 0.0015;
 camera.panningSensibility = 0;
 camera.minZ = 0.08;
 camera.maxZ = 60;
-camera.attachControl(ui.canvas, true);
+// `false` is noPreventDefault, so Babylon DOES call preventDefault on the
+// camera's own pointer events. With `true` a drag on the canvas was left for
+// the browser to interpret as well, and on a phone that means a text
+// selection and the iOS magnifier coming up over the sky while you are trying
+// to look around. Nothing on this page is text anyone wants to select — the
+// CSS in style.css says so too, and this is the other half of it.
+camera.attachControl(ui.canvas, false);
 camera.inputs.removeByType('ArcRotateCameraKeyboardMoveInput'); // WASD is ours
 
 const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
@@ -471,7 +477,7 @@ function updateDive(dt) {
     camera.upperRadiusLimit = CAMERA.maxRadius;
     camera.lowerBetaLimit = 0.62;
     camera.upperBetaLimit = 1.5;
-    camera.attachControl(ui.canvas, true);
+    camera.attachControl(ui.canvas, false); // noPreventDefault: see the rig above
     setLit(atMachine, false);
     atMachine = null;
     enterFloor();
@@ -510,10 +516,8 @@ function leaveGame() {
   stepAway();
 }
 
-// Published for the game inside the cabinet: ../exit.js draws a tab on the
-// game's own left edge — which the pill cannot be, since a game that takes
-// fullscreen on one of its own elements paints over everything out here — and
-// calls this to get back to the sky. It has to be this function and not
+// Published for the game inside the cabinet. Every game's own quit button
+// calls this through exit.js, and it has to be this function rather than
 // history.back(): the branch above is the whole point, and a deep link
 // straight to #play=<slug> has no entry of ours to unwind.
 window.arcadeLeave = leaveGame;
@@ -801,8 +805,18 @@ function updatePrompt(dt) {
 
   // The way out is a ring on the welcome cloud rather than a door, because
   // there is no street to walk out onto any more.
+  //
+  // It used to lead down to the 2D grid at /arcade/. The sky IS /arcade/ now,
+  // so that would only reload the page — and there is nothing above us to go
+  // back to. What is left is genuine but narrow: an INSTALLED arcade is a
+  // window, and a window can be closed. In an ordinary tab nothing may close
+  // anything, so the ring simply is not there; a way out that cannot get out
+  // is worse than no ring at all. Same judgement, and the same helper, as
+  // every game's quit button.
+  const canLeave = !!window.ArcadeExit?.standalone();
   const pos = gopher.pivot.position;
   const leaving =
+    canLeave &&
     state.mode === 'walk' &&
     state.grounded &&
     Math.hypot(pos.x - HOME.x, pos.z - HOME.z) < HOME.radius &&
@@ -818,7 +832,7 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.prompt.classList.add('leaving');
     ui.promptTitle.textContent = 'The way out';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd> to leave' : '<kbd>E</kbd> to leave the arcade';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd> to close' : '<kbd>E</kbd> to close the arcade';
     ui.coinBtn.hidden = !input.IS_TOUCH;
   } else {
     ui.prompt.hidden = true;
@@ -851,7 +865,17 @@ function leaveArcade() {
   const go = () => {
     if (gone) return;
     gone = true;
-    location.href = '../';
+    // Only ever reached from an installed window (the ring is hidden
+    // otherwise), so this closes the app. If the browser refuses after all,
+    // undo the fade rather than leaving the player staring at a black screen
+    // they cannot get out of.
+    window.ArcadeExit?.quit().then((how) => {
+      if (how !== 'refused') return;
+      phase = 'floor';
+      ui.fade.classList.remove('out');
+      ui.fade.hidden = true;
+      sfx.startAmbience();
+    });
   };
   ui.fade.addEventListener('transitionend', go, { once: true });
   const deadline = performance.now() + 1200;

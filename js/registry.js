@@ -3,8 +3,7 @@
  *
  * games.json is the arcade's registry and stays the registry: a slug added
  * there gets a cabinet here with no other change. Everything else about a game
- * is read at runtime from the game's OWN hosted files, exactly as the 2D
- * launcher does it (arcade.js):
+ * is read at runtime from the game's OWN hosted files:
  *
  *   1. <base>/manifest.webmanifest       name, description, theme colour, icons
  *   2. else the page itself               <link rel=manifest>, or one
@@ -12,24 +11,25 @@
  *                                         (fishtank lives at /fishtank/client/)
  *   3. else the slug, prettified          a worse cabinet, never a broken one
  *
- * This duplicates ~70 lines of arcade.js. That is deliberate for a proof of
- * concept — arcade.js is a classic script on one IIFE and this is an ES module,
- * so sharing means converting the working launcher. If the 3D floor graduates,
- * lift the resolver out of arcade.js into one module and import it in both.
+ * This used to be ~70 duplicated lines: the 2D grid at /arcade/ had its own
+ * copy in arcade.js, a classic script on one IIFE that could not import an ES
+ * module, and the note here said to unify them if the 3D floor ever graduated.
+ * It graduated — the sky IS /arcade/ now and the grid is gone — so there is
+ * one resolver again and this is it.
  *
  * WHERE the games are is the one thing we resolve differently, and it is what
  * makes localhost work with no configuration. The games are siblings of
- * /arcade/, so from this page they are two levels up — true both on
+ * /arcade/, so from this page they are one level up — true both on
  * ivaruf.github.io and under `python3 -m http.server` in ~/projects/games. We
  * try that first and fall back to games.json's `origin` only if nothing
  * answers there, which keeps a locally served floor entirely offline while a
  * page served from somewhere else still finds the live games.
  * ========================================================================== */
 
-const CONFIG_URL = '../games.json';
+const CONFIG_URL = './games.json';
 
 /** Games are siblings of the arcade, which is our grandparent. */
-const SIBLINGS = new URL('../../', location.href).href;
+const SIBLINGS = new URL('../', location.href).href;
 
 const first = (...vals) => vals.find((v) => typeof v === 'string' && v.trim())?.trim() ?? '';
 

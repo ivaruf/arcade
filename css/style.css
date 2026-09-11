@@ -45,6 +45,28 @@ html, body {
 
 body { touch-action: none; }
 
+/* Dragging to fly must never be read as dragging to select.
+ *
+ * `touch-action: none` above stops the browser scrolling and zooming, but it
+ * says nothing about SELECTION: on a phone, a press-and-drag anywhere over the
+ * HUD, the signs or the prompt still starts a text selection and pops the iOS
+ * magnifier over the sky. Every label here is chrome — none of it is text
+ * anyone wants to copy — so nothing on the page is selectable, and nothing
+ * offers the long-press callout menu either. This is what fishtank does, and
+ * for the same reason.
+ *
+ * On `body` rather than per-element: the canvas is the whole page and the DOM
+ * over it is all HUD. There is not one input or piece of prose to opt back in,
+ * which is worth saying out loud — add `user-select: text` to it explicitly if
+ * one ever appears. */
+body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Stops Safari inflating the HUD's type when a phone is turned. */
+  -webkit-text-size-adjust: 100%;
+}
+
 #stage {
   position: fixed;
   inset: 0;

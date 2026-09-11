@@ -132,7 +132,7 @@ export function registerWorker() {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('../sw.js', { scope: '../' })
+      .register('./sw.js', { scope: './' })
       .then((reg) => reg.update().catch(() => {}))
       .catch((err) => console.info('[cloudnine] offline support unavailable:', err.message));
   });

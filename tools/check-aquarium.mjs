@@ -1,4 +1,4 @@
-/** Run: node cloudnine/tools/check-aquarium.mjs ../fishtank/node_modules */
+/** Run: node tools/check-aquarium.mjs ../fishtank/node_modules */
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -14,7 +14,7 @@ const engine = new B.NullEngine();
 const scene = new B.Scene(engine);
 new B.FreeCamera('check', B.Vector3.Zero(), scene);
 B.SceneLoader.OnPluginActivatedObservable.add((loader) => { loader.skipMaterials = true; });
-const bytes = new Uint8Array(readFileSync(new URL('../../assets/3d/cloud-world.glb', import.meta.url)));
+const bytes = new Uint8Array(readFileSync(new URL('../assets/3d/cloud-world.glb', import.meta.url)));
 let timeout;
 try {
   const held = await Promise.race([

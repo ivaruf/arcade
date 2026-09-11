@@ -162,7 +162,7 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
    * Every game in the arcade has its own quit, in its own colours and its own
    * words, so a second control out here was just clutter over the top of it —
    * and ours could only ever be generic. But `games.json` is open: a slug can
-   * be added whose repo has never heard of `../exit.js`, and a game with no way
+   * be added whose repo has never heard of `../arcade/exit.js`, and a game with no way
    * out and no pill is a trap rather than a worse card. So we ask the frame
    * whether the game has the arcade's exit API, and show the pill only when it
    * does not.

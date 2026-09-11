@@ -4,7 +4,7 @@
 
 Writes ONE file, cloud-world.glb, with every platform at its final position —
 so the game loads it at the origin and never moves it, and the numbers here
-are the same numbers as the platform rectangles in cloudnine/js/room.js.
+are the same numbers as the platform rectangles in js/room.js.
 
 WHY THIS REPLACED A BUILDING: flight used to be a toy bolted onto an arcade
 with walls. Everything awkward came from that — a chase camera clipping

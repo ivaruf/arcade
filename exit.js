@@ -37,20 +37,19 @@
  * HOW LEAVING THE ARCADE WORKS
  * ----------------------------
  * The launcher publishes its own way out as `window.arcadeLeave`, and this
- * calls it. Both launchers live in this repository beside this file, so that
- * is one repo's contract rather than seven — and it has to be the launcher's
- * own function, because leaving is not simply `history.back()`:
+ * calls it. The launcher lives in this repository beside this file, so that is
+ * one repo's contract rather than seven — and it has to be the launcher's own
+ * function, because leaving is not simply `history.back()`:
  *
- *   arriving by PLAY or by flying to a machine pushes a `#play=<slug>` entry,
- *   and the way out is to unwind it so the back button, Escape and the game's
- *   own quit all leave the same trail;
+ *   arriving by flying to a machine pushes a `#play=<slug>` entry, and the way
+ *   out is to unwind it so the back button, Escape and the game's own quit all
+ *   leave the same trail;
  *
  *   arriving by DEEP LINK (`…/arcade/#play=swirls`, which the README
- *   advertises) pushes nothing, and `history.back()` would take the player
- *   out of the arcade altogether — the opposite of what the button says. Both
- *   launchers already handle this: `stop()` in arcade.js and `leaveGame()` in
- *   cloudnine/js/main.js each check `history.state` and unload directly when
- *   there is no entry of theirs to unwind.
+ *   advertises) pushes nothing, and `history.back()` would take the player out
+ *   of the arcade altogether — the opposite of what the button says.
+ *   `leaveGame()` in js/main.js checks `history.state`, clears the hash where
+ *   it stands and unloads directly when there is no entry of ours to unwind.
  *
  * `history.back()` stays as the fallback. It is the older contract, it is what
  * fishtank's own quit did before this existed, and it is what a launcher

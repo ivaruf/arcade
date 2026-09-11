@@ -7,11 +7,11 @@
  *                           dropped on activate.
  *   arcade-runtime          the games' manifests and icons (same origin,
  *                           outside this scope), and anything heavy in scope:
- *                           the 3D floor's models and its theme. Cached as
- *                           they are seen, and it survives version bumps —
- *                           which is the whole point of keeping them out of
- *                           the shell. Nine megabytes of gopher should not be
- *                           re-downloaded because a stylesheet changed.
+ *                           the models, the theme and Babylon. Cached as they
+ *                           are seen, and it survives version bumps — which is
+ *                           the whole point of keeping them out of the shell.
+ *                           Nine megabytes of gopher should not be downloaded
+ *                           again because a stylesheet changed.
  *
  * Both are stale-while-revalidate: answer from cache at once, refresh from
  * the network in the background. A new build therefore shows up on the visit
@@ -22,46 +22,41 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.6.1'; // each game quits in its own voice; the pill is a fallback now
+const VERSION = 'v2.0.0'; // the sky IS the arcade: the 3D floor moved up to /arcade/
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
 /**
- * Precached on install, so both launchers work on a cold offline start. The 3D
- * floor's models, its theme and Babylon itself are NOT here: they are megabytes
- * and they are picked up by the runtime cache the first time the floor is
- * opened. That means the 3D floor needs one online visit before it works
- * offline, while the 2D grid works offline immediately — the right trade for a
- * launcher that has to be dependable and an experiment that has to be big.
+ * Precached on install: the page, its modules, its stylesheet and its icons.
+ *
+ * The models, the theme and Babylon itself are NOT here. They are megabytes,
+ * and the runtime cache picks them up the first time they are fetched, so it
+ * survives a version bump — nine megabytes of gopher should not be downloaded
+ * again because a stylesheet changed. The cost of that trade is honest and
+ * worth writing down: the arcade needs ONE online visit before it works
+ * offline, because a sky with no clouds in it is not a sky.
  */
 const SHELL_FILES = [
   './',
   './index.html',
-  './arcade.css',
-  './arcade.js',
+  './css/style.css',
   './exit.js',
   './games.json',
   './manifest.webmanifest',
+  './js/main.js',
+  './js/room.js',
+  './js/aquarium.js',
+  './js/cabinets.js',
+  './js/gopher.js',
+  './js/launcher.js',
+  './js/registry.js',
+  './js/controls.js',
+  './js/audio.js',
+  './js/signs.js',
+  './js/screen.js',
+  './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './cloudnine/',
-  './cloudnine/index.html',
-  './cloudnine/css/style.css',
-  './cloudnine/manifest.webmanifest',
-  './cloudnine/js/main.js',
-  './cloudnine/js/room.js',
-  './cloudnine/js/aquarium.js',
-  './cloudnine/js/cabinets.js',
-  './cloudnine/js/gopher.js',
-  './cloudnine/js/launcher.js',
-  './cloudnine/js/registry.js',
-  './cloudnine/js/controls.js',
-  './cloudnine/js/audio.js',
-  './cloudnine/js/signs.js',
-  './cloudnine/js/screen.js',
-  './cloudnine/icons/icon-32.png',
-  './cloudnine/icons/icon-192.png',
-  './cloudnine/icons/icon-512.png',
 ];
 
 /** Big binaries live in the unversioned cache. See the header. */

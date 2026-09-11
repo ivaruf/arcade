@@ -15,7 +15,7 @@ with any of it beyond bumping into four pieces.
 
 Everything is placed at its final position in ROOM coordinates, so the GLB is
 loaded once at the origin and never moved. The collision boxes for the four
-solid pieces are written by hand in cloudnine/js/room.js; if you move something
+solid pieces are written by hand in js/room.js; if you move something
 here, move it there too. The conversion between these coordinates and the
 game's is documented at the top of that file.
 
