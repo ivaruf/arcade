@@ -47,14 +47,6 @@ const SCREEN = { y: 1.5, z: 0.288, width: 0.7, height: 0.49, tilt: 0.1396 };
 /** The marquee box's front face, just in front of the lettering we remove. */
 const MARQUEE = { y: 2.012, z: 0.337, width: 1.0, height: 0.2 };
 
-/**
- * One prize machine, by the door. There were two, in the middle of the floor,
- * and they were the main thing making the hall feel cluttered — scenery
- * belongs against a wall where you walk past it, not in the space you walk
- * through.
- */
-const DECOR = [{ x: -6.4, z: 6.1, yaw: Math.PI }];
-
 const TAU = Math.PI * 2;
 
 // ---------------------------------------------------------------------------
@@ -481,17 +473,6 @@ export async function placeCabinets(scene, shadows, games) {
     } catch (err) {
       console.error(`[cloudnine] could not stand up a cabinet for ${plan[i].game.slug}`, err);
     }
-  }
-
-  // Prize machines, purely so the middle of the room has something in it.
-  try {
-    const claw = await container('machine-claw.glb', scene);
-    const spec = { kind: 'claw', accentMaterial: 'Periwinkle', stand: 1.2, cinema: 1.4 };
-    for (const slot of DECOR) {
-      cabinets.push(await machine(scene, shadows, claw, spec, null, { ...slot, room: 'hall', floor: 0 }));
-    }
-  } catch (err) {
-    console.info('[cloudnine] no prize machines on the floor', err);
   }
 
   return cabinets;

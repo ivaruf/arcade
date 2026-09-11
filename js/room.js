@@ -46,10 +46,10 @@ const ASSETS = './assets/3d/';
  */
 export const PLATFORMS = [
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
-  { id: 'race', name: 'The steamworks', x: [-4.5, 4.5], z: [-21, -13], y: 1.5 },
-  { id: 'water', name: 'The aquarium', x: [-23.5, -10.5], z: [-10, 0], y: -2.5 },
-  { id: 'mine', name: 'The outcrop', x: [7, 23], z: [-14, -2], y: -5.5 },
-  { id: 'calm', name: 'The quiet cloud', x: [-9.5, -0.5], z: [-25.5, -16.5], y: 10 },
+  { id: 'race', name: 'The steamworks', x: [-4.5, 4.5], z: [-22, -14], y: 1.5 },
+  { id: 'water', name: 'The aquarium', x: [-25.5, -12.5], z: [-5, 5], y: -2.5 },
+  { id: 'mine', name: 'The outcrop', x: [12, 28], z: [-6, 6], y: -5.5 },
+  { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 10 },
 ];
 
 /**
@@ -58,7 +58,7 @@ export const PLATFORMS = [
  * that "down" is somewhere you come back from rather than somewhere you fall
  * out of.
  */
-export const SKY = { x: [-32, 32], z: [-44, 24], y: [-20, 28] };
+export const SKY = { x: [-36, 36], z: [-34, 34], y: [-20, 28] };
 
 /** Where the gopher arrives, and where the world puts it back if it must. */
 export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
@@ -66,15 +66,12 @@ export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
 /** Stand in the ring on the welcome cloud to go back to the 2D launcher. */
 export const HOME = { x: -3.6, y: 0, z: 2.2, radius: 1.5 };
 
-/** The signpost's mast, which signs.js hangs one arm per platform on. */
-export const SIGNPOST = { x: 2.6, y: 0, z: 1.4, top: 2.85 };
-
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
-  race: { x: 0, y: 1.5, z: -17.5, top: 5.0 },
-  water: { x: -17, y: -2.5, z: -9.5, top: 5.4 },
-  mine: { x: 15, y: -5.5, z: -13.5, top: 5.2 },
-  calm: { x: -5, y: 10, z: -25.0, top: 4.6 },
+  race: { x: 0, y: 1.5, z: -18.5, top: 5.0 },
+  water: { x: -19, y: -2.5, z: -4.5, top: 5.4 },
+  mine: { x: 20, y: -5.5, z: -5.5, top: 5.2 },
+  calm: { x: 0, y: 10, z: 14.0, top: 4.6 },
 };
 
 /**
@@ -95,20 +92,20 @@ export const PLACEMENT = {
 /** Cabinet standings per platform. A cabinet's screen faces its local +Z. */
 export const SLOTS = {
   race: [
-    { x: -2.2, z: -19.4, yaw: 0 },
-    { x: 2.2, z: -19.4, yaw: 0 },
+    { x: -2.2, z: -20.4, yaw: 0 },
+    { x: 2.2, z: -20.4, yaw: 0 },
   ],
   water: [
-    { x: -13.0, z: -7.0, yaw: -Math.PI / 2 },
-    { x: -13.0, z: -3.0, yaw: -Math.PI / 2 },
+    { x: -15.0, z: -2.0, yaw: -Math.PI / 2 },
+    { x: -15.0, z: 2.0, yaw: -Math.PI / 2 },
   ],
   mine: [
-    { x: 19.0, z: -10.0, yaw: -Math.PI / 2 },
-    { x: 19.0, z: -6.0, yaw: -Math.PI / 2 },
+    { x: 24.0, z: -2.0, yaw: -Math.PI / 2 },
+    { x: 24.0, z: 2.0, yaw: -Math.PI / 2 },
   ],
   calm: [
-    { x: -5.0, z: -23.6, yaw: 0 },
-    { x: -5.0, z: -18.4, yaw: Math.PI },
+    { x: 0.0, z: 15.4, yaw: 0 },
+    { x: 0.0, z: 20.6, yaw: Math.PI },
   ],
 };
 
@@ -187,7 +184,6 @@ export function blockerFor(slot, local) {
  */
 const FOOTPRINT = {
   classic: [{ x: 0, z: 0.11, hx: 0.6, hz: 0.62, top: 2.32 }],
-  claw: [{ x: 0, z: 0.05, hx: 0.6, hz: 0.6, top: 2.4 }],
 };
 
 export const footprintOf = (kind) => FOOTPRINT[kind] || FOOTPRINT.classic;
@@ -218,23 +214,24 @@ export async function container(file, scene) {
  */
 const FURNITURE = [
   // Steamworks boiler, between the machines at the back of the island.
-  { x: 0, z: -20.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
-  // welcome cloud: two benches, the side welcome board, the signpost
+  { x: 0, z: -21.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
+  // welcome cloud: two benches and the side welcome board. The signpost's
+  // blocker went with the signpost — the islands ring the hub now, so there is
+  // nothing left to point at.
   { x: -4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.95, z: -3.25, hx: 0.22, hz: 1.28, top: 3.1 },
-  { x: 2.6, z: 1.4, hx: 0.22, hz: 0.22, top: 3.1 },
   // the aquarium: the tank, and the stools you watch from
-  { x: -20.6, z: -5, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
-  ...[-7.7, -5.9, -4.1, -2.3].map((z) => ({ x: -15.6, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
+  { x: -22.6, z: 0, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
+  ...[-2.7, -0.9, 0.9, 2.7].map((z) => ({ x: -17.6, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
   // the outcrop: the headframe's legs, and the cart
-  ...[9.1, 13.9].flatMap((x) =>
-    [-11, -7].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
+  ...[14.1, 18.9].flatMap((x) =>
+    [-3, 1].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
   ),
-  { x: 11.5, z: -5.7, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
+  { x: 16.5, z: 2.3, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
   // the quiet cloud: pergola posts and two benches
-  ...[-8, -2].flatMap((x) => [-24, -18].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 13.1, base: 10 }))),
-  ...[[-7.2, -18.8], [-2.8, -18.8]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 10.4, base: 10 })),
+  ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 13.1, base: 10 }))),
+  ...[[-2.2, 20.2], [2.2, 20.2]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 10.4, base: 10 })),
 ];
 
 /**
@@ -244,7 +241,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=floors-2-edge-trim', scene);
+  const held = await container('cloud-world.glb?v=islands-around-hub', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

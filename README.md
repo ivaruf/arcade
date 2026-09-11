@@ -16,24 +16,24 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 ## The sky
 
 ```
-                    THE QUIET CLOUD  +10 m          swirls
-                          (pergola, nothing in it)
+                       THE STEAMWORKS  +1.5 m
+                       maxgear
+                       (brass, rivets and steam)
 
-   THE AQUARIUM  -2.5 m                    THE STEAMWORKS  +1.5 m
-   fishtank, dam_break                     maxgear
-   (glass tank, four stools)               (brass, rivets and steam)
+  THE AQUARIUM  -2.5 m     THE WELCOME CLOUD  0 m      THE OUTCROP  -5.5 m
+  fishtank, dam_break      arch, benches, the ring     supermine ×2
+  (glass tank, stools)                                 (rock and a headframe)
 
-                    THE WELCOME CLOUD  0 m
-                    arch, signpost, prize machine
-
-                          THE OUTCROP  -5.5 m
-                          supermine, supermine_adventure
-                          (rock slung under the cloud, a headframe)
+                       THE QUIET CLOUD  +10 m
+                       swirls
+                       (pergola, nothing in it)
 ```
 
-Every platform is 17 to 22 m from the welcome cloud — three or four seconds of
-flight. Small on purpose: you can see all of them from where you arrive, so
-finding a game is never the puzzle. The flying is the fun.
+One island per side, ringing the cloud you arrive on, 18 to 19 m out — three
+or four seconds of flight. That arrangement is the wayfinding: every game is
+in view from where you land and none of them is behind you. The heights stay
+uneven on purpose, so getting anywhere is a flight rather than a walk in a
+straight line.
 
 ## What it does
 
@@ -45,10 +45,11 @@ finding a game is never the puzzle. The flying is the fun.
   second — long enough to register as a mistake — and then the cloud is under
   you and you are flying. No damage, no reset, no way to get stuck, because
   this is a launcher and you should not be able to lose in one.
-- **Signs, because a sky has no corridors.** A signpost on the welcome cloud
-  with one arm per platform, each turned to point at the real thing, and a name
-  board on every platform's mast big enough to read from where you started.
-  Both are drawn at runtime, since only `games.json` knows what they say.
+- **A name board on every platform's mast**, big enough to read from the
+  welcome cloud and in that platform's own colour. Drawn at runtime, since only
+  `games.json` knows what it should say. There used to be a signpost in the
+  middle of the arrival island too, with an arm pointing at each platform; the
+  islands ring the hub now, so it was pointing at things already in view.
 
 ## How it finds the games
 
@@ -234,7 +235,7 @@ boot card says so plainly if the script never arrives.
 | `js/gopher.js` | Two models, one pivot, and all the procedural animation |
 | `js/launcher.js` | The handover from cabinet screen to running game |
 | `js/registry.js` | `games.json` → titles, icons, colours, URLs |
-| `js/signs.js` | The signpost's arms and each platform's name board |
+| `js/signs.js` | Each platform's name board |
 | `js/controls.js` | Keyboard, touch stick, gamepad, all answering the same questions |
 | `js/audio.js` | The sky synthesized, plus the theme on its own bus |
 | `js/screen.js` | Fullscreen, the landscape lock, and the worker registration |
@@ -279,8 +280,6 @@ Models come from `assets/3d/`, which is a static kit with its own
   `AssetContainer` with materials cloned so each machine takes its game's
   colour. The kit's racer and dance cabinets are not used: a seat and a floor
   pad each stick a metre and a half into a nine-metre platform.
-- `machine-claw.glb` — the prize machine on the welcome cloud, which is not a
-  game and never will be
 - `gopher-scarf.glb`, `gopher-scarf-cloud.glb` — the player, in both forms
 
 **The clouds are metaballs, not spheres.** This is the one place in the hub
@@ -361,8 +360,8 @@ These are honest, not oversights.
 ## Playtest checklist
 
 1. Title card over the sky, camera drifting. **Walk in.**
-2. Read the signpost on the welcome cloud: one arm per platform, each pointing
-   at the real thing, none of them mirrored.
+2. Turn a full circle on the welcome cloud: all four islands should be in
+   view, one per side, each with its name board readable from here.
 3. Jump, jump again — the cloud comes under you and you are flying. Walk off an
    edge instead: you fall for about half a second and it catches you.
 4. Fly to a machine and land. The mark under you lights, the callout names the

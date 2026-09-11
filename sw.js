@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.1.0'; // floor edges no longer fight for depth; UP sits above the action button
+const VERSION = 'v2.2.0'; // the four islands ring the welcome cloud; signpost and prize machine gone
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

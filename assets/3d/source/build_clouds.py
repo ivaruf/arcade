@@ -40,11 +40,23 @@ bpy.ops.object.delete(use_global=False)
 # ---------------------------------------------------------------------------
 # The sky, in game coordinates. room.js repeats these as platforms.
 # ---------------------------------------------------------------------------
+# The four game islands sit at the compass points AROUND the welcome cloud,
+# one per side, so every one of them is in view from where you arrive and none
+# is behind you. They used to be bunched into the -Z half, which is exactly
+# what made a signpost necessary; spread like this the sky explains itself.
+#
+# Heights stay deliberately uneven — the steamworks just above, the aquarium a
+# little below, the outcrop well down, the quiet cloud high — so getting
+# anywhere is still a flight and not a walk in a straight line.
+#
+# Everything on an island is placed relative to these, so moving one moves its
+# structures, its flooring and its trim with it. room.js repeats the rectangles
+# and keeps its FURNITURE collision boxes in step by hand; both files say so.
 WELCOME = dict(x=0.0, y=0.0, z=0.0, hx=6.0, hz=5.0)
-RACE = dict(x=0.0, y=1.5, z=-17.0, hx=4.5, hz=4.0)
-WATER = dict(x=-17.0, y=-2.5, z=-5.0, hx=6.5, hz=5.0)
-MINE = dict(x=15.0, y=-5.5, z=-8.0, hx=8.0, hz=6.0)
-CALM = dict(x=-5.0, y=10.0, z=-21.0, hx=4.5, hz=4.5)
+RACE = dict(x=0.0, y=1.5, z=-18.0, hx=4.5, hz=4.0)      # north
+WATER = dict(x=-19.0, y=-2.5, z=0.0, hx=6.5, hz=5.0)    # west
+MINE = dict(x=20.0, y=-5.5, z=0.0, hx=8.0, hz=6.0)      # east
+CALM = dict(x=0.0, y=10.0, z=18.0, hx=4.5, hz=4.5)      # south, and highest
 DECKS = [WELCOME, RACE, WATER, MINE, CALM]
 
 # ---------------------------------------------------------------------------
@@ -287,12 +299,6 @@ box("Hint board", (0, 1.5, -4.35), (5.4, 1.5, 0.14), navy, 0.08)
 text("Hint line1", "JUMP, THEN JUMP AGAIN", (0, 1.78, -4.44), 0.30, gold)
 text("Hint line2", "to ride the cloud and fly", (0, 1.34, -4.44), 0.22, white)
 text("Hint line3", "the machines are out there", (0, 0.92, -4.44), 0.17, cloudy)
-
-# The signpost. Its arms are made at runtime, one per platform, because only
-# games.json knows what they should say — this is the post they hang on.
-cylinder("Signpost", (2.6, 1.55, 1.4), 0.11, 3.1, chrome)
-box("Signpost foot", (2.6, 0.1, 1.4), (0.8, 0.2, 0.8), navy, 0.05)
-sphere("Signpost finial", (2.6, 3.2, 1.4), 0.19, gold)
 
 # The way home: a ring you step into, back to the 2D launcher.
 HOME = (-3.6, 0.0, 2.2)

@@ -1,18 +1,20 @@
 /* =============================================================================
- * signs.js — the signpost and the name boards.
+ * signs.js — the name board on each platform.
  *
- * An open sky has no corridors to lead you anywhere, so the wayfinding has to
- * be explicit or the arcade becomes a hunt. Two things do it:
+ * There used to be a signpost on the welcome cloud too, with one arm per
+ * platform turned to point at the real thing. It is gone, and what removed it
+ * was not code: the four game islands now sit at the compass points AROUND the
+ * welcome cloud, one per side, so every one of them is already in view from
+ * where you arrive. Arms pointing at things you can see are clutter, and the
+ * middle of the arrival island is the last place to put clutter.
  *
- *   the signpost   on the welcome cloud, one arm per platform, each arm
- *                  turned to point at the real thing and reading the names of
- *                  the games on it
- *   the beacons    a board on the mast of every platform, big enough to read
- *                  from the welcome cloud, in that platform's colour
+ * What remains is the beacons: a board on the mast of every platform, big
+ * enough to read from the welcome cloud, in that platform's own colour. So you
+ * do not hunt for a game — you look around, read the four boards, and fly.
  *
- * Both are built here rather than in Blender for the same reason the cabinet
+ * They are built here rather than in Blender for the same reason the cabinet
  * marquees are: only games.json knows what they should say, and a slug added
- * there has to grow an arm without anyone opening Blender.
+ * there has to grow a board without anyone opening Blender.
  *
  * Every board is TWO single-sided planes back to back rather than one
  * double-sided one. A double-sided plane shows the same UVs from behind, so
@@ -20,7 +22,7 @@
  * sort of thing that looks like a rendering bug rather than a sign.
  * ========================================================================== */
 
-import { SIGNPOST, BEACONS, PLATFORMS } from './room.js';
+import { BEACONS, PLATFORMS } from './room.js';
 
 const css = (c) => `rgb(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)})`;
 
@@ -72,14 +74,6 @@ function enamel(ctx, w, h, tint) {
   }
 }
 
-function drawArm(ctx, w, h, labels, tint, pointsRight) {
-  enamel(ctx, w, h, tint);
-  ctx.fillStyle = tint;
-  lettering(ctx, pointsRight ? '→' : '←', w * (pointsRight ? .89 : .11), h / 2, w * .12, h * .52);
-  ctx.fillStyle = '#f7f0df';
-  labels.forEach((label, i) => lettering(ctx, label, w * (pointsRight ? .45 : .55), h * (.5 + (i - (labels.length - 1) / 2) * .34), w * .69, h * (labels.length > 1 ? .28 : .36)));
-}
-
 function drawBeacon(ctx, w, h, titles, subtitle, tint) {
   enamel(ctx, w, h, tint);
   ctx.fillStyle = '#c3b291';
@@ -100,41 +94,6 @@ export function raiseSigns(scene, cabinets) {
     if (!cabinet.game) continue;
     if (!byPlatform.has(cabinet.room)) byPlatform.set(cabinet.room, []);
     byPlatform.get(cabinet.room).push(cabinet);
-  }
-
-  // ---- the signpost -------------------------------------------------------
-  // Arms are stacked down the mast in the order the platforms are declared,
-  // so the arrangement is stable between visits.
-  let level = 0;
-  for (const platform of PLATFORMS) {
-    const here = byPlatform.get(platform.id);
-    if (!here?.length) continue;
-
-    const tint = css(here[0].accent);
-    const label = here.map((c) => c.game.title);
-    const dx = platform.x[0] / 2 + platform.x[1] / 2 - SIGNPOST.x;
-    const dz = platform.z[0] / 2 + platform.z[1] / 2 - SIGNPOST.z;
-
-    const width = 2.35;
-    const height = 0.56;
-    const texture = new BABYLON.DynamicTexture(`arm:${platform.id}`, { width: 1024, height: 256 }, scene, true);
-    // The arm hangs off one side of the mast, so which way the point goes
-    // decides which half of the plank the text sits on.
-    drawArm(texture.getContext(), 1024, 256, label, tint, true);
-    const reverse = new BABYLON.DynamicTexture(`armBack:${platform.id}`, { width: 1024, height: 256 }, scene, true);
-    drawArm(reverse.getContext(), 1024, 256, label, tint, false);
-    reverse.update();
-    texture.update();
-
-    const arm = board(`signarm:${platform.id}`, texture, width, height, scene, reverse);
-    // Local +X is the plank's length; turn it so +X aims at the platform.
-    arm.rotation.y = Math.atan2(-dz, dx);
-    arm.position.set(
-      SIGNPOST.x + (dx / Math.hypot(dx, dz)) * (width / 2 + 0.1),
-      SIGNPOST.y + SIGNPOST.top - 0.42 - level * 0.64,
-      SIGNPOST.z + (dz / Math.hypot(dx, dz)) * (width / 2 + 0.1),
-    );
-    level += 1;
   }
 
   // ---- the beacons --------------------------------------------------------

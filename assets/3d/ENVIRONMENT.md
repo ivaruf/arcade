@@ -98,11 +98,18 @@ preview PNGs predate this steampunk update. No playtest was run for this update.
 
 ## Sign refresh and arrival route
 
-Island beacons and directional signs now use sharper textures, enamel faces,
-solid brass-colored frames and clearer typography. Multiple game titles use
-separate lines. Back-side arrows point in the correct physical direction.
-Cabinet marquees use larger textures and no blurred lettering. Printed sign
-faces are excluded from the neon glow layer.
+Island beacons use sharper textures, enamel faces, solid brass-colored frames
+and clearer typography. Multiple game titles use separate lines. Cabinet
+marquees use larger textures and no blurred lettering. Printed sign faces are
+excluded from the neon glow layer.
+
+The directional signpost that stood on the welcome cloud is gone, geometry and
+runtime arms alike. The four game islands now sit at the compass points around
+the welcome cloud — north steamworks, west aquarium, east outcrop, south quiet
+cloud — so each one is already in view from the arrival island and an arm
+pointing at it was pointing at something you could see. The arrival island is
+also clear of the prize machine, which was decor the runtime stood up and
+nothing played.
 
 The across-the-path arrival arch and hint panel have been replaced by a compact
 welcome board on the right edge, at game x=4.95, z=-3.25. Its collision footprint
