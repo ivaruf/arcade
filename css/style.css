@@ -249,6 +249,154 @@ kbd {
 
 .pause .neon { margin-top: 22px; }
 
+/* ---------- keeping the arcade: an offer, never a nag ----------
+   The title card asks the whole question in one row: "Walk in" above it is
+   play-in-the-browser, this is install, and the × is a real answer rather than
+   a way of putting it off. js/install.js decides who ever sees it. */
+
+.offer {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* .ghost is a full-width block button; inside the row it shares the width with
+   the dismiss square and centres its glyph against its label. */
+.offer .ghost {
+  flex: 1 1 auto;
+  width: auto;
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.offer-mark {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  opacity: .8;
+}
+
+.offer-hide {
+  flex: none;
+  width: 46px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  color: #6a7480;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease;
+}
+
+.offer-hide svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  margin: 0 auto;
+}
+
+.offer-hide:hover { color: var(--ink); border-color: rgba(255, 255, 255, .24); }
+.offer-hide:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+/* The scrim. Frosted rather than opaque, so the sky keeps drifting behind the
+   panel exactly as it does behind the title card — and so nothing underneath
+   can be tapped by accident while the card is up, which is the one job a
+   .card floating on its own cannot do. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: auto;
+  background: rgba(4, 6, 12, .5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Centred by the scrim's flexbox instead of by the fixed-position trick every
+   other card uses, so a tall panel on a short phone scrolls rather than having
+   its top half go off the screen. */
+.veil > .card {
+  position: static;
+  transform: none;
+  margin: auto;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.card.install {
+  width: min(560px, calc(100vw - 32px));
+  text-align: left;
+}
+
+.card.install .sign { text-align: center; }
+
+.install-why {
+  margin: 14px 0 18px;
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .03);
+}
+
+/* The drawing, lit like the mint neon on the back wall. */
+.glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(18, 217, 184, .3);
+  border-radius: 14px;
+  background: rgba(18, 217, 184, .08);
+  color: var(--mint);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 20px rgba(18, 217, 184, .14);
+}
+
+.glyph svg {
+  display: block;
+  width: 31px;
+  height: 31px;
+}
+
+.step {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.step b { color: var(--ivory); font-weight: 600; }
+
+.install-note {
+  margin: 16px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: center;
+  color: #6f7b88;
+}
+
 /* ---------- floor HUD ---------- */
 
 .hud {
@@ -602,4 +750,27 @@ kbd {
 @media (max-height: 520px) {
   .fine { display: none; }
   .card { padding: 18px 20px; }
+
+  /* A phone held sideways is about 390px tall, and the pause menu now runs to
+     five buttons. Tighten the stack rather than let the last one fall off the
+     bottom of the screen — the same reasoning that hides the key hints above. */
+  .pause .neon { margin-top: 14px; padding: 12px 18px; }
+  .pause .ghost { margin-top: 8px; padding: 11px 16px; }
+
+  /* Same squeeze on the install card. A phone on its side is about 390px tall
+     and the guide is five blocks deep, so the drawings shrink and the type
+     tightens until it fits — every word stays, because the whole point of the
+     panel is the two sentences telling you which button to press. It scrolls
+     below that rather than dropping anything. */
+  .veil { padding: 8px; }
+  .card.install { padding: 14px 18px; }
+  .card.install .sign { font-size: 20px; }
+  .card.install .ghost { margin-top: 8px; padding: 11px 16px; }
+  .install-why { margin: 7px 0 9px; font-size: 12.5px; }
+  .steps { gap: 7px; }
+  .steps li { padding: 7px 10px; gap: 11px; }
+  .glyph { width: 44px; height: 44px; border-radius: 12px; }
+  .glyph svg { width: 25px; height: 25px; }
+  .step { font-size: 13px; line-height: 1.5; }
+  .install-note { margin-top: 8px; font-size: 11px; }
 }

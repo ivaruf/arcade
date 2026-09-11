@@ -37,6 +37,25 @@
   <p class="sub">A R C A D E</p>
   <p class="blurb">Every machine is on its own cloud. Jump twice to ride the cloud, and fly to whichever one you fancy.</p>
   <button id="walk-in" class="neon" type="button">Walk in</button>
+  <!-- The other half of the same decision: play here, or keep it. Hidden in
+       the markup and revealed only by js/install.js, and only on a phone or
+       tablet that is not already running the installed arcade — a desktop and
+       an installed window both see nothing at all. The × sends it away for
+       good; the pause menu keeps a way back. -->
+  <div id="install-offer" class="offer" hidden>
+    <button id="install-open" class="ghost offer-go" type="button">
+      <svg class="offer-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="6" y="2.6" width="12" height="18.8" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M12 8.4v7.2M8.4 12h7.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span id="install-open-label">Install on your device</span>
+    </button>
+    <button id="install-hide" class="offer-hide" type="button" aria-label="Hide this, I will play in the browser">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.5 7.5l9 9M16.5 7.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
   <p class="fine">
     <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
     <kbd>Space</kbd> hop, again for the cloud &middot;
@@ -70,7 +89,103 @@
   <button id="resume" class="neon" type="button">Back to the floor</button>
   <button id="music" class="ghost" type="button" aria-pressed="true">Theme music: on</button>
   <button id="sound" class="ghost" type="button" aria-pressed="true">Room sound: on</button>
+  <!-- Waving the title card's offer away must not delete the feature, so this
+       is the way back to it. js/install.js reveals it on the same devices and
+       leaves it alone afterwards; it never carries a badge or a count. -->
+  <button id="install-pause" class="ghost" type="button" hidden>Keep it on your device</button>
   <button id="leave" class="ghost" type="button">Leave the arcade</button>
+</div>
+
+<!-- =========================================================================
+     Keeping the arcade. Three bodies, one of which js/install.js shows: the
+     browser's own install prompt where there is one (Android/Chrome), or a
+     drawing of the button to press where there is not.
+
+     The glyphs are drawn here rather than screenshotted on purpose. A photo of
+     somebody else's iOS goes stale the next time Safari moves a toolbar, it
+     cannot take the arcade's own colours, and it would be a network fetch in a
+     hub that does not make them. A box with an arrow jumping out of it is the
+     Share button on every iOS there has ever been.
+     ====================================================================== -->
+<div id="install" class="veil" hidden>
+  <div class="card install" role="dialog" aria-modal="true" aria-labelledby="install-head">
+    <p id="install-head" class="sign small">Take it with you</p>
+    <p class="blurb install-why">
+      Its own icon, straight into the sky, full screen &mdash; no address bar in the way.
+      Same arcade, same machines, nothing held back for it.
+    </p>
+
+    <!-- Android, Chrome: a real one-tap install, because the browser gave us one. -->
+    <div id="install-now" class="install-body" hidden>
+      <button id="install-go" class="neon" type="button">Install the arcade</button>
+    </div>
+
+    <!-- iPhone and iPad: Safari has no install API, so this is all there is. -->
+    <ol id="install-ios" class="steps" hidden>
+      <li>
+        <span class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M17 19h-4a3 3 0 0 0-3 3v17a3 3 0 0 0 3 3h22a3 3 0 0 0 3-3V22a3 3 0 0 0-3-3h-4"
+                  fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M24 30V7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M16 14l8-8 8 8" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="step">
+          Tap <b>Share</b> <span id="install-ios-where">in the bar at the bottom of the screen</span>
+          &mdash; the box with an arrow jumping out of it.
+        </span>
+      </li>
+      <li>
+        <span class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <rect x="9" y="9" width="30" height="30" rx="8" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M24 17v14M17 24h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="step">Scroll that list and choose <b>Add to Home Screen</b>.</span>
+      </li>
+    </ol>
+
+    <!-- Android without a prompt to spend: Firefox, or Chrome has asked already. -->
+    <ol id="install-android" class="steps" hidden>
+      <li>
+        <span class="glyph" aria-hidden="true">
+          <!-- The dots alone read as a battery at this size, so they are drawn
+               where they actually live: the right-hand end of a browser bar,
+               with the address field ghosted in beside them. -->
+          <svg viewBox="0 0 48 48">
+            <rect x="4" y="10" width="40" height="28" rx="7" fill="none" stroke="currentColor"
+                  stroke-width="2" opacity=".3"/>
+            <rect x="10" y="21" width="14" height="6" rx="3" fill="currentColor" opacity=".3"/>
+            <circle cx="34" cy="17" r="2.7" fill="currentColor"/>
+            <circle cx="34" cy="24" r="2.7" fill="currentColor"/>
+            <circle cx="34" cy="31" r="2.7" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="step">Open your browser's menu &mdash; the <b>three dots</b> at the top right.</span>
+      </li>
+      <li>
+        <span class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M24 8v17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            <path d="M16 19l8 8 8-8" fill="none" stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M11 32v5a4 4 0 0 0 4 4h18a4 4 0 0 0 4-4v-5" fill="none" stroke="currentColor"
+                  stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="step">Choose <b>Install app</b>. Some browsers call it <b>Add to Home screen</b>.</span>
+      </li>
+    </ol>
+
+    <p class="install-note">
+      No account, nothing to sign up for, nothing sent anywhere. Playing in the browser
+      instead costs you none of it.
+    </p>
+    <button id="install-close" class="ghost" type="button">Not now &mdash; playing here is fine</button>
+  </div>
 </div>
 
 <!-- Touch: a floating stick on the left, hop / sprint on the right, and a
@@ -167,5 +282,13 @@
   }, 5000);
 </script>
 <script type="module" src="js/main.js"></script>
+<!--
+  Its own tag, not an import of main.js, and for the same reason exit.js is a
+  classic script: a failed fetch anywhere in a module graph aborts the whole
+  graph, and filenames are a blocklist somebody else writes (§2). Hung off
+  main.js, an install.js that some filter list takes a dislike to would be a
+  blank sky. Standing alone, the worst it can cost is the install offer.
+-->
+<script type="module" src="js/install.js"></script>
 </body>
 </html>
