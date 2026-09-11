@@ -1,9 +1,73 @@
 # The shop, and players without a server
 
-**Status: a design, not a thing that exists.** §7 of the hub rules says to
-design toward the cosmetics layer and not build it until asked, so nothing here
-is implemented and nothing here is settled. The decisions at the bottom are the
-owner's, and two of them cannot be taken back once taken.
+**Status: PARKED 2026-09-11.** A design, not a thing that exists — §7 of the
+hub rules says to design toward the cosmetics layer and not build it until
+asked. **Nothing is implemented, no domain is bought, no payment account has
+been created, and no money has been spent.** If you are picking this up later,
+start at "Where to start again" below rather than at §1.
+
+---
+
+## Where this stands
+
+### Settled
+
+| | |
+| --- | --- |
+| **No currency of any kind** | not coins, not arcade tickets, not "earned grabs". Counters do not merge across devices, and they are also the shape that rewards volume instead of moments (§3, §7a) |
+| **Earn the item, claim it at the counter** | won outright in a game, waits at the arcade, the choosing happens at the counter. Finite sets, no expiry, no notification (§7a) |
+| **Three grow-only sets** | `earned`, `claimed`, `purchased`; everything else derived. They stay separate because they carry different *recovery* guarantees (§4) |
+| **Signing up is picking a name** | nothing is stored until somebody asks for it to be. Never gates playing; the ask comes when something has actually been earned (§4a) |
+| **No anti-cheat** | a cosmetic that confers no advantage is worth nothing to steal (§2) |
+| **Lemon Squeezy, provisionally** | Gumroad the fallback. Chosen for merchant-of-record status, not price (§6, §10c) |
+
+### Discovered, so it need not be re-derived
+
+All measured on 2026-09-11 in Chrome 152, by actually running it:
+
+- **A whole profile fits in a QR code.** 30 items and 15 achievements is 738 B
+  of JSON, 276 B gzipped, 456 characters signed. QR v40-L holds 2953.
+- **Ed25519 and ECDSA P-256 both sign and verify in the browser.** Ed25519:
+  64-byte signature, 32-byte public key.
+- **`BarcodeDetector` is missing on iOS Safari** — which is why the continue
+  code is a URL, so every phone's own Camera app becomes the scanner.
+- **Both licence endpoints are callable from a static page.** Lemon Squeezy's
+  `/v1/licenses/validate` and Gumroad's `/v2/licenses/verify` both answered a
+  browser and CORS permitted reading the response; neither needs a secret. So
+  automatic fulfilment with no backend is real, not hoped for.
+- **`largeBlob` is advertised by Chrome** (along with `prf` and
+  `hybridTransport`) — but that is the browser, not an iPhone. Still unproven
+  where it matters (§5c).
+- **The origin is the database** (§4) — the constraint that outranks the
+  storage-key decision.
+
+Two things learned the slow way, recorded so nobody repeats them:
+
+- **`.game` singular is a premium TLD** — about 5,000 NOK. `.games` plural is
+  ordinary.
+- **Creem is a competitor that ranks for "Lemon Squeezy"**, not a company that
+  acquired it. Lemon Squeezy is owned by Stripe and is in friendly maintenance
+  mode; it is not shutting down.
+
+### Deferred, and what decides each
+
+| deferred | what would settle it |
+| --- | --- |
+| **The domain** | `gophercloud.games` was unregistered at 549 NOK/yr; `gophercloudarcade.com` at 249. Not urgent — see the sequence rule in §4. The owner has said the swirls Android TWA may lapse, so §13 of the hub CLAUDE.md needs updating **if** a move happens |
+| **The storage key** (§10a) | genuinely irreversible; wants real code in front of it |
+| **Ed25519 or P-256** (§10d) | one Safari check |
+| **How shared code reaches the games** (§10b) | `exit.js` is the obvious precedent now that it has shipped, but §7 says ask |
+| **Passkey `largeBlob`** (§5c) | one afternoon on a real iPhone. Decides whether sync is magic or merely works |
+| **A profile switcher for a shared iPad** (§10f) | product call, not technical |
+| **What swirls has to earn** | it is a toy with no win condition. Either it has nothing, or time spent counts |
+
+### Where to start again
+
+**Step 1 of §11: `merge` and the profile shape, with tests.** No UI, no
+network, no shop, no accounts, no domain — about eighty lines, and it is the
+whole design. Nothing else is blocked on anything deferred above.
+
+---
 
 The goal, in the owner's words:
 
