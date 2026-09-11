@@ -306,3 +306,17 @@ for o in root.children_recursive:
         o.location.y -= 1.0 if gz>MZ else -1.0
 
 exec(compile((OUT / 'source' / 'steampunk_island.py').read_text(), str(OUT / 'source' / 'steampunk_island.py'), 'exec'), globals())
+
+# Replace the arrival arch and its across-the-path instruction panel with
+# a compact welcome board at the right edge of the landing area.
+for prefix in ['Welcome post','Welcome beam','Welcome title','Welcome brass post','Welcome inset post','Post fastening','Welcome sign','Welcome curved crown','Hint board','Hint line']:
+    remove(prefix)
+box('Welcome sideboard',(4.95,2.0,-3.25),(.16,2.2,2.5),structural,.09)
+for zz in [-4.30,-2.20]:
+    box('Welcome sideboard leg',(4.95,.5,zz),(.12,1,.12),structural,.025)
+    box('Welcome sideboard shoe',(4.95,.08,zz),(.3,.16,.3),brass,.035)
+for yy in [.99,3.01]:box('Welcome sideboard trim',(4.858,yy,-3.25),(.025,.025,2.30),brass,.008)
+for name,label,yy,size,mat in [
+    ('Brand','GOPHER CLOUD',2.56,.25,white),('Arcade','A R C A D E',2.22,.18,brass),
+    ('Guide','Jump twice to fly',1.70,.19,white),('Guide small','Find your next game in the clouds',1.36,.095,white)]:
+    text('Welcome sideboard '+name,label,(4.84,yy,-3.25),size,mat,yaw=-math.pi/2)

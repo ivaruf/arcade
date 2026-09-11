@@ -227,27 +227,19 @@ function drawScreen(ctx, w, h, game, accent, icon, lit) {
 }
 
 function drawMarquee(ctx, w, h, game, accent) {
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#05070e';
-  ctx.fillRect(0, 0, w, h);
-  const wash = ctx.createLinearGradient(0, 0, 0, h);
-  wash.addColorStop(0, css(accent));
-  wash.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.globalAlpha = 0.42;
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, w, h);
-  ctx.globalAlpha = 1;
-
-  ctx.fillStyle = '#fbfff6';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const size = Math.round(h * 0.52);
-  ctx.font = `500 ${size}px system-ui, sans-serif`;
-  ctx.letterSpacing = `${Math.round(size * 0.16)}px`;
-  ctx.shadowColor = css(accent);
-  ctx.shadowBlur = h * 0.35;
-  ctx.fillText(fit(ctx, (game.title || '').toUpperCase(), w * 0.9), w / 2, h * 0.54);
-  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#10282d'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#b6a27b'; ctx.lineWidth = 2;
+  ctx.strokeRect(7, 7, w - 14, h - 14);
+  ctx.fillStyle = css(accent); ctx.fillRect(w * .08, h * .13, w * .84, 3);
+  ctx.fillStyle = '#fff5df'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.letterSpacing = '0px'; ctx.shadowBlur = 0;
+  let size = h * .45;
+  ctx.font = `650 ${size}px system-ui, sans-serif`;
+  const title = game.title || '';
+  const measured = ctx.measureText(title).width;
+  if (measured > w * .86) size *= w * .86 / measured;
+  ctx.font = `650 ${size}px system-ui, sans-serif`;
+  ctx.fillText(title, w / 2, h * .55);
 }
 
 /** Squeeze a string down until it fits, then let the canvas ellipsise nothing. */
@@ -366,14 +358,16 @@ async function machine(scene, shadows, held, spec, game, slot) {
   screen.material = emissivePanel(`crtMat:${game.slug}`, screenTex, scene);
 
   // ---- the marquee ----
-  const marqueeTex = new BABYLON.DynamicTexture(`marquee:${game.slug}`, { width: 512, height: 102 }, scene, true);
+  const marqueeTex = new BABYLON.DynamicTexture(`marquee:${game.slug}`, { width: 1024, height: 204 }, scene, true);
   const marquee = panel(`marquee:${game.slug}`, MARQUEE, scene);
   marquee.parent = holder;
   marquee.position.set(0, MARQUEE.y, MARQUEE.z);
   marquee.material = emissivePanel(`marqueeMat:${game.slug}`, marqueeTex, scene);
   const mctx = marqueeTex.getContext();
-  drawMarquee(mctx, 512, 102, game, accent);
+  drawMarquee(mctx, 1024, 204, game, accent);
+  marqueeTex.anisotropicFilteringLevel = 8;
   marqueeTex.update();
+  for (const layer of scene.effectLayers || []) if (layer.addExcludedMesh) layer.addExcludedMesh(marquee);
 
   // ---- the spot on the floor that says stand here ----
   const decal = BABYLON.MeshBuilder.CreateDisc(`decal:${game.slug}`, { radius: 0.62, tessellation: 28 }, scene);

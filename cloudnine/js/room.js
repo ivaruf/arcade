@@ -219,11 +219,10 @@ export async function container(file, scene) {
 const FURNITURE = [
   // Steamworks boiler, between the machines at the back of the island.
   { x: 0, z: -20.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
-  // welcome cloud: two benches, the arch posts, the signpost
+  // welcome cloud: two benches, the side welcome board, the signpost
   { x: -4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
-  { x: -3.4, z: -4.2, hx: 0.22, hz: 0.22, top: 3.5 },
-  { x: 3.4, z: -4.2, hx: 0.22, hz: 0.22, top: 3.5 },
+  { x: 4.95, z: -3.25, hx: 0.22, hz: 1.28, top: 3.1 },
   { x: 2.6, z: 1.4, hx: 0.22, hz: 0.22, top: 3.1 },
   // the aquarium: the tank, and the stools you watch from
   { x: -20.6, z: -5, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
@@ -245,7 +244,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=steamworks-1', scene);
+  const held = await container('cloud-world.glb?v=signs-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

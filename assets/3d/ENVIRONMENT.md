@@ -95,3 +95,16 @@ included. Gears and boiler are decorative, without mechanical gameplay.
 Use `source/render_environment.py -- --no-render` with Blender to regenerate
 the GLB and editable scene without spending time on preview renders. Existing
 preview PNGs predate this steampunk update. No playtest was run for this update.
+
+## Sign refresh and arrival route
+
+Island beacons and directional signs now use sharper textures, enamel faces,
+solid brass-colored frames and clearer typography. Multiple game titles use
+separate lines. Back-side arrows point in the correct physical direction.
+Cabinet marquees use larger textures and no blurred lettering. Printed sign
+faces are excluded from the neon glow layer.
+
+The across-the-path arrival arch and hint panel have been replaced by a compact
+welcome board on the right edge, at game x=4.95, z=-3.25. Its collision footprint
+replaces the old arch posts. The route straight ahead from spawn is open.
+This update was built without playtesting or regenerating preview images.

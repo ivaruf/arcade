@@ -24,99 +24,69 @@ import { SIGNPOST, BEACONS, PLATFORMS } from './room.js';
 
 const css = (c) => `rgb(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)})`;
 
-/** Squeeze a string until it fits rather than letting it run off the board. */
-function fit(ctx, text, maxWidth) {
-  if (ctx.measureText(text).width <= maxWidth) return text;
-  let cut = text;
-  while (cut.length > 1 && ctx.measureText(`${cut}…`).width > maxWidth) cut = cut.slice(0, -1);
-  return `${cut}…`;
+/** Fit full titles by sizing the type, rather than truncating game names. */
+function lettering(ctx, label, x, y, width, size, weight = 650) {
+  ctx.letterSpacing = '0px';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${weight} ${size}px system-ui, sans-serif`;
+  const measured = ctx.measureText(label).width;
+  if (measured > width) ctx.font = `${weight} ${size * width / measured}px system-ui, sans-serif`;
+  ctx.fillText(label, x, y);
 }
 
-/**
- * A flat board carrying `texture`, readable from both sides. `parent` gets the
- * position and rotation; the two planes just hang on it.
- */
-function board(name, texture, width, height, scene) {
+/** Enamel face, brass reveal and a solid backing; distinct front/back faces. */
+function board(name, texture, width, height, scene, reverseTexture = texture) {
   const node = new BABYLON.TransformNode(name, scene);
-  const mat = new BABYLON.StandardMaterial(`${name}:mat`, scene);
-  mat.diffuseTexture = texture;
-  mat.emissiveTexture = texture;
-  mat.emissiveColor = new BABYLON.Color3(0.85, 0.85, 0.85);
-  mat.specularColor = BABYLON.Color3.Black();
-  mat.disableLighting = true;
-  texture.hasAlpha = true;
-  mat.useAlphaFromDiffuseTexture = true;
-  mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHATEST;
-
-  for (const turn of [0, Math.PI]) {
+  const edge = new BABYLON.StandardMaterial(`${name}:edge`, scene);
+  edge.diffuseColor = new BABYLON.Color3(.34, .26, .15);
+  edge.specularColor = new BABYLON.Color3(.22, .19, .13);
+  const body = BABYLON.MeshBuilder.CreateBox(`${name}:frame`, { width: width + .065, height: height + .065, depth: .09 }, scene);
+  body.material = edge; body.parent = node; body.isPickable = false;
+  for (const [turn, image] of [[0, texture], [Math.PI, reverseTexture]]) {
+    image.hasAlpha = false;
+    image.anisotropicFilteringLevel = 8;
+    image.updateSamplingMode(BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+    const mat = new BABYLON.StandardMaterial(`${name}:ink:${turn}`, scene);
+    mat.diffuseTexture = image; mat.emissiveTexture = image;
+    mat.emissiveColor = BABYLON.Color3.White();
+    mat.disableLighting = true; mat.specularColor = BABYLON.Color3.Black();
     const face = BABYLON.MeshBuilder.CreatePlane(`${name}:face`, { width, height }, scene);
-    face.rotation.y = turn;
-    face.material = mat;
-    face.isPickable = false;
-    face.parent = node;
+    face.rotation.y = turn; face.position.z = turn === 0 ? -.047 : .047;
+    face.material = mat; face.isPickable = false; face.parent = node;
+    // Keep printed lettering crisp while the surrounding neon still glows.
+    for (const layer of scene.effectLayers || []) if (layer.addExcludedMesh) layer.addExcludedMesh(face);
   }
   return node;
 }
 
-/** One arm of the signpost: a name, an arrow, and the platform's colour. */
-function drawArm(ctx, w, h, label, tint, pointsRight) {
-  ctx.clearRect(0, 0, w, h);
-
-  // The plank, with a pointed end on whichever side it aims at.
-  const tip = h * 0.42;
-  ctx.beginPath();
-  if (pointsRight) {
-    ctx.moveTo(0, 0);
-    ctx.lineTo(w - tip, 0);
-    ctx.lineTo(w, h / 2);
-    ctx.lineTo(w - tip, h);
-    ctx.lineTo(0, h);
-  } else {
-    ctx.moveTo(w, 0);
-    ctx.lineTo(tip, 0);
-    ctx.lineTo(0, h / 2);
-    ctx.lineTo(tip, h);
-    ctx.lineTo(w, h);
+function enamel(ctx, w, h, tint) {
+  const wash = ctx.createLinearGradient(0, 0, 0, h);
+  wash.addColorStop(0, '#193639'); wash.addColorStop(1, '#0c2025');
+  ctx.fillStyle = wash; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#9d8966'; ctx.lineWidth = 2;
+  ctx.strokeRect(10, 10, w - 20, h - 20);
+  ctx.fillStyle = tint; ctx.fillRect(w * .1, h * .08, w * .8, 3);
+  for (const x of [21, w - 21]) for (const y of [21, h - 21]) {
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = '#c2ae87'; ctx.fill();
   }
-  ctx.closePath();
-  ctx.fillStyle = '#0a0e1c';
-  ctx.fill();
-  ctx.lineWidth = Math.max(3, h * 0.055);
-  ctx.strokeStyle = tint;
-  ctx.stroke();
-
-  ctx.fillStyle = '#eef2ee';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `600 ${Math.round(h * 0.42)}px system-ui, sans-serif`;
-  ctx.letterSpacing = `${Math.round(h * 0.05)}px`;
-  ctx.fillText(fit(ctx, label.toUpperCase(), w * 0.72), w * (pointsRight ? 0.45 : 0.55), h * 0.54);
 }
 
-/** A platform's name board, for reading from a long way off. */
-function drawBeacon(ctx, w, h, title, subtitle, tint) {
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(10,14,28,.92)';
-  ctx.beginPath();
-  ctx.roundRect(0, 0, w, h, h * 0.16);
-  ctx.fill();
-  ctx.lineWidth = Math.max(4, h * 0.05);
-  ctx.strokeStyle = tint;
-  ctx.stroke();
+function drawArm(ctx, w, h, labels, tint, pointsRight) {
+  enamel(ctx, w, h, tint);
+  ctx.fillStyle = tint;
+  lettering(ctx, pointsRight ? '→' : '←', w * (pointsRight ? .89 : .11), h / 2, w * .12, h * .52);
+  ctx.fillStyle = '#f7f0df';
+  labels.forEach((label, i) => lettering(ctx, label, w * (pointsRight ? .45 : .55), h * (.5 + (i - (labels.length - 1) / 2) * .34), w * .69, h * (labels.length > 1 ? .28 : .36)));
+}
 
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#f4f8f4';
-  ctx.font = `700 ${Math.round(h * 0.34)}px system-ui, sans-serif`;
-  ctx.letterSpacing = `${Math.round(h * 0.04)}px`;
-  ctx.fillText(fit(ctx, title.toUpperCase(), w * 0.88), w / 2, h * (subtitle ? 0.38 : 0.5));
-
-  if (subtitle) {
-    ctx.fillStyle = tint;
-    ctx.font = `500 ${Math.round(h * 0.19)}px system-ui, sans-serif`;
-    ctx.letterSpacing = `${Math.round(h * 0.02)}px`;
-    ctx.fillText(fit(ctx, subtitle.toUpperCase(), w * 0.88), w / 2, h * 0.72);
-  }
+function drawBeacon(ctx, w, h, titles, subtitle, tint) {
+  enamel(ctx, w, h, tint);
+  ctx.fillStyle = '#c3b291';
+  lettering(ctx, subtitle.replace(/^The /, '').toUpperCase(), w / 2, h * .23, w * .83, h * .09, 550);
+  ctx.fillStyle = '#fff8e9';
+  titles.forEach((title, i) => lettering(ctx, title, w / 2, h * (.57 + (i - (titles.length - 1) / 2) * .24), w * .85, h * (titles.length > 1 ? .18 : .27)));
+  ctx.fillStyle = tint; ctx.beginPath(); ctx.arc(w / 2, h * .88, 3, 0, Math.PI * 2); ctx.fill();
 }
 
 /**
@@ -141,24 +111,27 @@ export function raiseSigns(scene, cabinets) {
     if (!here?.length) continue;
 
     const tint = css(here[0].accent);
-    const label = here.map((c) => c.game.title).join(' · ');
+    const label = here.map((c) => c.game.title);
     const dx = platform.x[0] / 2 + platform.x[1] / 2 - SIGNPOST.x;
     const dz = platform.z[0] / 2 + platform.z[1] / 2 - SIGNPOST.z;
 
-    const width = 2.0;
-    const height = 0.46;
-    const texture = new BABYLON.DynamicTexture(`arm:${platform.id}`, { width: 512, height: 118 }, scene, true);
+    const width = 2.35;
+    const height = 0.56;
+    const texture = new BABYLON.DynamicTexture(`arm:${platform.id}`, { width: 1024, height: 256 }, scene, true);
     // The arm hangs off one side of the mast, so which way the point goes
     // decides which half of the plank the text sits on.
-    drawArm(texture.getContext(), 512, 118, label, tint, true);
+    drawArm(texture.getContext(), 1024, 256, label, tint, true);
+    const reverse = new BABYLON.DynamicTexture(`armBack:${platform.id}`, { width: 1024, height: 256 }, scene, true);
+    drawArm(reverse.getContext(), 1024, 256, label, tint, false);
+    reverse.update();
     texture.update();
 
-    const arm = board(`signarm:${platform.id}`, texture, width, height, scene);
+    const arm = board(`signarm:${platform.id}`, texture, width, height, scene, reverse);
     // Local +X is the plank's length; turn it so +X aims at the platform.
     arm.rotation.y = Math.atan2(-dz, dx);
     arm.position.set(
       SIGNPOST.x + (dx / Math.hypot(dx, dz)) * (width / 2 + 0.1),
-      SIGNPOST.y + SIGNPOST.top - 0.42 - level * 0.56,
+      SIGNPOST.y + SIGNPOST.top - 0.42 - level * 0.64,
       SIGNPOST.z + (dz / Math.hypot(dx, dz)) * (width / 2 + 0.1),
     );
     level += 1;
@@ -171,17 +144,17 @@ export function raiseSigns(scene, cabinets) {
     const platform = PLATFORMS.find((p) => p.id === id);
     const tint = css(here[0].accent);
 
-    const texture = new BABYLON.DynamicTexture(`beacon:${id}`, { width: 640, height: 200 }, scene, true);
+    const texture = new BABYLON.DynamicTexture(`beacon:${id}`, { width: 1536, height: 512 }, scene, true);
     drawBeacon(
       texture.getContext(),
-      640, 200,
-      here.map((c) => c.game.title).join('  +  '),
+      1536, 512,
+      here.map((c) => c.game.title),
       platform?.name || '',
       tint,
     );
     texture.update();
 
-    const sign = board(`beacon:${id}`, texture, 4.2, 1.31, scene);
+    const sign = board(`beacon:${id}`, texture, 4.8, 1.6, scene);
     sign.position.set(mast.x, mast.y + mast.top + 0.9, mast.z);
     // Face the welcome cloud, which is where anyone reading it is standing.
     sign.rotation.y = Math.atan2(-mast.x, -mast.z) + Math.PI;
