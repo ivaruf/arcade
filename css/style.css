@@ -561,8 +561,11 @@ kbd {
    action above it. They used to be three, with sprint off to one side and a
    PLAY button appearing over the top of it — which meant the thumb had to
    find a different target depending on what the gopher happened to be near. */
-.tbtn-hop { bottom: max(28px, calc(env(safe-area-inset-bottom) + 28px)); }
-.tbtn-action { bottom: max(116px, calc(env(safe-area-inset-bottom) + 116px)); }
+/* UP on top, the action under it. That ordering is not decoration: in the air
+   the action button IS a down arrow, and a down arrow sitting above an up
+   arrow reads as a lie every time you glance at it. */
+.tbtn-hop { bottom: max(116px, calc(env(safe-area-inset-bottom) + 116px)); }
+.tbtn-action { bottom: max(28px, calc(env(safe-area-inset-bottom) + 28px)); }
 
 /* At a machine the action button stops being a modifier and becomes the point
    of the whole arcade, so it says so and takes the cabinet's amber. */

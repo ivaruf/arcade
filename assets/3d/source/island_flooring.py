@@ -37,9 +37,15 @@ for tag,d,palette,tile_w,tile_d in [
             groups[(row*7+col*3+row//3)%len(groups)].append((x-hx+(col+.5)*w,y-.035,z-hz+(row+.5)*depth,w-.014,.07,depth-.014))
     for i,cells in enumerate(groups):flooring_mesh(tag+' floor finish '+str(i),cells,palette[i],.009)
     border=bronze if tag=='Race' else (brass if tag in ['Welcome','Calm'] else structural)
+    # The perimeter LIES ON TOP of the outermost tiles — the finish covers the
+    # full rectangle, so the two overlap in a 7 cm ring. Both used to be topped
+    # at exactly y, which is two coplanar faces fighting for the same depth:
+    # the platform edges flickered whenever the camera moved. Lifting the trim
+    # 3 mm proud settles it the way real edging does, and 3 mm is under the
+    # gopher's foot roll, so nothing about walking on it changes.
     flooring_mesh(tag+' floor perimeter',[
-        (x-hx+.035,y-.045,z,.07,.09,hz*2),(x+hx-.035,y-.045,z,.07,.09,hz*2),
-        (x,y-.045,z-hz+.035,hx*2-.14,.09,.07),(x,y-.045,z+hz-.035,hx*2-.14,.09,.07)],border,.008)
+        (x-hx+.035,y-.042,z,.07,.09,hz*2),(x+hx-.035,y-.042,z,.07,.09,hz*2),
+        (x,y-.042,z-hz+.035,hx*2-.14,.09,.07),(x,y-.042,z+hz-.035,hx*2-.14,.09,.07)],border,.008)
     # Prevent the sculpted cloud peaks poking through the newly finished floor.
     for o in root.children_recursive:
         if o.name==tag+' sculpted cloud':

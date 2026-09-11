@@ -244,7 +244,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=floors-1', scene);
+  const held = await container('cloud-world.glb?v=floors-2-edge-trim', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);
