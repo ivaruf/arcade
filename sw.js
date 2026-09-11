@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.2.0'; // the four islands ring the welcome cloud; signpost and prize machine gone
+const VERSION = 'v2.3.0'; // the islands ring the hub, and the arcade offers to install itself
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -54,6 +54,7 @@ const SHELL_FILES = [
   './js/audio.js',
   './js/signs.js',
   './js/screen.js',
+  './js/install.js',
   './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
