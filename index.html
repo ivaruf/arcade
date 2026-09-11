@@ -61,7 +61,11 @@
   <iframe id="frame" title="Game"
           allow="fullscreen; autoplay; gamepad; screen-wake-lock; accelerometer; gyroscope; pointer-lock; xr-spatial-tracking"
           allowfullscreen></iframe>
-  <div class="pill">
+  <!-- Hidden by default: every game in the arcade has its own quit, in its own
+       colours, and a second generic control over the top of it was clutter.
+       arcade.js reveals this only for a game that turns out not to have one
+       (see offerPillIfTheGameHasNoQuit), so nobody is ever stuck inside. -->
+  <div class="pill" hidden>
     <button id="exit" type="button" aria-label="Back to the arcade">◂ ARCADE</button>
   </div>
 </div>

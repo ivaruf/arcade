@@ -85,7 +85,11 @@
      The iframe is not here: launcher.js builds a fresh one per game and
      removes it afterwards — see its header for why that matters. -->
 <div id="cabinet" class="cabinet" hidden>
-  <div class="pill">
+  <!-- Hidden by default: every game in the arcade has its own quit, in its own
+       colours, and a second generic control over the top of it was clutter.
+       launcher.js reveals this only for a game that turns out not to have one
+       (see offerPillIfTheGameHasNoQuit), so nobody is ever stuck inside. -->
+  <div class="pill" hidden>
     <button id="step-away" type="button" aria-label="Step away from the machine">&#9666; FLOOR</button>
   </div>
 </div>

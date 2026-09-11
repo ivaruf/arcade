@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v1.6.0'; // the in-game exit tab, PWA install + fullscreen, the gopher icon
+const VERSION = 'v1.6.1'; // each game quits in its own voice; the pill is a fallback now
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

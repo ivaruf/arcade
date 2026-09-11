@@ -77,37 +77,68 @@ so the arcade can see which games are cached.
 
 ## Giving a game its own way out
 
-The launcher's "◂ ARCADE" pill lives outside the iframe, so a game that takes
-fullscreen on one of its own elements paints over it — the fullscreen element
-belongs to the top-level document and covers everything the arcade drew. A
-player in a fullscreen game then has no way back but the browser's own gesture.
-
-One line in the game's `<head>` fixes that, and does nothing at all when the
-game is played standalone:
+Every game in the arcade has a quit of its own, in its own colours and its own
+words. What they share is one line in the `<head>`:
 
 ```html
 <script src="../arcade/exit.js" defer></script>
 ```
 
+**`exit.js` draws nothing.** The button belongs to the game — a generic chip
+dropped into six different games is the thing §2 of the hub rules warns about,
+and an earlier version of this file did exactly that before being talked out of
+it. What a game cannot work out for itself is what quitting should *do*, and
+that is what the file is for.
+
 It is a **classic script, not a module**, on purpose: a game loading it takes a
 runtime dependency on this repo, and a failed fetch inside a module graph
 aborts the whole graph. Deferred and classic, `/arcade/` being unreachable
-costs the game a button and nothing else.
+costs the game its quit button and nothing else — which is why every game
+checks for `window.ArcadeExit` before building one.
 
-### Where it sits
+### The three ways a game is open
 
-A tab welded to the middle of the game's **left edge**, collapsed to an arrow
-after saying its own name for a few seconds. That placement was measured, not
-chosen: there is no free corner in this hub. Every game hangs its HUD off the
-corners of one full-viewport `fixed` root, and in gameplay at 1280×800
-`dam_break` occupies **all four** — level name top-left, budget top-right,
-materials bottom-left, RELEASE WATER bottom-right. `supermine`'s top bar spans
-1260 px, taking both top corners. The middle of the left edge is free in every
-one of them, and it is also the direction "back" means.
+| how it was opened | what quit means |
+| --- | --- |
+| in the arcade | an iframe with the launcher behind it — hand the player back to the floor |
+| installed | its own PWA window — close it |
+| an ordinary tab | a script may not close it, so say so honestly |
+
+`ArcadeExit.quit()` tells them apart and does the right one. It returns a
+promise resolving to `'arcade'` or `'refused'`; there is deliberately no
+`'closed'`, because if the window really closes the page stops existing and
+nothing could observe it. So a game handles only the outcomes where it is still
+alive to handle them.
+
+`ArcadeExit.verb({ arcade, app, tab })` picks the label, so six games do not
+each guess differently and none promises something that will not happen.
+
+```js
+if (window.ArcadeExit) {
+  button.textContent = ArcadeExit.verb({ arcade: '◂ BACK TO THE ARCADE', app: '✕ CLOSE' });
+  button.addEventListener('click', () => ArcadeExit.quit().then((how) => {
+    if (how === 'refused') button.textContent = 'CLOSE THIS TAB YOURSELF';
+  }));
+}
+```
+
+`framed()`, `inArcade()`, `standalone()` and `leave()` are there too, for a
+game wiring something more specific — `fishtank` uses `leave()` from the quit
+it already had.
+
+### The launcher pills are a fallback now
+
+Both launchers still carry their own pill, but it starts `hidden`. After the
+iframe loads, each asks the framed game whether it has `ArcadeExit` and shows
+the pill **only if it does not**. In normal play the pill is gone, because the
+game's own quit is better dressed and better worded than ours could be. But
+`games.json` is open: a slug can be added whose repo has never heard of
+`exit.js`, and a game with no way out and no pill is a trap rather than a worse
+card.
 
 ### How leaving works
 
-Each launcher publishes its own way out as `window.arcadeLeave`, and the tab
+Each launcher publishes its own way out as `window.arcadeLeave`, and `leave()`
 calls it. Both launchers are in this repository beside `exit.js`, so that is
 one repo's contract rather than seven — and it has to be their function rather
 than plain `history.back()`, because leaving is not one thing:
@@ -126,18 +157,12 @@ a launcher served from a cache older than `exit.js` still understands — the
 shell and the games are cached by separate service workers, so an old launcher
 framing a new game is a real state during a rollout.
 
-A game with its own pause menu should put the item there instead and suppress
-the default button:
-
-```html
-<script src="../arcade/exit.js" defer data-no-button></script>
-```
-
-`window.ArcadeExit` then offers `framed()`, `inArcade()` and `leave()`. It is
-published whether or not the button is drawn, so the menu item can appear only
-when there is an arcade to go back to. `fishtank` is the one game doing this
-today: it already had a quit that knew it might be framed, so it passes
-`data-no-button` and calls `ArcadeExit.leave()` from that.
+Where each game puts it, as of now: `supermine` and `supermine_adventure` in
+the pause card under a hairline (the adventure arms it twice, like everything
+else there that throws a run away); `dam_break` on the title and level screens,
+so leaving is never three taps deep; `maxgear` on the title and pause menus;
+`swirls` across the foot of the gear panel; `fishtank` in the pause menu it
+already had.
 
 ## Developing locally
 

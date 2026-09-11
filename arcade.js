@@ -382,14 +382,45 @@
     document.body.classList.add('playing');
     themeMeta.content = game.theme || ARCADE_THEME;
     document.title = `${game.title} · ARCADE`;
-    wakePill();
-    frame.addEventListener('load', () => frame.focus(), { once: true });
+    pill.hidden = true;
+    frame.addEventListener(
+      'load',
+      () => {
+        frame.focus();
+        offerPillIfTheGameHasNoQuit();
+      },
+      { once: true },
+    );
+  }
+
+  /**
+   * The pill is a safety net now, not furniture.
+   *
+   * Every game in the arcade has its own quit, in its own colours and its own
+   * words, so a second control on top of it was only clutter — and ours could
+   * only ever be generic. But games.json is open: a slug can be added whose
+   * repo has never heard of exit.js, and a game with no way out and no pill is
+   * a trap rather than a worse card. So ask the frame whether the game has the
+   * arcade's exit API, and show the pill only when it does not. Same origin, so
+   * this is a fact; a cross-origin frame throws, and a game we cannot even ask
+   * is exactly the case that needs the pill.
+   */
+  function offerPillIfTheGameHasNoQuit() {
+    let hasOwnQuit = false;
+    try {
+      hasOwnQuit = !!frame.contentWindow.ArcadeExit;
+    } catch {
+      hasOwnQuit = false;
+    }
+    pill.hidden = hasOwnQuit;
+    if (!hasOwnQuit) wakePill();
   }
 
   function hidePlayer() {
     if (player.hidden) return;
     frame.src = 'about:blank';
     player.hidden = true;
+    pill.hidden = true;
     document.body.classList.remove('playing');
     themeMeta.content = ARCADE_THEME;
     document.title = 'ARCADE';

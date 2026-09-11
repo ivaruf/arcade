@@ -153,6 +153,32 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
     };
     frame.addEventListener('load', () => setTimeout(reveal, DWELL_AFTER_LOAD), { once: true });
     setTimeout(reveal, DWELL_CEILING);
+    frame.addEventListener('load', () => offerPillIfTheGameHasNoQuit(), { once: true });
+  }
+
+  /**
+   * The FLOOR pill is a safety net now, not furniture.
+   *
+   * Every game in the arcade has its own quit, in its own colours and its own
+   * words, so a second control out here was just clutter over the top of it —
+   * and ours could only ever be generic. But `games.json` is open: a slug can
+   * be added whose repo has never heard of `../exit.js`, and a game with no way
+   * out and no pill is a trap rather than a worse card. So we ask the frame
+   * whether the game has the arcade's exit API, and show the pill only when it
+   * does not.
+   *
+   * Same origin, so this is a fact. A cross-origin frame throws, and something
+   * we cannot even ask is exactly the case that needs the pill.
+   */
+  function offerPillIfTheGameHasNoQuit() {
+    let hasOwnQuit = false;
+    try {
+      hasOwnQuit = !!frame?.contentWindow?.ArcadeExit;
+    } catch {
+      hasOwnQuit = false;
+    }
+    pill.hidden = hasOwnQuit;
+    if (!hasOwnQuit) wakePill();
   }
 
   /** Give the machine back. Resolves once the floor is on screen again. */
@@ -169,6 +195,7 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
     frame.style.transform = shrinkFor(cabinet.screenMesh);
     const leaving = frame;
     frame = null;
+    pill.hidden = true; // back to hidden for whatever opens next
 
     return new Promise((resolve) => {
       setTimeout(() => {
