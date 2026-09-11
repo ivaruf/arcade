@@ -20,8 +20,10 @@ not because we cannot have one, but because doing it without one is the part
 worth learning. If the answer turns out to need a server, we will buy a server
 — but this document is the argument that it does not.
 
-Everything measured below was measured, on 2026-09-11, in Chrome 152. Numbers
-from one browser are one browser; where that matters it says so.
+Everything measured below was measured, on 2026-09-11, in Chrome 152 — the
+crypto, the compression, the profile sizes, and the two licence endpoints,
+which were called for real from a browser rather than read about. Numbers from
+one browser are one browser; where that matters it says so.
 
 ---
 
@@ -384,30 +386,77 @@ randomness to leak a private key when it goes wrong. It is also the more
 recent arrival in WebCrypto, so check Safari before committing; P-256 is the
 conservative fallback and costs 33 bytes.
 
-### Stripe specifically
+### Who takes the money: Lemon Squeezy, for now
 
-Worth being blunt, since it is the obvious name to reach for: **Stripe is the
-weakest fit of the options here**, for two reasons that are both about it being
-the most "bring your own server" of them.
+**Settled 2026-09-11, provisionally and while testing.** Gumroad is the
+fallback. The decision is worth less than it looks, and that is by design: see
+the paragraph above — `purchased` only asks whether something it trusts said
+so, so the provider can be swapped without migrating a profile or invalidating
+a receipt. This is a reversible decision wearing the costume of an
+irreversible one.
 
-The first is fulfilment. A Payment Link can redirect to a page we host and
-append a `session_id`, but *verifying* that id means calling Stripe with a
-secret key, which cannot live in a static page. So the redirect is unverifiable
-on its own — anyone could type one — and the honest flow reverts to manual
-signed grants from the orders list. Gumroad, by contrast, issues a per-sale
-license key and exposes a verification endpoint a browser can call, which is
-the closest thing to automatic fulfilment available without a server. That is a
-runtime dependency on a third party and would need writing down the way
-`rendezvous.js` writes down the PeerJS trade, but it is a real option.
+Both are **merchant of record**, which is the thing that actually matters
+(§10c): they are the legal seller, and they calculate, collect and remit VAT
+and sales tax worldwide. Selling from Norway to wherever without that is a tax
+administration problem no hobby project should take on.
 
-The second is tax, and it is the larger one. Stripe is a payment processor, not
-a merchant of record: choosing it means **we** own VAT and the EU's 14-day
-withdrawal right. Ko-fi, Gumroad and itch can act as merchant of record and
-carry that. See decision (c) — this is the part to settle before the first sale
-rather than after, and it is not a decision to take from a design document.
+And both can be verified from a static page, which was measured rather than
+assumed — one POST each, dummy data, from a real browser origin:
 
-None of which rules Stripe out. Manual grants are fine at this scale, and
-"manual" here means running a script against a CSV once in a while.
+```
+POST api.lemonsqueezy.com/v1/licenses/validate   -> 404 {"valid":false,"error":"license_key not found."}
+POST api.gumroad.com/v2/licenses/verify          -> 404 {"success":false,"message":"That license does not exist…"}
+```
+
+CORS permits reading both. **So automatic fulfilment with no backend is real**,
+not a hope: the buyer pastes the key their receipt gave them, the arcade asks
+the provider, `purchased` gains the item. Neither endpoint needs a secret, so
+nothing has to be hidden and there is nothing a static page cannot do.
+
+The usual objection to verifying a licence client-side is that a user can stub
+the response. That is the same objection §2 already answered: stubbing it gets
+you a cosmetic hat that confers nothing on you and costs nobody anything.
+
+On price, Lemon Squeezy is roughly 5% + $0.50 (plus about 1.5% international)
+against Gumroad's 10% + $0.50 with card processing on top — about $0.95 versus
+$1.70 on a $7 sale. At the volume this hub will see that difference is tens of
+dollars a year and is *not* why it was chosen; it was chosen because it is at
+least as good on everything that is not price. If sales ever become real money,
+revisit it deliberately rather than because something forced you.
+
+**Price a supporter unlock at $5–10, not $2 a hat.** The fixed per-sale fee is
+what decides that: it eats a tenth of a $7 sale and nearly half of a $2 one.
+That happens to be the healthier shape anyway — one adult-sized act of support
+rather than a catalogue of small impulses in a hub that children play, which is
+the thing §1 exists to keep out.
+
+### Keep your own order records, whoever it is
+
+A licence key is only worth something while the issuer's endpoint answers. Both
+of these are fine today; neither is promised in five years — Lemon Squeezy in
+particular is owned by Stripe, which has since launched its own merchant-of-
+record product built by the same team and described as the successor.
+
+So the provider's API is a **convenience for day one, not the durable
+artifact**. Export the order list and keep it. The permanent fallback is
+issuing a signed grant by hand (above) against a key we control, verified
+offline, forever. That is what makes "the receipt is the backup" true rather
+than aspirational, and it is the reason none of this is a lock-in.
+
+### Stripe, and why not
+
+Stripe direct is the obvious name to reach for and the weakest fit here, for
+two reasons that are both about it being the most bring-your-own-server of
+them.
+
+Fulfilment first: a Payment Link can redirect to a page we host and append a
+`session_id`, but *verifying* that id means calling Stripe with a secret key,
+which cannot live in a static page. The redirect proves nothing on its own —
+anyone could type one — so fulfilment reverts to manual grants.
+
+Tax second, and larger: Stripe is a payment processor, not a merchant of
+record, so VAT and the EU's 14-day withdrawal right stay with us. That is the
+whole problem the two above solve.
 
 ### It is a bearer token
 
@@ -546,11 +595,12 @@ one is not a game's key — it is the hub's — so even the prefix is a choice.
 answer. The `exit.js` pattern is the obvious candidate now that it exists and
 has shipped, but it is still a decision.
 
-**(c) Merchant of record.** Selling digital goods from Norway to wherever means
-VAT and the EU's 14-day withdrawal right. Providers like Gumroad, Ko-fi and
-itch can act as merchant of record and carry that; a raw Stripe Payment Link
-generally leaves it with you. Worth settling before the first sale rather than
-after. Not a code decision and not one to take from a design doc.
+**(c) Merchant of record. SETTLED 2026-09-11: Lemon Squeezy, provisionally,
+while testing** — Gumroad the fallback if onboarding stalls, which is the one
+reported friction. Both are merchant of record and both were measured to be
+verifiable from a static page (§6). Reversible by construction, and the reason
+it needed settling at all is that selling from Norway to wherever without a
+merchant of record is a tax problem no hobby project should own.
 
 **(d) Ed25519 or P-256**, pending a Safari check (§6).
 
