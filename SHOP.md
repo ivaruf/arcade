@@ -209,6 +209,36 @@ means the "newer" choice may not be the later one. For *which hat am I
 wearing*, being wrong costs a player one tap. Do not let anything important
 depend on it.
 
+### Where it lives: the origin is the database
+
+§6 of the hub rules is careful about never renaming a storage key, and
+`dam_break` still carries `dam-builder-save-v1` through a whole project rename
+to prove the point. There is a larger version of that rule which is easy to
+miss, and it deserves saying once, plainly:
+
+**`localStorage` is keyed to the ORIGIN.** Move the hub from
+`ivaruf.github.io` to a domain of its own and every profile, every earned item
+and every purchase is simply not there any more. Not renamed — in a different
+bucket entirely, on a site that has never seen this player before. The same
+goes for IndexedDB and for every service worker cache. Careful key naming does
+not help; there is no key to rename.
+
+That has two consequences worth holding on to:
+
+1. **A custom domain is nearly free before any player has data, and expensive
+   after.** Right now nothing is built, so it costs a DNS record and a
+   reinstall. The gap between now and the first earned hat is the whole window.
+2. **The continue code (§5a) is also the migration tool.** A player exports on
+   the old origin and imports on the new one, which turns a wipe into an
+   inconvenience. So the rule is a sequence rather than a deadline: **if the
+   inventory ever ships before the domain is settled, the continue code has to
+   ship with it.** Do that and the domain decision stays open indefinitely.
+
+It also means the shared origin is not an implementation detail but the whole
+reason a cross-game inventory is possible at all (§7 of the hub rules). Any
+future hosting change has to keep all seven games on one origin, or the
+inventory stops being cross-game the day it moves.
+
 ## 4a. Who earns things: the name on the save file
 
 **Only a player who has chosen a name earns anything.** Until then the arcade
@@ -584,7 +614,9 @@ not a failure of this design, just the edge of it.
 
 ## 10. Decisions still open, and who they belong to
 
-**(a) The storage key. Owner's, and irreversible.** §7 says it stays undecided
+**(a) The storage key. Owner's, and irreversible.** Note the origin is the
+larger version of this same decision — see §4 — and it is the one still open
+while a custom domain is being considered. §7 says it stays undecided
 until there is real code in front of us, and that is right: a key holding
 people's earned *and paid* items can never be renamed without wiping them.
 `dam_break` still carries `dam-builder-save-v1` through a whole project rename
