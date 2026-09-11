@@ -110,6 +110,12 @@ owner described. Anything that looks like a wallet is a sign the design has
 drifted — and a wallet is also the shape that invites "buy coins, get random
 item", which §1 forbids for better reasons than this one.
 
+This rule bites harder than it first looks, and the first version of this
+document broke it two sections later by having the claw machine spend "earned
+grabs". Grabs are a counter. Arcade tickets are a counter. Anything you
+accumulate and spend is a counter, however charming the theme, and it fails
+for the ethical reason before it fails for the technical one — see §7a.
+
 Note this is *not* the same as dam_break's budget or supermine's ore. Those are
 in-fiction gameplay economies, they live in those games' own saves, and §7 says
 to keep them entirely separate from this. They are allowed to be counters
@@ -124,6 +130,8 @@ decision (a) below:
 {
   "v": 1,
   "id": "b3f1…",             // crypto.randomUUID(), made once, never shown
+  "name": "Bramble",         // chosen by the player; the only field that
+                             // is ever shown to anybody else (§4a)
   "items": ["hat.crown", …], // G-Set: union on merge
   "got":   ["ach.flew-far"], // G-Set: union on merge
   "wear":  { "hat": ["hat.crown", 1757… ] },  // LWW: [value, timestamp]
@@ -133,13 +141,71 @@ decision (a) below:
 
 `id` exists so two profiles can tell they are different people rather than the
 same person on two devices, which matters when you hand a friend a hat rather
-than syncing yourself. It is random, it is never sent anywhere, and it is not
-an account.
+than syncing yourself. It is random and it is not an account. It goes to a peer
+only during a trade, and nowhere else, ever.
+
+The profile does not exist at all until the player has chosen a `name` — see
+§4a, which is the rule that makes all of this consented rather than assumed.
 
 Clock skew is the one wrinkle in LWW: two devices disagreeing about the time
 means the "newer" choice may not be the later one. For *which hat am I
 wearing*, being wrong costs a player one tap. Do not let anything important
 depend on it.
+
+## 4a. Who earns things: the name on the save file
+
+**Only a player who has chosen a name earns anything.** Until then the arcade
+is anonymous: it plays, it keeps nothing, and it has written nothing to disk.
+
+This looks like it contradicts §1's "no accounts". It does not, and the
+distinction is worth being exact about, because the whole privacy posture of
+the hub rests on it. There is no server, no credential, no password, no
+recovery, no verification and nothing transmitted. It is **a name on a save
+file**, the way every console game did it before 2005. What it buys is
+consent: a profile exists because somebody asked for one, not because they
+loaded a page.
+
+Signing up is one act — pick a name, and `crypto.randomUUID()` is written
+beside it. That is the whole ceremony.
+
+Three things keep it an invitation rather than a toll gate:
+
+- **It never gates playing.** Only earning. Anyone can fly, fall, and play
+  every machine in the sky forever without being asked for anything.
+- **The ask comes at the motivated moment.** Not on the title card, which is
+  exactly the friction §1 exists to prevent. The instant somebody does
+  something earnable while anonymous is the good moment: *"The dam held.
+  That's worth something — who shall I put it under?"* They are already
+  pleased and the question explains itself. Hold that pending item **in memory
+  only**, never written to disk, so a player who says no has genuinely had
+  nothing stored about them. Say yes in the same session and you keep what you
+  just did.
+- **Guest state is visible.** A precondition nobody can see is a nasty
+  surprise: play well for an hour, discover none of it counted. The HUD
+  already names where you are standing; a quiet "playing as a guest" line
+  beside it costs nothing and removes the surprise entirely.
+
+### The name is the one thing that leaves the device
+
+Everything else here stays local. A name does not: a P2P trade shows it to
+another human (§5b). §8 of the hub rules already says to validate guest input
+and check names against an allowlist, and that applies to this.
+
+Beyond validating and length-capping, **suggest names rather than presenting an
+empty box.** A list of gopher-ish suggestions with a shuffle button is
+friendlier, and for a hub that children play it makes the path of least
+resistance something other than typing a real name. An empty field with a
+blinking cursor is a small invitation to do the wrong thing.
+
+### What it buys back
+
+Pairing becomes honest. Two devices meet, compare ids, and the arcade can ask
+the right question instead of guessing: *"This is Ada's arcade — sync, or
+trade?"* Same id means one person on two devices; different id means two
+people. Without a name, that difference is invisible to the human being asked.
+
+A grant link (§6) clicked by someone with no profile follows the same rule as
+anything else earnable: hold it, ask for a name, then apply it.
 
 ## 5. Moving a profile between devices
 
@@ -287,6 +353,55 @@ rollout on 2026-09-11. An `inventory.js` beside it would inherit a pattern that
 already works rather than inventing one. That is decision (b) below, because
 §7 says to ask.
 
+## 7a. Tickets, and why there are none
+
+Arcade tickets are the obvious fit for a place like this: win, get tickets,
+walk to the counter, choose a prize. The first version of this document
+smuggled them in as "earned grabs" for the claw machine and did not notice.
+
+They are out, and the reason is worth keeping because it is not squeamishness.
+It is about **what the reward measures**. Tickets reward volume: play more, the
+number goes up, eventually a prize. The number becomes the goal, and a player's
+relationship with a game quietly turns into tickets-per-minute. An earned item
+rewards a moment — *the dam held for ninety seconds*, *you found the quiet
+cloud*, *you dug to five hundred metres*.
+
+> Tickets remember how long you played. An item remembers what you did.
+
+Everything grim about real redemption arcades — punishing exchange rates,
+near-misses, the nine-thousand-ticket bear — is engineering of the gap between
+the number and the prize. Nobody would build those on purpose, but the shape
+invites them: once a counter exists somebody has to choose its rate, and every
+rate is a decision about how long to keep a person playing. That is the machine
+§1 is describing when it bans dark patterns.
+
+Be fair to tickets, though, because they buy one genuinely good thing:
+**choice**. The walk to the counter, weighing the big bear against three small
+things, is the actual pleasure of a redemption arcade. Pure achievements throw
+that away — you get the item the designer picked, and a less skilled player may
+never reach it at all. So the goal is not to drop tickets. It is to **keep the
+choosing and lose the counting**.
+
+### What replaces them: earn the thing, claim it at the counter
+
+The item is won outright in the game, and waits at the arcade to be collected.
+Three details make that work rather than being tickets with extra steps:
+
+- **The set is finite.** A collection ends; a treadmill does not. Knowing there
+  are twelve things to find in supermine is a different feeling from knowing
+  tickets accrue for ever.
+- **Nothing expires, ever.** The moment a claim has a deadline you have
+  invented FOMO. It waits indefinitely. There is no notification either: it is
+  a pull, not a push.
+- **The choosing moves to the counter.** You earned *a claim*; which item you
+  take is yours to pick. That is where the ticket-counter pleasure lives, with
+  no exchange rate to tune and nothing to grind.
+
+And it costs nothing architecturally, which is the pleasing part. `earned` and
+`claimed` are both grow-only sets; pending is the difference between them. Both
+merge by union, so a claim won on a phone is waiting at the counter on a laptop
+with no counter anywhere in sight — and §3's rule is kept rather than bent.
+
 ## 8. The shop as a place
 
 `machine-claw.glb` is still in the kit — "CLOUD CATCH open-frame prize machine
@@ -295,13 +410,19 @@ with toys and claw". The prize machine was removed from the welcome cloud on
 only with it.
 
 **The guardrail, and it matters more than the theme:** a claw machine is
-mechanically a loot box. If money buys random grabs, this is gambling, it
-breaks §1's ban on dark patterns, and it does so in front of children. The
-split that keeps it clean:
+mechanically a loot box. If money buys random grabs this is gambling, it breaks
+§1's ban on dark patterns, and it does so in front of children. The split that
+keeps it clean:
 
-- **playing earns grabs** — the claw is where you spend what you earned;
+- **the claw is how you choose, not how you gamble.** You come to it holding a
+  claim you already earned (§7a), you steer it to the toy you want, and it
+  never misses. Skill that can fail is a slot machine; a claw that always
+  works is a nice way to point at things.
 - **money buys a named item you can see before you pay** — a shelf, not a
   gacha.
+
+Nothing is bought with anything that accumulates, because nothing accumulates
+(§3, §7a).
 
 No timers, no daily login, no manufactured scarcity, no "one left!". §1 already
 forbids all of it; a shop is just the first place where it becomes tempting.
@@ -347,15 +468,22 @@ after. Not a code decision and not one to take from a design doc.
 **(e) Whether paid items are visibly supporter items.** Recommended yes: it
 makes a hacked-in hat socially pointless without a line of enforcement code.
 
+**(f) Multiple profiles on one device.** A shared family iPad is a real case
+here. Profiles keyed by id allow it and the data model already does, but
+whether there is a switcher is a product call rather than a technical one.
+
 ## 11. The order I would build it
 
 1. `merge` and the profile shape, with tests. No UI, no network, no shop. This
    is the whole design and it is about eighty lines.
-2. The continue code (5a), which is the backup and the first real sync.
-3. Earned items the arcade can see by itself (§7).
-4. The claw machine, spending earned grabs (§8).
-5. The passkey experiment (5c) on a real iPhone — the result decides whether
+2. Choosing a name (§4a) — the smallest possible ceremony, and the thing that
+   decides a profile exists at all.
+3. The continue code (5a), which is the backup and the first real sync.
+4. Earned items the arcade can see by itself (§7), and claims waiting at the
+   counter (§7a).
+5. The claw machine as the way to choose a claim (§8).
+6. The passkey experiment (5c) on a real iPhone — the result decides whether
    this ever feels magic or merely works.
-6. Pairing in the world (5b).
-7. The shop shelf and signed grants (§6), last, because it is the only part
+7. Pairing in the world (5b).
+8. The shop shelf and signed grants (§6), last, because it is the only part
    that involves anyone's money.
