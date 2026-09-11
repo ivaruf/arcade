@@ -79,9 +79,12 @@
   <div class="stick-zone">
     <div class="stick-base"><div class="stick-knob"></div></div>
   </div>
-  <button class="tbtn tbtn-sprint" type="button" aria-label="Sprint or sink">&raquo;</button>
-  <button class="tbtn tbtn-hop" type="button" aria-label="Hop">&#9650;</button>
-  <button id="tbtn-coin" class="tbtn tbtn-coin" type="button" aria-label="Play game" hidden>PLAY</button>
+  <!-- Two buttons, and only two. The top one never changes meaning: up. The
+       one under it is whatever the gopher can do where it is standing — run
+       on a cloud, sink in the air, play at a machine — and controls.js swaps
+       its glyph and its key together so the two can never disagree. -->
+  <button class="tbtn tbtn-hop" type="button" aria-label="Up">&#9650;</button>
+  <button id="tbtn-action" class="tbtn tbtn-action" type="button" aria-label="Run">&raquo;</button>
 </div>
 
 <!-- The game itself. The clip-path starts as the CRT's rectangle on screen and

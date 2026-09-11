@@ -320,3 +320,5 @@ for name,label,yy,size,mat in [
     ('Brand','GOPHER CLOUD',2.56,.25,white),('Arcade','A R C A D E',2.22,.18,brass),
     ('Guide','Jump twice to fly',1.70,.19,white),('Guide small','Find your next game in the clouds',1.36,.095,white)]:
     text('Welcome sideboard '+name,label,(4.84,yy,-3.25),size,mat,yaw=-math.pi/2)
+
+exec(compile((OUT / 'source' / 'island_flooring.py').read_text(), str(OUT / 'source' / 'island_flooring.py'), 'exec'), globals())

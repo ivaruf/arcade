@@ -108,3 +108,16 @@ The across-the-path arrival arch and hint panel have been replaced by a compact
 welcome board on the right edge, at game x=4.95, z=-3.25. Its collision footprint
 replaces the old arch posts. The route straight ahead from spawn is open.
 This update was built without playtesting or regenerating preview images.
+
+## Flooring
+
+All five playable cloud islands now have full flooring at their existing
+collision height: limestone at arrival, oak in the steamworks, teal glazed
+tiles at the aquarium, slate at the mine, and cedar on the quiet terrace.
+Recessed joints, solid foundations and metal edging define the landing areas.
+Cloud billows remain visible underneath and around each island. Decorative
+clouds elsewhere in the sky are unchanged.
+
+`source/island_flooring.py` runs at the end of the environment build. Floor
+pieces are grouped into shared meshes by material. No gameplay coordinates
+changed. This update was exported without playtesting or preview renders.

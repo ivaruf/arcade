@@ -124,7 +124,6 @@ const ui = {
   music: $('music'),
   leave: $('leave'),
   touch: $('touch'),
-  coinBtn: $('tbtn-coin'),
   cabinet: $('cabinet'),
   pill: document.querySelector('.pill'),
   fade: $('fade'),
@@ -162,8 +161,14 @@ const camera = new BABYLON.ArcRotateCamera('camera', Math.PI / 2, CAMERA.titleBe
 camera.lockedTarget = cameraTarget;
 camera.lowerRadiusLimit = 2.4;
 camera.upperRadiusLimit = CAMERA.maxRadius;
+// Beta is measured from straight up, so 1.5 stopped the camera a hair short of
+// level with the gopher — you could never get UNDER it and look up, which is
+// the one view flying actually wants. 2.6 is about 150 degrees: well below and
+// looking up, and still short of the pole where an orbit camera's roll goes
+// strange. Nothing under a cloud to clip into up here, so the same range works
+// standing still as it does in the air.
 camera.lowerBetaLimit = 0.62;
-camera.upperBetaLimit = 1.5;
+camera.upperBetaLimit = 2.6;
 camera.wheelDeltaPercentage = 0.02;
 camera.pinchDeltaPercentage = 0.0015;
 camera.panningSensibility = 0;
@@ -385,7 +390,6 @@ function startDive(cabinet, silent = false) {
   atMachine = cabinet;
   input.clear();
   ui.prompt.hidden = true;
-  ui.coinBtn.hidden = true;
   setLit(cabinet, true);
   if (!silent) {
     sfx.unlock();
@@ -476,7 +480,7 @@ function updateDive(dt) {
     camera.lowerRadiusLimit = 2.4;
     camera.upperRadiusLimit = CAMERA.maxRadius;
     camera.lowerBetaLimit = 0.62;
-    camera.upperBetaLimit = 1.5;
+    camera.upperBetaLimit = 2.6;
     camera.attachControl(ui.canvas, false); // noPreventDefault: see the rig above
     setLit(atMachine, false);
     atMachine = null;
@@ -827,17 +831,19 @@ function updatePrompt(dt) {
     ui.prompt.classList.remove('leaving');
     ui.promptTitle.textContent = near.game.title;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
-    ui.coinBtn.hidden = !input.IS_TOUCH;
   } else if (leaving) {
     ui.prompt.hidden = false;
     ui.prompt.classList.add('leaving');
     ui.promptTitle.textContent = 'The way out';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd> to close' : '<kbd>E</kbd> to close the arcade';
-    ui.coinBtn.hidden = !input.IS_TOUCH;
   } else {
     ui.prompt.hidden = true;
-    ui.coinBtn.hidden = true;
   }
+
+  // The one button under UP says what the gopher can actually do from here.
+  // Being at a machine beats everything, because it is the point of the place;
+  // otherwise the air means sink and the ground means run.
+  input.setAction(near || leaving ? 'play' : state.mode === 'fly' ? 'descend' : 'run');
 
   // Standing in the ring is an offer, not a trapdoor: you leave when you say
   // so. Walking through a doorway could be an accident; pressing a key cannot.

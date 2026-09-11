@@ -209,9 +209,80 @@ export function attachTouch(root) {
     el.addEventListener('pointercancel', up);
   };
   bind('.tbtn-hop', 'Space');
-  bind('.tbtn-sprint', 'ShiftLeft');
-  bind('.tbtn-coin', 'KeyE');
+  bindAction(root.querySelector('#tbtn-action'));
   return true;
+}
+
+/* ---------------------------------------------------------------------------
+ * The action button
+ * ---------------------------------------------------------------------------
+ * UP never changes meaning, so it is a plain `bind`. The button under it does,
+ * and it has to change its KEY and its GLYPH together or the two drift apart
+ * and the thumb lies to the player.
+ *
+ * Note that run and descend are the same key. `updateFly` reads sprintHeld()
+ * as "sink", which was already true before this button existed — so the only
+ * thing that differs between a cloud and the open air is what the glyph says.
+ * Only PLAY is a different key, and it is the one that is a tap rather than a
+ * hold, which is why the code is captured at press time rather than swapped
+ * underneath a thumb that is already down.
+ * ------------------------------------------------------------------------ */
+
+const ACTIONS = {
+  run:     { code: 'ShiftLeft', glyph: '\u00bb',  label: 'Run' },
+  descend: { code: 'ShiftLeft', glyph: '\u25bc',  label: 'Descend' },
+  play:    { code: 'KeyE',      glyph: 'PLAY',     label: 'Play game' },
+};
+
+let actionEl = null;
+let action = ACTIONS.run;
+let actionHeld = null; // the code actually pressed, so we release that one
+
+function bindAction(el) {
+  if (!el) return;
+  actionEl = el;
+  paintAction();
+
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* as above */
+    }
+    el.classList.add('active');
+    actionHeld = action.code;
+    press(actionHeld);
+  });
+  const up = () => {
+    el.classList.remove('active');
+    // Release what was pressed, not what the button says NOW: the gopher can
+    // leave the ground between a thumb going down and coming up again, and a
+    // ShiftLeft left held down would sink it for ever.
+    if (actionHeld) release(actionHeld);
+    actionHeld = null;
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+function paintAction() {
+  if (!actionEl) return;
+  actionEl.textContent = action.glyph;
+  actionEl.setAttribute('aria-label', action.label);
+  actionEl.classList.toggle('is-play', action === ACTIONS.play);
+}
+
+/**
+ * What the action button means right now: 'run', 'descend' or 'play'. Called
+ * every frame by main.js, which is the only place that knows where the gopher
+ * is standing; a no-op when nothing changed, so it is free to call.
+ */
+export function setAction(name) {
+  const next = ACTIONS[name] || ACTIONS.run;
+  if (next === action) return;
+  action = next;
+  paintAction();
 }
 
 // ---------------------------------------------------------------------------

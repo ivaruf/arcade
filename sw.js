@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.0.0'; // the sky IS the arcade: the 3D floor moved up to /arcade/
+const VERSION = 'v2.0.1'; // Finished flooring on all five playable cloud islands
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
