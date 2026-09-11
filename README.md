@@ -16,24 +16,31 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 ## The sky
 
 ```
-                       THE STEAMWORKS  +1.5 m
-                       maxgear
-                       (brass, rivets and steam)
+                       THE AQUARIUM  -2.5 m
+                       fishtank, dam_break
+                       (glass tank, stools)          <- you arrive facing this
 
-  THE AQUARIUM  -2.5 m     THE WELCOME CLOUD  0 m      THE OUTCROP  -5.5 m
-  fishtank, dam_break      arch, benches, the ring     supermine ×2
-  (glass tank, stools)                                 (rock and a headframe)
+  THE STEAMWORKS  +1.5 m   THE WELCOME CLOUD  0 m      THE OUTCROP  -5.5 m
+  maxgear                  benches, the ring           supermine ×2
+  (brass and steam)                                    (rock and a headframe)
 
-                       THE QUIET CLOUD  +10 m
+                       THE QUIET CLOUD  +6 m
                        swirls
                        (pergola, nothing in it)
 ```
 
-One island per side, ringing the cloud you arrive on, 18 to 19 m out — three
+One island per side, ringing the cloud you arrive on, 18 to 20 m out — three
 or four seconds of flight. That arrangement is the wayfinding: every game is
-in view from where you land and none of them is behind you. The heights stay
-uneven on purpose, so getting anywhere is a flight rather than a walk in a
-straight line.
+in view from where you land and none of them is behind you. The aquarium takes
+the north side because the spawn faces that way, so the biggest thing here is
+what you are looking at before you have touched a key. The heights stay uneven
+on purpose, so getting anywhere is a flight rather than a walk in a straight
+line.
+
+**Every machine faces the hub.** `SLOTS` in `js/room.js` stores only where a
+cabinet stands; which way it looks is derived, because a yaw typed by hand goes
+stale the moment an island moves — and a machine showing the sky its back means
+flying across, landing, and then walking round it to find the screen.
 
 ## What it does
 

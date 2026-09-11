@@ -46,10 +46,10 @@ const ASSETS = './assets/3d/';
  */
 export const PLATFORMS = [
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
-  { id: 'race', name: 'The steamworks', x: [-4.5, 4.5], z: [-22, -14], y: 1.5 },
-  { id: 'water', name: 'The aquarium', x: [-25.5, -12.5], z: [-5, 5], y: -2.5 },
+  { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
+  { id: 'race', name: 'The steamworks', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
   { id: 'mine', name: 'The outcrop', x: [12, 28], z: [-6, 6], y: -5.5 },
-  { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 10 },
+  { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 6 },
 ];
 
 /**
@@ -68,10 +68,10 @@ export const HOME = { x: -3.6, y: 0, z: 2.2, radius: 1.5 };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
-  race: { x: 0, y: 1.5, z: -18.5, top: 5.0 },
-  water: { x: -19, y: -2.5, z: -4.5, top: 5.4 },
-  mine: { x: 20, y: -5.5, z: -5.5, top: 5.2 },
-  calm: { x: 0, y: 10, z: 14.0, top: 4.6 },
+  water: { x: 0, y: -2.5, z: -14.5, top: 5.4 },
+  race: { x: -15, y: 1.5, z: 0, top: 5.0 },
+  mine: { x: 12.5, y: -5.5, z: 0, top: 5.2 },
+  calm: { x: 0, y: 6, z: 14.0, top: 4.6 },
 };
 
 /**
@@ -89,24 +89,29 @@ export const PLACEMENT = {
   swirls: 'calm',
 };
 
-/** Cabinet standings per platform. A cabinet's screen faces its local +Z. */
+/**
+ * Cabinet standings per platform, and which way each machine looks.
+ *
+ * A cabinet's screen faces its local +Z, and under a Y rotation that direction
+ * becomes (sin yaw, cos yaw). So to face the welcome cloud at the origin from
+ * (x, z) the screen has to point along (-x, -z), which is exactly what
+ * `facingHub` returns. It is DERIVED rather than written down because a yaw
+ * typed by hand is a yaw that goes stale the moment an island moves — which is
+ * how half of these ended up showing the sky their backs: you flew across,
+ * landed, and had to walk around the machine to find its screen.
+ *
+ * The positions themselves stay where they were relative to their island,
+ * because each one was chosen to miss that island's own furniture — the tank
+ * and its stools, the boiler, the pergola posts.
+ */
+const facingHub = (x, z) => Math.atan2(-x, -z);
+const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
+
 export const SLOTS = {
-  race: [
-    { x: -2.2, z: -20.4, yaw: 0 },
-    { x: 2.2, z: -20.4, yaw: 0 },
-  ],
-  water: [
-    { x: -15.0, z: -2.0, yaw: -Math.PI / 2 },
-    { x: -15.0, z: 2.0, yaw: -Math.PI / 2 },
-  ],
-  mine: [
-    { x: 24.0, z: -2.0, yaw: -Math.PI / 2 },
-    { x: 24.0, z: 2.0, yaw: -Math.PI / 2 },
-  ],
-  calm: [
-    { x: 0.0, z: 15.4, yaw: 0 },
-    { x: 0.0, z: 20.6, yaw: Math.PI },
-  ],
+  water: [stand(4.0, -21.0), stand(4.0, -17.0)],
+  race: [stand(-21.2, -2.4), stand(-16.8, -2.4)],
+  mine: [stand(24.0, -2.0), stand(24.0, 2.0)],
+  calm: [stand(0.0, 15.4), stand(0.0, 20.6)],
 };
 
 /**
@@ -214,7 +219,7 @@ export async function container(file, scene) {
  */
 const FURNITURE = [
   // Steamworks boiler, between the machines at the back of the island.
-  { x: 0, z: -21.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
+  { x: -19, z: -3.05, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
   // welcome cloud: two benches and the side welcome board. The signpost's
   // blocker went with the signpost — the islands ring the hub now, so there is
   // nothing left to point at.
@@ -222,16 +227,16 @@ const FURNITURE = [
   { x: 4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.95, z: -3.25, hx: 0.22, hz: 1.28, top: 3.1 },
   // the aquarium: the tank, and the stools you watch from
-  { x: -22.6, z: 0, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
-  ...[-2.7, -0.9, 0.9, 2.7].map((z) => ({ x: -17.6, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
+  { x: -3.6, z: -19, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
+  ...[-21.7, -19.9, -18.1, -16.3].map((z) => ({ x: 1.4, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
   // the outcrop: the headframe's legs, and the cart
   ...[14.1, 18.9].flatMap((x) =>
     [-3, 1].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
   ),
   { x: 16.5, z: 2.3, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
   // the quiet cloud: pergola posts and two benches
-  ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 13.1, base: 10 }))),
-  ...[[-2.2, 20.2], [2.2, 20.2]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 10.4, base: 10 })),
+  ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 9.1, base: 6 }))),
+  ...[[-2.2, 20.2], [2.2, 20.2]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 6.4, base: 6 })),
 ];
 
 /**
@@ -241,7 +246,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=islands-around-hub', scene);
+  const held = await container('cloud-world.glb?v=aquarium-north', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

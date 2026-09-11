@@ -42,7 +42,9 @@ bpy.ops.object.delete(use_global=False)
 # ---------------------------------------------------------------------------
 # The four game islands sit at the compass points AROUND the welcome cloud,
 # one per side, so every one of them is in view from where you arrive and none
-# is behind you. They used to be bunched into the -Z half, which is exactly
+# is behind you. WATER is north on purpose: the spawn faces that way, so the
+# aquarium — fishtank, the biggest thing here — is the island you are looking
+# at before you have touched a key. They used to be bunched into the -Z half, which is exactly
 # what made a signpost necessary; spread like this the sky explains itself.
 #
 # Heights stay deliberately uneven — the steamworks just above, the aquarium a
@@ -53,10 +55,10 @@ bpy.ops.object.delete(use_global=False)
 # structures, its flooring and its trim with it. room.js repeats the rectangles
 # and keeps its FURNITURE collision boxes in step by hand; both files say so.
 WELCOME = dict(x=0.0, y=0.0, z=0.0, hx=6.0, hz=5.0)
-RACE = dict(x=0.0, y=1.5, z=-18.0, hx=4.5, hz=4.0)      # north
-WATER = dict(x=-19.0, y=-2.5, z=0.0, hx=6.5, hz=5.0)    # west
+WATER = dict(x=0.0, y=-2.5, z=-19.0, hx=6.5, hz=5.0)    # north — dead ahead on arrival
+RACE = dict(x=-19.0, y=1.5, z=0.0, hx=4.5, hz=4.0)      # west
 MINE = dict(x=20.0, y=-5.5, z=0.0, hx=8.0, hz=6.0)      # east
-CALM = dict(x=0.0, y=10.0, z=18.0, hx=4.5, hz=4.5)      # south, and highest
+CALM = dict(x=0.0, y=6.0, z=18.0, hx=4.5, hz=4.5)       # south, and highest
 DECKS = [WELCOME, RACE, WATER, MINE, CALM]
 
 # ---------------------------------------------------------------------------
@@ -270,9 +272,19 @@ def platform(tag, d, accent=None, blobs=26):
 
 def beacon(tag, d, accent, height=6.0):
     """A pylon you can see from the welcome cloud. The name board that goes on
-    it is drawn at runtime, because the names come from games.json."""
-    x, y, z, hz = d["x"], d["y"], d["z"], d["hz"]
-    bz = z - hz + 0.5
+    it is drawn at runtime, because the names come from games.json.
+
+    The mast stands on whichever edge of its island faces the hub. That used to
+    be hard-wired to the -Z edge, which was the same thing only while every
+    island sat north of the welcome cloud; now that they ring it, an island to
+    the east would have hung its board off its far side and shown the welcome
+    cloud the back of it."""
+    x, y, z, hx, hz = d["x"], d["y"], d["z"], d["hx"], d["hz"]
+    if abs(x) >= abs(z):
+        bx, bz = x - math.copysign(hx - 0.5, x), z
+    else:
+        bx, bz = x, z - math.copysign(hz - 0.5, z)
+    x = bx
     cylinder(f"{tag} mast", (x, y + height / 2, bz), 0.09, height, chrome)
     box(f"{tag} mast base", (x, y + 0.18, bz), (0.7, 0.36, 0.7), navy, 0.05)
     for i in range(4):

@@ -141,9 +141,14 @@ for bx in [-4.6,4.6]:
     for bz in [-1.75,-.25]:
         box('Welcome bench trestle',(bx,.17,bz),(.58,.31,.12),structural,.025)
         box('Welcome bench shoe',(bx,.035,bz),(.64,.07,.22),brass,.025)
-for bx in [-7.2,-2.8]:
-    for i in range(3):box('Calm cedar seat',(bx,10.29,-18.8-.18+i*.18),(1.6,.14,.16),wood,.03)
-    for dx in [-.6,.6]:box('Calm seat leg',(bx+dx,10.12,-18.8),(.12,.24,.46),structural,.025)
+# Relative to CALM, not written out. These were the one thing on this island
+# left at absolute coordinates, so when the island moved the benches stayed
+# where it used to be and hung in open sky — while their collision boxes,
+# which ARE derived, moved correctly. Everything on an island belongs to the
+# island.
+for bx in [-2.2,2.2]:
+    for i in range(3):box('Calm cedar seat',(CX+bx,CY+.29,CZ+2.2-.18+i*.18),(1.6,.14,.16),wood,.03)
+    for dx in [-.6,.6]:box('Calm seat leg',(CX+bx+dx,CY+.12,CZ+2.2),(.12,.24,.46),structural,.025)
 
 # Conservatory: the previous solid luminous roof is now transparent panes
 # in a proper structure, with drainage trim, ribs and bolted column bases.

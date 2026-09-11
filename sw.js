@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.3.0'; // the islands ring the hub, and the arcade offers to install itself
+const VERSION = 'v2.4.0'; // the aquarium is the island you arrive facing; machines look back at the hub
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
