@@ -129,15 +129,70 @@ decision (a) below:
 ```jsonc
 {
   "v": 1,
-  "id": "b3f1…",             // crypto.randomUUID(), made once, never shown
-  "name": "Bramble",         // chosen by the player; the only field that
-                             // is ever shown to anybody else (§4a)
-  "items": ["hat.crown", …], // G-Set: union on merge
-  "got":   ["ach.flew-far"], // G-Set: union on merge
-  "wear":  { "hat": ["hat.crown", 1757… ] },  // LWW: [value, timestamp]
-  "at": 1757…                // last touched, for the humans reading it
+  "id": "b3f1…",              // crypto.randomUUID(), made once
+  "name": "Bramble",          // chosen by the player; the only field that
+                              // is ever shown to anybody else (§4a)
+
+  // The three grow-only sets. Everything else is derived from them.
+  "earned":    ["dam.held-90s", "sky.found-quiet-cloud"],
+  "claimed":   { "dam.held-90s": "hat.crown" },   // feat -> item chosen
+  "purchased": ["scarf.gold"],                    // via a signed grant (§6)
+
+  "wear": { "hat": ["hat.crown", 1757… ] },  // LWW: [value, timestamp]
+  "at": 1757…                 // last touched, for the humans reading it
 }
 ```
+
+**What you own** is derived: the values of `claimed`, union `purchased` (union
+`extra`, which only exists to settle a rare merge — see below).
+**What is waiting for you** is derived too: `earned` minus the keys of
+`claimed`. Nothing stores a list of owned items, because a derived value
+cannot drift out of step with the thing it is derived from.
+
+### Why three sets and not one
+
+They could be collapsed into a single `items` list. They should not be, and the
+reason is not tidiness — the three have **different provenance and different
+recovery guarantees**, and the code needs to be able to tell them apart:
+
+| | how it got there | if it is lost |
+| --- | --- | --- |
+| `earned` | you did something in a game | play again — annoying, not unfair |
+| `claimed` | you chose it at the counter | as above |
+| `purchased` | somebody paid money | **cannot be recovered without the receipt (§6)** |
+
+That last row is the entire reason to keep them separate. A lost earned hat is
+a shrug; a lost paid one is a person out of pocket with nothing to show, and no
+server to ask. So `purchased` is the only set that has to be treated as
+precious — it is what the grant link restores, it is what the "keep this, it is
+your receipt" line is about, and it is what makes a supporter item renderable
+as a supporter item without a second flag (decision (e)).
+
+The sets are allowed to overlap. A hat that can be either earned or bought
+appearing in both is harmless: union is union.
+
+### The one conflict, and the generous answer
+
+`earned` and `purchased` are plain sets and merge by union with nothing to
+decide. `claimed` is a map, which is grow-only only as long as each key is
+written once — and there is exactly one way to break that: claim the same feat
+on two devices while both are offline, and pick a different item each time.
+
+The tempting fix is a timestamp tiebreak, which drags clock skew (§4) into the
+one place it would actually cost something. The better fix is to notice what is
+being fought over: two cosmetic hats, worth nothing to anybody (§2).
+
+**On conflict, grant both.** `claimed` keeps whichever item id sorts lower, so
+every replica agrees without consulting a clock; the other item goes into
+`extra`, a fourth grow-only set that exists for this and nothing else and
+merges by union like the others. Owned then reads: values of `claimed`, union
+`purchased`, union `extra`.
+
+Nobody loses a hat they picked, the structure stays grow-only, and a whole
+class of distributed-systems problem is closed by being generous instead of
+being clever — which is available precisely because the thing being fought over
+is worth nothing (§2). It is also rare enough that it may never happen to
+anyone; it is written down so that if it does, the answer is already decided.
 
 `id` exists so two profiles can tell they are different people rather than the
 same person on two devices, which matters when you hand a friend a hat rather
@@ -298,6 +353,13 @@ hosted checkout (Ko-fi, Gumroad, itch, a Stripe Payment Link) and let them be
 the shop. The hard part is the entitlement coming *back*, which normally means
 a webhook into a database.
 
+**The data model does not care which provider it is.** `purchased` is a
+grow-only set that only ever asks "did something I trust say this?" — so the
+issuing mechanism can start as a person with a script and become an automated
+issuer, or a real backend, without touching the profile, migrating anything, or
+invalidating a single receipt. Choose the provider on tax and checkout-quality
+grounds (decision (c)), not technical ones. Nothing here locks that in.
+
 Instead: **a signed grant.**
 
 Hold an Ed25519 private key offline — on the owner's machine, never in the
@@ -322,7 +384,34 @@ randomness to leak a private key when it goes wrong. It is also the more
 recent arrival in WebCrypto, so check Safari before committing; P-256 is the
 conservative fallback and costs 33 bytes.
 
-It **is** a bearer token: whoever holds the link holds the hat. That is the
+### Stripe specifically
+
+Worth being blunt, since it is the obvious name to reach for: **Stripe is the
+weakest fit of the options here**, for two reasons that are both about it being
+the most "bring your own server" of them.
+
+The first is fulfilment. A Payment Link can redirect to a page we host and
+append a `session_id`, but *verifying* that id means calling Stripe with a
+secret key, which cannot live in a static page. So the redirect is unverifiable
+on its own — anyone could type one — and the honest flow reverts to manual
+signed grants from the orders list. Gumroad, by contrast, issues a per-sale
+license key and exposes a verification endpoint a browser can call, which is
+the closest thing to automatic fulfilment available without a server. That is a
+runtime dependency on a third party and would need writing down the way
+`rendezvous.js` writes down the PeerJS trade, but it is a real option.
+
+The second is tax, and it is the larger one. Stripe is a payment processor, not
+a merchant of record: choosing it means **we** own VAT and the EU's 14-day
+withdrawal right. Ko-fi, Gumroad and itch can act as merchant of record and
+carry that. See decision (c) — this is the part to settle before the first sale
+rather than after, and it is not a decision to take from a design document.
+
+None of which rules Stripe out. Manual grants are fine at this scale, and
+"manual" here means running a script against a CSV once in a while.
+
+### It is a bearer token
+
+Whoever holds the link holds the hat. That is the
 same trade as §2 and the answer is the same — it is a cosmetic, sharing one
 harms nobody, and a person who wanted to pay still pays.
 
