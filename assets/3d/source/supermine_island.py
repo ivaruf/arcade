@@ -13,6 +13,7 @@ nugget_gold=material('Supermine native gold',(.94,.60,.11),.72,0,.27)
 gem_green=material('Supermine emerald',(.025,.51,.21),.28,0,.22)
 gem_purple=material('Supermine purple crystal',(.46,.15,.66),.26,0,.24)
 worklight=material('Supermine worklight glass',(.95,.81,.46),.1,.6,.3)
+rig_before=set(root.children_recursive)
 RX,RY,RZ=17,MY,-1
 # Track belts and visible road wheels, with cleats wrapping over their ends.
 for side in [-1,1]:
@@ -86,6 +87,8 @@ for i in range(7):
     sphere('Supermine cut rock',(x,MY+.50,-4.65),.65,rock,scale=(.62,.85,.65),segs=10)
     box('Supermine exposed gold seam',(x+.08,MY+.58,-4.19),(.07,.63,.045),nugget_gold,.012,yaw=.14*(i%3-1))
 
+rig_parts=set(root.children_recursive)-rig_before
+
 # Rich irregular piles, with deterministic geometry independent of other islands.
 rng=random.Random(714)
 def gem(name,x,y,z,r,h,mat):
@@ -123,9 +126,19 @@ for side in [-1,1]:
 for i in range(12):sphere('Supermine wagon gold',(14.2+rng.uniform(-.35,.35),MY+.79,4.2+rng.uniform(-.43,.43)),.15,nugget_gold,segs=8)
 for i in range(8):sphere('Supermine hopper ore',(RX+rng.uniform(-.6,.6),MY+1.13,RZ+1.68+rng.uniform(-.35,.35)),.14,nugget_gold,segs=8)
 # Compact work-light towers illuminate the worksite visually without adding lights.
-for x,z in [(13.5,-3.8),(20,-4.7)]:
+for x,z in [(13.2,-.9),(20,-4.7)]:
     box('Supermine worklight foot',(x,MY+.09,z),(.48,.18,.48),rig_steel,.04)
     cylinder('Supermine worklight mast',(x,MY+1.26,z),.055,2.4,rig_edge)
     box('Supermine worklight housing',(x,MY+2.45,z),(.66,.33,.24),rig_yellow,.06)
     box('Supermine worklight lens',(x,MY+2.45,z+.13),(.53,.22,.025),worklight,.035)
 print('SUPERMINE_ISLAND_COMPLETE')
+
+# Park the rig lengthwise along the north edge, opening a direct central route.
+# Move the cut face with its bits; keep ore piles and the wagon in place.
+from mathutils import Matrix
+bpy.context.view_layer.update()
+move=(Matrix.Translation(Vector(bl(17.5,MY,-3.7)))
+      @ Matrix.Rotation(-math.pi/2,4,'Z')
+      @ Matrix.Translation(-Vector(bl(17,MY,-1))))
+rig_parts.update(o for o in root.children_recursive if o.name.startswith('Supermine hopper ore'))
+for o in rig_parts:o.matrix_world=move @ o.matrix_world

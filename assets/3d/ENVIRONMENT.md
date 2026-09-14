@@ -350,8 +350,9 @@ hydraulics, exhaust stacks, rear hopper and collector conveyor. A cut rock face
 with gold seams sits ahead of the bits. Gold nuggets and bullion, emeralds and
 purple crystal heaps, a loaded ore wagon and compact work lights dress the mine.
 
-The rig occupies the west worksite. Enter around its south side, then follow
-the clear eastern lane to the cabinet or the Adventure bridge. Model footprints
+The rig is parked lengthwise along the north edge, centered at (17.5, -3.7),
+with the cut face moved with its drill bits. Walk straight through the central
+arrival lane to the cabinet, or turn south toward the Adventure bridge. Model footprints
 and runtime collisions change together. Existing Adventure and other islands
 are preserved. No playtesting or preview rendering was performed.
 

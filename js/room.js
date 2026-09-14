@@ -104,7 +104,7 @@ export const SLOTS = {
   dam: [{ x: 15, z: -20.3, yaw: 0 }],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
   race: [stand(-21.2, -2.4)],
-  mine: [stand(24.0, -2.0)],
+  mine: [stand(24.0, 0.0)],
   // Arrive via the bridge, pass the assay office and minerals, then play.
   adventure: [{ x: 22, z: 20.5, yaw: Math.PI }],
   // Walk through the pergola and across the floor inlay to reach Swirls.
@@ -241,14 +241,14 @@ const FURNITURE = [
   // the aquarium: the tank, and the stools you watch from
   { x: -3.6, z: -19, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
   ...[-21.7, -19.9, -18.1, -16.3].map((z) => ({ x: 1.4, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
-  // Supermine rig and cut face, leaving the southern/eastern approach open.
-  { x: 17, z: -.5, hx: 1.95, hz: 2.6, top: -2.7, base: -5.5 },
-  { x: 17, z: -3.65, hx: 1.95, hz: .75, top: -4.25, base: -5.5 },
-  { x: 16.9, z: -4.65, hx: 1.95, hz: .5, top: -4.3, base: -5.5 },
+  // Rig parked along the north edge; central entrance-to-cabinet lane stays open.
+  { x: 18, z: -3.7, hx: 2.6, hz: 1.95, top: -2.7, base: -5.5 },
+  { x: 14.85, z: -3.7, hx: .75, hz: 1.95, top: -4.25, base: -5.5 },
+  { x: 13.85, z: -3.6, hx: .5, hz: 1.95, top: -4.3, base: -5.5 },
   ...[[22, -4.5], [25.7, 3.6], [18, 4.65]].map(([x, z]) =>
     ({ x, z, hx: 1.15, hz: 1, top: -3.7, base: -5.5 })),
   { x: 14.2, z: 4.2, hx: .65, hz: .68, top: -4.4, base: -5.5 },
-  ...[[13.5, -3.8], [20, -4.7]].map(([x, z]) =>
+  ...[[13.2, -.9], [20, -4.7]].map(([x, z]) =>
     ({ x, z, hx: .25, hz: .25, top: -2.8, base: -5.5 })),
   // the quiet cloud: pergola posts and two benches
   ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 9.1, base: 6 }))),
@@ -262,7 +262,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=maxgear-ship-1', scene);
+  const held = await container('cloud-world.glb?v=supermine-clear-path-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

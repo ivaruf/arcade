@@ -7,7 +7,7 @@ preview_dir=out/'previews'/'environment'
 preview_dir.mkdir(parents=True,exist_ok=True)
 runpy.run_path(str(Path(__file__).with_name('build_clouds.py')),run_name='__main__')
 # Presentation references only: build_clouds has already exported the world.
-for filename,pos,yaw in [('machine-classic.glb',(-15,20.3,1),0),('machine-classic.glb',(0,-20,6),-math.pi),('gopher-scarf.glb',(0,-2.1,0),0),('machine-classic.glb',(2.2,19.4,1.5),0),('machine-classic.glb',(-2.2,19.4,1.5),0),('machine-classic.glb',(13,7,-2.5),math.pi/2),('machine-classic.glb',(13,3,-2.5),math.pi/2),('machine-classic.glb',(-24,2,-5.5),-math.atan2(-24,2)),('machine-classic.glb',(-22,-20.5,-5.5),-math.pi),('gopher-scarf.glb',(-17.5,8,-5.5),math.pi/2)]:
+for filename,pos,yaw in [('machine-classic.glb',(-15,20.3,1),0),('machine-classic.glb',(0,-20,6),-math.pi),('gopher-scarf.glb',(0,-2.1,0),0),('machine-classic.glb',(2.2,19.4,1.5),0),('machine-classic.glb',(-2.2,19.4,1.5),0),('machine-classic.glb',(13,7,-2.5),math.pi/2),('machine-classic.glb',(13,3,-2.5),math.pi/2),('machine-classic.glb',(-24,0,-5.5),math.pi/2),('machine-classic.glb',(-22,-20.5,-5.5),-math.pi),('gopher-scarf.glb',(-17.5,8,-5.5),math.pi/2)]:
     before=set(bpy.data.objects);bpy.ops.import_scene.gltf(filepath=str(out/filename))
     imported=set(bpy.data.objects)-before
     pivot=bpy.data.objects.new('Preview reference '+filename,None);scene_ref=bpy.context.scene;scene_ref.collection.objects.link(pivot)
