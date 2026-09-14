@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.5.5'; // Supermine tracked rig and rich ore piles.
+const VERSION = 'v2.5.6'; // Max-Gear gyro-wedge and sci-fi hangar deck.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

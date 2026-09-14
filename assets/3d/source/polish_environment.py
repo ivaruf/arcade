@@ -328,3 +328,5 @@ exec(compile((OUT / 'source' / 'dam_island.py').read_text(), str(OUT / 'source' 
 exec(compile((OUT / 'source' / 'adventure_island.py').read_text(), str(OUT / 'source' / 'adventure_island.py'), 'exec'), globals())
 
 exec(compile((OUT / 'source' / 'supermine_island.py').read_text(), str(OUT / 'source' / 'supermine_island.py'), 'exec'), globals())
+
+exec(compile((OUT / 'source' / 'maxgear_ship.py').read_text(), str(OUT / 'source' / 'maxgear_ship.py'), 'exec'), globals())

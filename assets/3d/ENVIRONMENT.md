@@ -354,3 +354,16 @@ The rig occupies the west worksite. Enter around its south side, then follow
 the clear eastern lane to the cabinet or the Adventure bridge. Model footprints
 and runtime collisions change together. Existing Adventure and other islands
 are preserved. No playtesting or preview rendering was performed.
+
+## Max-Gear gyro hangar
+
+`source/maxgear_ship.py` adds a static 3D version of the gyro-wedge drawn in
+`maxgear/js/player.js`: arrow hull, brass edging, domed porthole, eight-tooth
+tail gyro, auxiliary barrels and cyan engine cores. Landing struts rest on
+a lit maintenance dais in the southern half of the island. A diagnostics
+console, alloy floor panels and thin perimeter conduits give the deck a
+spacecraft-hangar finish while retaining the original moving gear machinery.
+
+The north/east approach to the arcade remains clear. Display and console
+colliders are kept in `js/room.js`; the unused second cabinet slot is removed.
+No playtesting or preview rendering was performed.

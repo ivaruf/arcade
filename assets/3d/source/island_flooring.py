@@ -18,12 +18,12 @@ limestone=[material('Arrival limestone '+str(i),(.59+i*.026,.55+i*.026,.44+i*.02
 sea_tile=[material('Aquarium glazed tile '+str(i),(.10+i*.017,.30+i*.024,.30+i*.022),.08,0,.31) for i in range(4)]
 quarry=[material('Mine slate '+str(i),(.19+i*.023,.19+i*.02,.18+i*.017),0,0,.78) for i in range(4)]
 cedar=[material('Terrace cedar '+str(i),(.39+i*.025,.25+i*.022,.13+i*.016),0,0,.54) for i in range(4)]
-workshop=[material('Workshop oak '+str(i),(.25+i*.024,.14+i*.017,.064+i*.009),0,0,.58) for i in range(4)]
+workshop=[material('Hangar alloy floor '+str(i),(.15+i*.022,.20+i*.022,.25+i*.022),.48,0,.55) for i in range(4)]
 grout=material('Recessed floor joints',(.065,.083,.08),0,0,.85)
 # The earlier partial racing deck is replaced by full-width workshop flooring.
 remove('Steamworks deck plank');remove('Steamworks deck edging')
 for tag,d,palette,tile_w,tile_d in [
-    ('Welcome',WELCOME,limestone,1.2,1.0),('Race',RACE,workshop,2.25,.32),
+    ('Welcome',WELCOME,limestone,1.2,1.0),('Race',RACE,workshop,1.5,1.0),
     ('Water',WATER,sea_tile,1.0,1.0),('Mine',MINE,quarry,1.6,1.0),
     ('Calm',CALM,cedar,2.25,.30),('Dam',DAM,limestone,1.1,1.1),
     ('Adventure',ADVENTURE,quarry,1.2,1.0)]:

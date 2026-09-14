@@ -48,7 +48,7 @@ const ASSETS = './assets/3d/';
 export const PLATFORMS = [
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
   { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
-  { id: 'race', name: 'The steamworks', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
+  { id: 'race', name: 'The gyro hangar', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
   { id: 'mine', name: 'The outcrop', x: [12, 28], z: [-6, 6], y: -5.5 },
   { id: 'adventure', name: 'The mining company', x: [14, 26], z: [12, 24], y: -5.5 },
   { id: 'mine_bridge', name: 'The miners’ bridge', x: [20.8, 23.2], z: [6, 12], y: -5.5 },
@@ -103,7 +103,7 @@ export const SLOTS = {
   // Enter from the southwest, pass the reservoir on the right, then play.
   dam: [{ x: 15, z: -20.3, yaw: 0 }],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
-  race: [stand(-21.2, -2.4), stand(-16.8, -2.4)],
+  race: [stand(-21.2, -2.4)],
   mine: [stand(24.0, -2.0)],
   // Arrive via the bridge, pass the assay office and minerals, then play.
   adventure: [{ x: 22, z: 20.5, yaw: Math.PI }],
@@ -215,6 +215,9 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  // Gyro-wedge landing display and its rear diagnostics console.
+  { x: -18, z: 1.05, hx: 1.6, hz: 1.6, top: 3.05, base: 1.5 },
+  { x: -20.15, z: 2.48, hx: .42, hz: .31, top: 2.85, base: 1.5 },
   // Mining-company office, mineral beds and cargo; central route stays clear.
   { x: 17, z: 18.5, hx: 2.25, hz: 2.3, top: -1, base: -5.5 },
   ...[[24, 15.4], [24, 18.3], [16, 14]].map(([x, z]) =>
@@ -259,7 +262,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=supermine-rig-1', scene);
+  const held = await container('cloud-world.glb?v=maxgear-ship-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);
