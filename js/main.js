@@ -1,3 +1,4 @@
+import { createCustomizationStation } from './customization.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
  *
@@ -264,6 +265,9 @@ let falling = 0;
 
 let stepPhase = 0;
 let cabinets = [];
+let customizationStation = null;
+let nearCustomization = false;
+let outfitCamera = null;
 let gopher = null;
 let blockers = [];
 let near = null;
@@ -294,7 +298,8 @@ async function boot() {
 
   say(`wheeling in ${machines.length} cabinet${machines.length === 1 ? '' : 's'}…`);
   cabinets = await placeCabinets(scene, shadows, machines);
-  blockers = [...world.blockers, ...cabinets.flatMap((c) => c.blockers)];
+  customizationStation = createCustomizationStation(scene, shadows);
+  blockers = [...world.blockers, customizationStation.blocker, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
@@ -807,6 +812,7 @@ function findNear() {
 }
 
 function updatePrompt(dt) {
+  nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
   const previous = near;
   near = findNear();
   if (previous && previous !== near) setLit(previous, false);
@@ -834,6 +840,10 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.promptTitle.textContent = near.game.title;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
+  } else if (nearCustomization) {
+    ui.prompt.hidden = false;
+    ui.promptTitle.textContent = 'Silly Stuff';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>DRESS</kbd>' : '<kbd>E</kbd> customize gopher';
   } else {
     ui.prompt.hidden = true;
   }
@@ -841,7 +851,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearCustomization ? 'dress' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -858,7 +868,7 @@ scene.onPointerObservable.add((info) => {
 function updateCamera(dt) {
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
-  if (phase === 'diving' || phase === 'playing' || phase === 'rising') return;
+  if (phase === 'diving' || phase === 'playing' || phase === 'rising' || phase === 'customizing') return;
 
   const look = input.lookState();
   if (look.x || look.y) {
@@ -939,6 +949,7 @@ function render() {
     if (input.tookPause()) {
       if (phase === 'floor') pause();
       else if (phase === 'paused') unpause();
+      else if (phase === 'customizing') closeCustomization();
     }
 
     if (phase === 'floor') {
@@ -954,6 +965,7 @@ function render() {
       // it behind `near` short-circuits and banks the press for later.
       const coin = input.tookCoin();
       if (near && coin) startDive(near);
+      else if (nearCustomization && coin) openCustomization();
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
       if (platform?.id !== 'calm') sfx.tickAmbience(dt);
@@ -1092,3 +1104,42 @@ document.addEventListener('visibilitychange', () => {
 // worker rather than a second one; see its header.
 // ---------------------------------------------------------------------------
 registerWorker();
+
+// Dress-up is a local modal, not a game launch or a persisted profile.
+const outfitDialog = $('customize-dialog');
+function paintOutfit() {
+  const worn = gopher.getAccessories();
+  for (const [id, key, label] of [['wear-sunglasses','sunglasses','Silly sunglasses'],['wear-tophat','topHat','Top hat']]) {
+    const button = $(id);
+    button.setAttribute('aria-pressed', String(worn[key]));
+    button.textContent = `${label}: ${worn[key] ? 'on' : 'off'}`;
+  }
+}
+function openCustomization() {
+  if (phase !== 'floor' || !nearCustomization) return;
+  phase = 'customizing'; input.clear(); ui.prompt.hidden = true;
+  state.vx = state.vz = 0; state.speed01 = 0;
+  gopher.pivot.position.copyFrom(customizationStation.stand);
+  state.yaw = 0; gopher.pivot.rotation.y = 0;
+  outfitCamera = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
+  camera.detachControl();
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+  cameraTarget.position.copyFrom(gopher.pivot.position);
+  cameraTarget.position.y += .82;
+  camera.alpha = Math.PI / 2; camera.beta = 1.30; camera.radius = 3.1;
+  paintOutfit(); outfitDialog.showModal(); $('wear-sunglasses').focus();
+}
+function closeCustomization() {
+  if (phase !== 'customizing') return;
+  outfitDialog.close(); input.clear(); phase = 'floor';
+  Object.assign(camera, outfitCamera); outfitCamera = null;
+  camera.attachControl(ui.canvas, false); ui.canvas.focus();
+}
+for (const [id, key] of [['wear-sunglasses','sunglasses'],['wear-tophat','topHat']]) {
+  $(id).addEventListener('click', () => {
+    if (phase !== 'customizing') return;
+    gopher.setAccessory(key, !gopher.getAccessories()[key]); paintOutfit(); sfx.click();
+  });
+}
+$('customize-done').addEventListener('click', closeCustomization);
+outfitDialog.addEventListener('cancel', event => { event.preventDefault(); closeCustomization(); });

@@ -381,3 +381,17 @@ than the full canvas simulation.
 The world update drives a fixed number of reusable meshes at 30 Hz; no new
 textures, point lights, collision boxes or Blender export are required.
 The module is precached with the arcade shell. No playtesting was performed.
+
+## Welcome-cloud dressing station
+
+`js/customization.js` builds the small Silly Stuff stand at (-3.5, 0, 1.8)
+and the gopher's round pink sunglasses and top hat. Head-local accessories
+are attached to both walking and flying forms. Two independent in-memory
+booleans allow either item, both or neither; reloading resets both to off.
+There is no storage, account or gameplay-stat change.
+
+Approach the stand and press E / touch DRESS. A native modal provides live
+toggles, a front camera view and Done / Escape exit, pausing movement while
+open. The counter has a matching blocker and sits beside the starter path.
+The station is runtime geometry; no Blender rebuild is needed. Accessory unit
+checks and syntax checks passed. No playtesting was performed.

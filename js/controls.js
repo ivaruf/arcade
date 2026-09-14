@@ -87,6 +87,7 @@ export function moveAxes() {
 
 export function attachKeyboard(target = window) {
   target.addEventListener('keydown', (e) => {
+    if (e.target.closest?.('dialog[open]')) return;
     if (SCROLL_KEYS.has(e.code)) e.preventDefault();
     if (e.repeat) return;
     if (e.code === 'Escape') {
@@ -229,6 +230,7 @@ export function attachTouch(root) {
  * ------------------------------------------------------------------------ */
 
 const ACTIONS = {
+  dress:   { code: 'KeyE', glyph: 'DRESS', label: 'Customize gopher' },
   run:     { code: 'ShiftLeft', glyph: '\u00bb',  label: 'Run' },
   descend: { code: 'ShiftLeft', glyph: '\u25bc',  label: 'Descend' },
   play:    { code: 'KeyE',      glyph: 'PLAY',     label: 'Play game' },

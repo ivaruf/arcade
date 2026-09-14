@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.6.1'; // Swirls island aurora ribbons and orbiting motes.
+const VERSION = 'v2.6.2'; // Session-only gopher dressing station.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -50,6 +50,7 @@ const SHELL_FILES = [
   './js/swirls.js',
   './js/cabinets.js',
   './js/gopher.js',
+  './js/customization.js',
   './js/launcher.js',
   './js/registry.js',
   './js/controls.js',
