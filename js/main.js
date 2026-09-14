@@ -317,11 +317,6 @@ async function boot() {
   ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines in the sky`;
   ui.boot.hidden = true;
 
-  // Everything that will ever glow exists by now — world, cabinets, signs and
-  // gopher — so this is the first moment the glow layer can be told where the
-  // neon actually is. Before this point the answer would be "the world only".
-  quality.focusGlow(glow, scene);
-
   // Nothing on this floor swaps a texture or a blend mode after boot; the only
   // material change per frame is the screens' emissiveColor, which is a uniform
   // and keeps working. So stop Babylon re-checking 104 materials for shader

@@ -112,27 +112,24 @@ export function setTier(name, targets) {
   apply(targets);
 }
 
-/**
- * Tell the glow layer which meshes are actually neon.
+/* -----------------------------------------------------------------------
+ * Why there is no focusGlow() here any more.
  *
- * Left alone, a GlowLayer renders EVERY mesh in the scene into its texture to
- * collect the emissive ones — about 1,100 draws here to find the ~60 that
- * have any emissive at all. Naming them cuts that pass by better than 90%,
- * and on a tile-based GPU it also shrinks the tile binning behind it.
+ * There was one, and it was wrong. A GlowLayer renders the scene into its own
+ * texture to build the bloom, and the obvious saving is to hand it only the
+ * ~60 meshes that have any emissive at all rather than letting it walk all
+ * 1,100 to find them. That is a real 90% cut in the pass, and it produces
+ * neon that shines straight through the clouds.
  *
- * Failure is safe by construction: find nothing and we add nothing, which
- * leaves Babylon's own behaviour exactly as it was rather than a dark sky.
- * Returns the count so boot can log what it caught.
- */
-export function focusGlow(glow, scene) {
-  const lit = scene.meshes.filter((m) => m.material && glows(m.material));
-  for (const mesh of lit) glow.addIncludedOnlyMesh(mesh);
-  return lit.length;
-}
-
-function glows(mat) {
-  if (mat.subMaterials) return mat.subMaterials.some((m) => m && glows(m));
-  if (mat.emissiveTexture) return true;
-  const e = mat.emissiveColor;
-  return Boolean(e) && e.r + e.g + e.b > 0.01;
-}
+ * The thousand meshes were not waste. They render black into that texture,
+ * but they still write DEPTH, and depth is the only reason a tube behind a
+ * cloud is hidden by it. Name only the emissive ones and nothing occludes
+ * them any more; the sky keeps its bloom and loses its solidity. What reads
+ * as flicker is the near-cabinet pulse at cabinets.js:493 coming through
+ * geometry that should have stopped it.
+ *
+ * So the glow layer keeps every mesh, and the tier turns its blur down
+ * instead. If this pass ever needs to be cheaper, the honest lever is
+ * mainTextureRatio — fewer pixels in the glow texture, every occluder still
+ * in it — and not a shorter list of meshes.
+ * -------------------------------------------------------------------- */
