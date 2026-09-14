@@ -324,3 +324,33 @@ the benches to either side and the sign behind it. Its old entrance slot is
 removed. Both this cabinet and Dam Break retain standing space inside their
 islands; the editable Blender scene includes their updated reference positions.
 No playtesting or preview rendering was performed.
+
+## Supermine Adventure outpost
+
+Supermine keeps the original outcrop. Supermine Adventure has its own 12 × 12 m
+slate-floored cloud at (20, -5.5, 18), with its own rear game sign. A level,
+2.4 m wide timber bridge connects the outcrop’s south edge to the new island’s
+north entrance. Its floor and continuous side rails have matching runtime
+collision definitions; the two ends stay open.
+
+Walk past the Cloud Mining Co. assay office and amethyst, copper ore and quartz
+specimens to reach the Adventure cabinet at (22, 20.5), facing the bridge.
+The scenic office has timber siding, a seamed gable roof, framed windows,
+lanterns, a company nameboard and sample crates. Built in
+`source/adventure_island.py`; the office is a solid decorative building.
+The editable scene includes both games’ updated reference cabinets.
+No playtesting or preview rendering was performed.
+
+## Supermine working mine
+
+`source/supermine_island.py` replaces the old headframe with a static 3D
+interpretation of the upgraded machine in `supermine/js/vehicle.js`: tracked
+gunmetal chassis, safety-yellow cab, cutting drum, twin spiral drill bits,
+hydraulics, exhaust stacks, rear hopper and collector conveyor. A cut rock face
+with gold seams sits ahead of the bits. Gold nuggets and bullion, emeralds and
+purple crystal heaps, a loaded ore wagon and compact work lights dress the mine.
+
+The rig occupies the west worksite. Enter around its south side, then follow
+the clear eastern lane to the cabinet or the Adventure bridge. Model footprints
+and runtime collisions change together. Existing Adventure and other islands
+are preserved. No playtesting or preview rendering was performed.

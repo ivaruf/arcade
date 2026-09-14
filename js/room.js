@@ -50,6 +50,8 @@ export const PLATFORMS = [
   { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
   { id: 'race', name: 'The steamworks', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
   { id: 'mine', name: 'The outcrop', x: [12, 28], z: [-6, 6], y: -5.5 },
+  { id: 'adventure', name: 'The mining company', x: [14, 26], z: [12, 24], y: -5.5 },
+  { id: 'mine_bridge', name: 'The miners’ bridge', x: [20.8, 23.2], z: [6, 12], y: -5.5 },
   { id: 'dam', name: 'The reservoir', x: [12.5, 23.5], z: [-23.5, -12.5], y: 1 },
   { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 6 },
 ];
@@ -70,6 +72,7 @@ export const BEACONS = {
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
   water: { x: 0, y: -2.5, z: -23.5, top: 5.4 },
   race: { x: -23, y: 1.5, z: 0, top: 5.0 },
+  adventure: { x: 25.5, y: -5.5, z: 18, top: 5.2 },
   mine: { x: 27.5, y: -5.5, z: 0, top: 5.2 },
   calm: { x: 0, y: 6, z: 22.0, top: 4.6 },
 };
@@ -85,7 +88,7 @@ export const PLACEMENT = {
   fishtank: 'water',
   dam_break: 'dam',
   supermine: 'mine',
-  supermine_adventure: 'mine',
+  supermine_adventure: 'adventure',
   swirls: 'calm',
 };
 
@@ -101,7 +104,9 @@ export const SLOTS = {
   dam: [{ x: 15, z: -20.3, yaw: 0 }],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
   race: [stand(-21.2, -2.4), stand(-16.8, -2.4)],
-  mine: [stand(24.0, -2.0), stand(24.0, 2.0)],
+  mine: [stand(24.0, -2.0)],
+  // Arrive via the bridge, pass the assay office and minerals, then play.
+  adventure: [{ x: 22, z: 20.5, yaw: Math.PI }],
   // Walk through the pergola and across the floor inlay to reach Swirls.
   calm: [stand(0.0, 20.0)],
 };
@@ -210,6 +215,14 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  // Mining-company office, mineral beds and cargo; central route stays clear.
+  { x: 17, z: 18.5, hx: 2.25, hz: 2.3, top: -1, base: -5.5 },
+  ...[[24, 15.4], [24, 18.3], [16, 14]].map(([x, z]) =>
+    ({ x, z, hx: .85, hz: .85, top: -3.8, base: -5.5 })),
+  { x: 16.5, z: 21.4, hx: 1, hz: .5, top: -4.7, base: -5.5 },
+  // Continuous bridge rails protect the sides, with both ends open.
+  ...[20.85, 23.15].map((x) =>
+    ({ x, z: 9, hx: .105, hz: 3.1, top: -4.25, base: -5.5 })),
   // Miniature dam and reservoir, east of the western walking lane.
   { x: 20, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1 },
   // Steamworks plant stays at the west/south perimeter, clear of cabinet fronts.
@@ -225,11 +238,15 @@ const FURNITURE = [
   // the aquarium: the tank, and the stools you watch from
   { x: -3.6, z: -19, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
   ...[-21.7, -19.9, -18.1, -16.3].map((z) => ({ x: 1.4, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
-  // the outcrop: the headframe's legs, and the cart
-  ...[14.1, 18.9].flatMap((x) =>
-    [-3, 1].map((z) => ({ x, z, hx: 0.2, hz: 0.2, top: -2.1, base: -5.5 })),
-  ),
-  { x: 16.5, z: 2.3, hx: 0.6, hz: 0.8, top: -4.5, base: -5.5 },
+  // Supermine rig and cut face, leaving the southern/eastern approach open.
+  { x: 17, z: -.5, hx: 1.95, hz: 2.6, top: -2.7, base: -5.5 },
+  { x: 17, z: -3.65, hx: 1.95, hz: .75, top: -4.25, base: -5.5 },
+  { x: 16.9, z: -4.65, hx: 1.95, hz: .5, top: -4.3, base: -5.5 },
+  ...[[22, -4.5], [25.7, 3.6], [18, 4.65]].map(([x, z]) =>
+    ({ x, z, hx: 1.15, hz: 1, top: -3.7, base: -5.5 })),
+  { x: 14.2, z: 4.2, hx: .65, hz: .68, top: -4.4, base: -5.5 },
+  ...[[13.5, -3.8], [20, -4.7]].map(([x, z]) =>
+    ({ x, z, hx: .25, hz: .25, top: -2.8, base: -5.5 })),
   // the quiet cloud: pergola posts and two benches
   ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 9.1, base: 6 }))),
   ...[[-2.2, 20.2], [2.2, 20.2]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 6.4, base: 6 })),
@@ -242,7 +259,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=interior-approaches-1', scene);
+  const held = await container('cloud-world.glb?v=supermine-rig-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

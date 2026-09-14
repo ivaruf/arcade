@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.5.3'; // Dam Break and Swirls: scenery first, cabinets farther inside.
+const VERSION = 'v2.5.5'; // Supermine tracked rig and rich ore piles.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

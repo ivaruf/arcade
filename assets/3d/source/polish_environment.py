@@ -59,7 +59,7 @@ cloudskin.node_tree.links.new(color_node.outputs['Color'],cloudskin.node_tree.no
 # Sculpt a closed, scalloped cloud island around each unchanged collision
 # rectangle. A broad top rolls into rounded billows, never a paper-thin slab.
 bpy.context.view_layer.update()
-for tag,d in zip(['Welcome','Race','Water','Mine','Calm','Dam'],DECKS):
+for tag,d in zip(['Welcome','Race','Water','Mine','Calm','Dam','Adventure'],DECKS):
     x,y,z,hx,hz=[d[k] for k in ('x','y','z','hx','hz')]
     remove(tag+' cloud');remove(tag+' underside')
     verts=[bl(x,y-.055,z)];faces=[];N=128
@@ -102,7 +102,7 @@ for tag,d in zip(['Welcome','Race','Water','Mine','Calm','Dam'],DECKS):
     for cx,cz,starta in [(x+hx-r,z+hz-r,0),(x-hx+r,z+hz-r,90),(x-hx+r,z-hz+r,180),(x+hx-r,z-hz+r,270)]:
         for j in range(9):
             a=math.radians(starta+j*90/8);pts.append((cx+r*math.cos(a),y-.008,cz+r*math.sin(a)))
-    tube(tag+' inset landing light',pts,.018,[cyan,gold,cyan,gold,pink,cyan][DECKS.index(d)],True)
+    tube(tag+' inset landing light',pts,.018,[cyan,gold,cyan,gold,pink,cyan,gold][DECKS.index(d)],True)
 # Keep decorative clouds from swallowing structures or the flying routes.
 for o in list(root.children_recursive):
     if o.name.startswith(('Near cloud','Drifting cloud')):
@@ -324,3 +324,7 @@ for name,label,yy,size,mat in [
 exec(compile((OUT / 'source' / 'island_flooring.py').read_text(), str(OUT / 'source' / 'island_flooring.py'), 'exec'), globals())
 
 exec(compile((OUT / 'source' / 'dam_island.py').read_text(), str(OUT / 'source' / 'dam_island.py'), 'exec'), globals())
+
+exec(compile((OUT / 'source' / 'adventure_island.py').read_text(), str(OUT / 'source' / 'adventure_island.py'), 'exec'), globals())
+
+exec(compile((OUT / 'source' / 'supermine_island.py').read_text(), str(OUT / 'source' / 'supermine_island.py'), 'exec'), globals())
