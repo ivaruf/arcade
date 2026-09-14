@@ -50,6 +50,7 @@ export const PLATFORMS = [
   { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
   { id: 'race', name: 'The steamworks', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
   { id: 'mine', name: 'The outcrop', x: [12, 28], z: [-6, 6], y: -5.5 },
+  { id: 'dam', name: 'The reservoir', x: [12.5, 23.5], z: [-23.5, -12.5], y: 1 },
   { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 6 },
 ];
 
@@ -69,6 +70,7 @@ export const HOME = { x: -3.6, y: 0, z: 2.2, radius: 1.5 };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
+  dam: { x: 23, y: 1, z: -18, top: 5.0 },
   water: { x: 0, y: -2.5, z: -23.5, top: 5.4 },
   race: { x: -23, y: 1.5, z: 0, top: 5.0 },
   mine: { x: 27.5, y: -5.5, z: 0, top: 5.2 },
@@ -84,7 +86,7 @@ export const BEACONS = {
 export const PLACEMENT = {
   maxgear: 'race',
   fishtank: 'water',
-  dam_break: 'water',
+  dam_break: 'dam',
   supermine: 'mine',
   supermine_adventure: 'mine',
   swirls: 'calm',
@@ -109,6 +111,7 @@ const facingHub = (x, z) => Math.atan2(-x, -z);
 const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
 
 export const SLOTS = {
+  dam: [stand(14.3, -15)],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
   race: [stand(-21.2, -2.4), stand(-16.8, -2.4)],
   mine: [stand(24.0, -2.0), stand(24.0, 2.0)],
@@ -219,6 +222,8 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  // Miniature dam and reservoir, behind the open cabinet approach.
+  { x: 19, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1 },
   // Steamworks plant stays at the west/south perimeter, clear of cabinet fronts.
   { x: -22, z: 2, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
   { x: -21.75, z: .72, hx: .55, hz: .4, top: 3, base: 1.5 },
@@ -249,7 +254,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=rotating-gears-rear-signs', scene);
+  const held = await container('cloud-world.glb?v=dam-island-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

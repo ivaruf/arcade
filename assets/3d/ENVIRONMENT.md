@@ -148,3 +148,19 @@ smaller gears turning faster. Fixed axles, supports and the deck stay still.
 All four game-island signs and their physical masts now stand at the far edge
 relative to the central welcome cloud, leaving each entrance open. The sign
 faces still point toward the hub. No playtesting or preview rendering was run.
+
+## Dam Break reservoir island
+
+Dam Break now has a dedicated northeast island at (18, 1, -18), with an
+11 × 11 m limestone landing area. Its machine stands on the clear southwest
+approach and faces the welcome cloud. The sign stands at the far edge.
+Fishtank retains its aquarium island and peaceful swimming fish.
+
+The miniature includes a concrete dam, raised blue reservoir, retaining banks,
+crown walkway and handrail, three closed spillway gates, stepped buttresses,
+a lower channel, stilling pool and control hut. The water is static scenery;
+the Dam Break game itself remains inside its arcade machine.
+
+`source/dam_island.py` builds the model. Platform bounds, machine assignment,
+sign position and model collision are defined in `js/room.js`. No playtesting
+or preview rendering was performed for this update.

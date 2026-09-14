@@ -59,7 +59,8 @@ WATER = dict(x=0.0, y=-2.5, z=-19.0, hx=6.5, hz=5.0)    # north — dead ahead o
 RACE = dict(x=-19.0, y=1.5, z=0.0, hx=4.5, hz=4.0)      # west
 MINE = dict(x=20.0, y=-5.5, z=0.0, hx=8.0, hz=6.0)      # east
 CALM = dict(x=0.0, y=6.0, z=18.0, hx=4.5, hz=4.5)       # south, and highest
-DECKS = [WELCOME, RACE, WATER, MINE, CALM]
+DAM = dict(x=18.0, y=1.0, z=-18.0, hx=5.5, hz=5.5)  # northeast
+DECKS = [WELCOME, RACE, WATER, MINE, CALM, DAM]
 
 # ---------------------------------------------------------------------------
 # Materials: the kit's palette, plus what a sky needs.

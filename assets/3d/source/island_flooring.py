@@ -25,7 +25,7 @@ remove('Steamworks deck plank');remove('Steamworks deck edging')
 for tag,d,palette,tile_w,tile_d in [
     ('Welcome',WELCOME,limestone,1.2,1.0),('Race',RACE,workshop,2.25,.32),
     ('Water',WATER,sea_tile,1.0,1.0),('Mine',MINE,quarry,1.6,1.0),
-    ('Calm',CALM,cedar,2.25,.30)]:
+    ('Calm',CALM,cedar,2.25,.30),('Dam',DAM,limestone,1.1,1.1)]:
     x,y,z,hx,hz=[d[k] for k in ['x','y','z','hx','hz']]
     # Full rectangular coverage agrees exactly with the playable area. The
     # broad cloud billows still show beyond and below the platform edges.
