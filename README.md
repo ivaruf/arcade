@@ -138,18 +138,40 @@ checks for `window.ArcadeExit` before building one.
 
 | how it was opened | what quit means |
 | --- | --- |
-| in the arcade | an iframe with the launcher behind it — hand the player back to the sky |
+| **framed** | an iframe with a launcher behind it — hand the player back to the sky |
 | installed | its own PWA window — close it |
-| an ordinary tab | a script may not close it, so say so honestly |
+| an ordinary tab | no script may close it, so **go** to the arcade instead |
 
 `ArcadeExit.quit()` tells them apart and does the right one. It returns a
-promise resolving to `'arcade'` or `'refused'`; there is deliberately no
-`'closed'`, because if the window really closes the page stops existing and
+promise resolving to `'arcade'`, `'home'` or `'refused'`; there is deliberately
+no `'closed'`, because if the window really closes the page stops existing and
 nothing could observe it. So a game handles only the outcomes where it is still
-alive to handle them.
+alive to handle them — in practice, `'refused'` and nothing else.
 
-`ArcadeExit.verb({ arcade, app, tab })` picks the label, so six games do not
-each guess differently and none promises something that will not happen.
+**Read the first row as FRAMED, not "in the arcade", because that distinction
+was a bug.** Whether the thing behind us is the arcade is a question that can
+*fail to be answered* — `inArcade()` reads the parent's path, which throws for
+a cross-origin parent — while being framed at all is knowable either way. This
+used to ask `inArcade()` first and fall through to `window.close()`, so a game
+in a cross-origin arcade ran `window.close()` inside an iframe, where it does
+nothing, and 250 ms later apologised for a refusal that never happened. A
+button labelled BACK turned into "close this tab yourself". Cross-origin is not
+exotic: the registry falls back to `games.json`'s `origin`, so any arcade
+served where the games are not its siblings frames the live game (§ hub rules,
+"same-origin is the live site's luck").
+
+The third row changed with it. There was never anything to close in a tab
+either, so that button's only possible outcome was the same apology — but the
+arcade is a URL, and a game that can load `../arcade/exit.js` can go to
+`../arcade/`. `exit.js` works out where that is from its own `src`, so it is
+right on `ivaruf.github.io`, on localhost, in a fork, and from `/fishtank/client/`
+two levels down. Only the installed case can still fail, and only on iOS.
+
+`ArcadeExit.verb({ arcade, app })` picks the label, so six games do not each
+guess differently and none promises something that will not happen. It asks the
+same three questions in the same order as `quit()`, so the word and the deed
+cannot disagree. A third key, `tab`, is accepted and ignored — every game still
+passes one, none needs to now, and removing it from six repos buys nothing.
 
 ```js
 if (window.ArcadeExit) {
@@ -164,21 +186,33 @@ if (window.ArcadeExit) {
 arcade loads `exit.js` itself for `standalone()` alone, which is how the
 install offer knows to stay quiet inside an arcade that is already installed.
 
-Where each game puts its button: `supermine` and `supermine_adventure` in the
-pause card under a hairline (the adventure arms it twice, like everything there
-that throws a run away); `dam_break` on the title and level screens;
-`maxgear` on the title and pause menus; `swirls` across the foot of the gear
-panel; `fishtank` in the pause menu it already had.
+Where each game puts its button, and it has to be somewhere a player who has
+not started anything can reach — the pause card alone is not a way out, because
+the pause card is behind a run: `supermine` and `supermine_adventure` on the
+menu they land on *and* in the pause card under a hairline (the adventure arms
+the pause one twice, like everything there that throws a run away); `dam_break`
+on the title and level screens; `maxgear` on the title and pause menus;
+`swirls` across the foot of the gear panel, which is always on screen;
+`fishtank` in the panel its corner ✕ opens from anywhere.
 
 ### The FLOOR pill is a fallback
 
-The launcher still carries its own `◂ FLOOR` pill, but it starts `hidden`.
-After the iframe loads, the launcher asks the framed game whether it has
-`ArcadeExit` and shows the pill **only if it does not**. In normal play the
-pill is gone, because the game's own quit is better dressed and better worded
-than ours could be. But `games.json` is open: a slug can be added whose repo
-has never heard of `exit.js`, and a game with no way out and no pill is a trap
-rather than a worse card.
+The launcher still carries its own `◂ FLOOR` pill, but it starts `hidden`. Once
+the game is revealed, the launcher decides whether it has a quit of its own and
+shows the pill **only if it does not**. In normal play the pill is gone,
+because the game's own quit is better dressed and better worded than ours could
+be. But `games.json` is open: a slug can be added whose repo has never heard of
+`exit.js`, and a game with no way out and no pill is a trap rather than a worse
+card.
+
+It asks **two ways**, because one of them cannot always be asked. Reading
+`contentWindow.ArcadeExit` is a fact for a same-origin game and *throws* for a
+cross-origin one — and a game we cannot interrogate is not a game without a
+quit. So `exit.js` also posts `{ arcade: 'exit-ready' }` to its parent as it
+loads, and either answer counts. The decision is made when the game is
+revealed rather than on `load`, because a posted message is a task the parent
+runs when it gets to it and it was measured arriving *after* the load event —
+which made the pill appear and then take itself away again.
 
 ### How leaving works
 
@@ -194,9 +228,22 @@ than seven — and it has to be the launcher's function rather than plain
   player out of the arcade altogether. `leaveGame()` in `js/main.js` checks
   `history.state`, clears the hash where it stands, and unloads directly.
 
-`history.back()` remains the fallback, for a launcher served from a cache older
-than `exit.js` — the shell and the games are cached by separate workers, so an
-old launcher framing a new game is a real state during a rollout.
+Three routes, in descending order of certainty:
+
+1. `window.parent.arcadeLeave()` — exact, and same-origin only.
+2. `postMessage({ arcade: 'leave' })` — the one that survives a **cross-origin**
+   parent, where every property of `window.parent` throws. `launcher.js`
+   answers it and checks the message came from the frame it opened.
+3. `history.back()`, on a 900 ms timer, and last for two reasons: a launcher
+   that heard the message has already unwound its own entry, so doing both
+   would leave twice; and back() is outright *wrong* for a deep link, per the
+   bullets above. A launcher that handled the message removed the iframe long
+   before the timer fires, and removing an iframe destroys its timers — so this
+   runs only when nothing was listening.
+
+`history.back()` also remains the fallback for a launcher served from a cache
+older than `exit.js` — the shell and the games are cached by separate workers,
+so an old launcher framing a new game is a real state during a rollout.
 
 ## Controls
 

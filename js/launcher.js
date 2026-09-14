@@ -44,6 +44,11 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   let current = null;
   let frame = null;
   let dimTimer = 0;
+  // Whether the framed game has said it has its own way out. Per game, so it
+  // is cleared in open() rather than only in close(): a machine opened, left
+  // and reopened must be asked again, and a game with no exit.js following one
+  // that had it must not inherit the answer.
+  let announced = false;
 
   /**
    * The mesh's screen rectangle in CSS pixels. Babylon projects into drawing
@@ -124,6 +129,7 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
    */
   function open(cabinet) {
     current = cabinet;
+    announced = false;
 
     frame = document.createElement('iframe');
     frame.title = cabinet.game.title;
@@ -143,6 +149,13 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
     const reveal = () => {
       if (opened || current !== cabinet) return;
       opened = true;
+      // Decided HERE and not on `load`, which is where it used to be and where
+      // it was a frame too early: exit.js announces itself by postMessage, and
+      // a posted message is a task the parent runs whenever it gets to it —
+      // measured arriving AFTER the iframe's load event, so the pill appeared
+      // and then took itself away again. This moment is the one that matters
+      // anyway. Nobody can see the pill until the game is on screen.
+      offerPillIfTheGameHasNoQuit();
       root.style.clipPath = 'inset(0 round 0)';
       frame.style.transform = 'none';
       // The floor keeps rendering around the opening clip; it stops once the
@@ -153,7 +166,6 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
     };
     frame.addEventListener('load', () => setTimeout(reveal, DWELL_AFTER_LOAD), { once: true });
     setTimeout(reveal, DWELL_CEILING);
-    frame.addEventListener('load', () => offerPillIfTheGameHasNoQuit(), { once: true });
   }
 
   /**
@@ -167,19 +179,51 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
    * whether the game has the arcade's exit API, and show the pill only when it
    * does not.
    *
-   * Same origin, so this is a fact. A cross-origin frame throws, and something
-   * we cannot even ask is exactly the case that needs the pill.
+   * TWO WAYS OF ASKING, BECAUSE ONE OF THEM CANNOT ALWAYS BE ASKED. Reading
+   * `contentWindow.ArcadeExit` is a fact when the game is same-origin, and it
+   * THROWS when it is not — and a cross-origin game is not a game without a
+   * quit, it is a game we cannot interrogate. That happens for real whenever
+   * the arcade is served from somewhere the games are not its siblings (a
+   * local server rooted elsewhere, a fork, a preview), because the registry
+   * then falls back to games.json's `origin` and frames the live game. So
+   * exit.js also announces itself by postMessage as it loads, `announced`
+   * below records it, and either answer is proof enough.
    */
   function offerPillIfTheGameHasNoQuit() {
-    let hasOwnQuit = false;
-    try {
-      hasOwnQuit = !!frame?.contentWindow?.ArcadeExit;
-    } catch {
-      hasOwnQuit = false;
+    let hasOwnQuit = announced;
+    if (!hasOwnQuit) {
+      try {
+        hasOwnQuit = !!frame?.contentWindow?.ArcadeExit;
+      } catch {
+        hasOwnQuit = false;
+      }
     }
     pill.hidden = hasOwnQuit;
     if (!hasOwnQuit) wakePill();
   }
+
+  /**
+   * What the framed game has told us about itself, cleared for every game.
+   *
+   * `exit-ready` is exit.js saying it ran, which is the cross-origin half of
+   * the question above. `leave` is a game asking to be dismissed when it could
+   * not reach `window.arcadeLeave` directly — same request, same answer, just
+   * the only route out of a cross-origin frame.
+   *
+   * `event.source` is checked against the iframe we opened, so this listens to
+   * the game on the machine and to nothing else on the internet. Both messages
+   * are requests rather than data, so there is nothing here to trust or spend.
+   */
+  window.addEventListener('message', (event) => {
+    if (!frame || event.source !== frame.contentWindow) return;
+    const what = event.data?.arcade;
+    if (what === 'exit-ready') {
+      announced = true;
+      pill.hidden = true;
+    } else if (what === 'leave') {
+      onLeft();
+    }
+  });
 
   /** Give the machine back. Resolves once the floor is on screen again. */
   function close(render) {

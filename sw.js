@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.5.8'; // Center Supermine cabinet beneath its sign.
+const VERSION = 'v2.6.0'; // Framed means leave; a tab means go. Neither means close.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
