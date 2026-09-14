@@ -164,3 +164,14 @@ the Dam Break game itself remains inside its arcade machine.
 `source/dam_island.py` builds the model. Platform bounds, machine assignment,
 sign position and model collision are defined in `js/room.js`. No playtesting
 or preview rendering was performed for this update.
+
+## The way out is gone
+
+The WAY OUT doorway on the welcome cloud — two posts, a lintel, the sign and
+the portal rings in the floor — has been removed from `build_clouds.py` and
+`polish_environment.py`. It closed an installed arcade, and a browser only lets
+a page close a window whose session history holds a single entry, which the
+first game played ends for the rest of the session. Nothing pointed at a spot
+that could do nothing, so the geometry went with the code. The doorway never
+had a collision box, so `js/room.js` loses only the `HOME` constant. Rebuilt
+without playtesting or preview rendering.

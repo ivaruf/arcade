@@ -161,9 +161,8 @@ if (window.ArcadeExit) {
 ```
 
 `framed()`, `inArcade()`, `standalone()` and `leave()` are there too. The
-arcade loads `exit.js` itself for `standalone()` alone: an installed window can
-be closed and a tab cannot, and that is what decides whether the way-out ring
-on the welcome cloud exists at all.
+arcade loads `exit.js` itself for `standalone()` alone, which is how the
+install offer knows to stay quiet inside an arcade that is already installed.
 
 Where each game puts its button: `supermine` and `supermine_adventure` in the
 pause card under a hairline (the adventure arms it twice, like everything there
@@ -312,8 +311,16 @@ which is why `js/screen.js` owns both. Where a browser cannot pin, only the
 button's label changes; where there is no fullscreen at all, both buttons hide
 and the prompt stands on its own.
 
-Installed, the way-out ring on the welcome cloud closes the app. In a tab there
-is nothing a script may close, so the ring is not there at all.
+There is no way out of the sky itself, and that is a decision rather than a
+gap. A ring on the welcome cloud used to close an installed arcade, and it
+worked once per launch at best: a browser only lets a page close a window
+whose session history holds a single entry, and playing any machine pushes a
+`#play=` entry that going back never removes. So from the first game onward
+`window.close()` was refused for the rest of the session — and on iOS, where a
+home-screen app may never close itself, it was refused from the start. A way
+out that works for the first thirty seconds is worse than none, so the arcade
+is closed the way every installed app is closed: by the system. The games keep
+their own quit, which hands them back to the sky.
 
 ## Deploying
 

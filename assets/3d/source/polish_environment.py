@@ -112,11 +112,11 @@ for o in list(root.children_recursive):
 
 # Correct the sketch's text planes, which sat behind their opaque boards.
 for o in list(root.children_recursive):
-    if o.name.startswith(('Welcome title','Hint line','Home sign')):o.location.y -= .55
+    if o.name.startswith(('Welcome title','Hint line')):o.location.y -= .55
 
 # Arrival architecture: layered sign, curved crest, fitted post shoes.
 for o in list(root.children_recursive):
-    if o.name.startswith(('Welcome post','Welcome beam','Home post','Home lintel')):paint(o,structural)
+    if o.name.startswith(('Welcome post','Welcome beam')):paint(o,structural)
 for sx in [-3.4,3.4]:
     box('Welcome brass post shoe',(sx,.14,-4.2),(.41,.28,.41),brass,.045)
     box('Welcome inset post light',(sx,1.85,-4.395),(.045,2.6,.025),cyan,.012)
@@ -128,11 +128,6 @@ for sx in [-2.64,2.64]:box('Hint board edging',(sx,1.5,-4.44),(.045,1.38,.02),br
 for o in root.children_recursive:
     if o.name=='Welcome title':o.location.z=4.1
     if o.name=='Welcome title2':o.location.z=3.70
-
-# Circular portal threshold, with a warm stone surround instead of square pixels.
-remove('Home ring')
-ring('Portal threshold',(.0+HOME[0],.015,HOME[2]),1.25,.038,pink)
-ring('Portal outer inlay',(HOME[0],-.005,HOME[2]),1.33,.02,brass)
 
 # Slatted benches use the same footprints and heights as the collision boxes.
 remove('Welcome bench');remove('Bench leg');remove('Calm bench')

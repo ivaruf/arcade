@@ -11,8 +11,6 @@
  *      boot -> title -> floor <-> paused
  *                         |
  *                         +-> diving -> playing -> rising -> floor
- *                         |
- *                         +-> leaving -> /arcade/
  *
  * `diving` and `rising` are the camera flying to the glass and back. They exist
  * as states rather than as an animation callback because input has to be dead
@@ -29,7 +27,7 @@
 import { loadMachines } from './registry.js';
 import {
   buildWorld, groundAt, insideSky, platformNear,
-  SKY, SKY_LOOK, SPAWN, HOME,
+  SKY, SKY_LOOK, SPAWN,
 } from './room.js';
 import { raiseSigns } from './signs.js';
 import { placeCabinets, setLit, animateCabinets } from './cabinets.js';
@@ -124,11 +122,9 @@ const ui = {
   sound: $('sound'),
   music: $('music'),
   quality: $('quality'),
-  leave: $('leave'),
   touch: $('touch'),
   cabinet: $('cabinet'),
   pill: document.querySelector('.pill'),
-  fade: $('fade'),
 };
 
 const say = (text) => {
@@ -265,9 +261,6 @@ let platform = null;
 
 /** How long it has been falling with nothing underneath. */
 let falling = 0;
-
-/** True while the gopher is standing in the way-out ring. */
-let atTheDoor = false;
 
 let stepPhase = 0;
 let cabinets = [];
@@ -833,35 +826,19 @@ function updatePrompt(dt) {
     gopher.pivot.rotation.y = state.yaw;
   }
 
-  // The way out is a ring on the welcome cloud rather than a door, because
-  // there is no street to walk out onto any more.
-  //
-  // It used to lead down to the 2D grid at /arcade/. The sky IS /arcade/ now,
-  // so that would only reload the page — and there is nothing above us to go
-  // back to. What is left is genuine but narrow: an INSTALLED arcade is a
-  // window, and a window can be closed. In an ordinary tab nothing may close
-  // anything, so the ring simply is not there; a way out that cannot get out
-  // is worse than no ring at all. Same judgement, and the same helper, as
-  // every game's quit button.
-  const canLeave = !!window.ArcadeExit?.standalone();
-  const pos = gopher.pivot.position;
-  const leaving =
-    canLeave &&
-    state.mode === 'walk' &&
-    state.grounded &&
-    Math.hypot(pos.x - HOME.x, pos.z - HOME.z) < HOME.radius &&
-    Math.abs(pos.y - HOME.y) < 1.0;
-
+  // There is no way out of the sky, on purpose. A ring on the welcome cloud
+  // used to close an INSTALLED arcade, and it worked once per launch at best:
+  // a browser only lets a page close a window whose session history holds a
+  // single entry, and playing any machine pushes a #play entry that going back
+  // never removes — so from the first game onward window.close() was refused
+  // for the rest of the session, and on iOS it is refused from the start. A
+  // way out that works for the first thirty seconds is worse than none, so
+  // the arcade closes the way every installed app does: from the system. The
+  // games keep their own quit (exit.js), which hands them back to the sky.
   if (near) {
     ui.prompt.hidden = false;
-    ui.prompt.classList.remove('leaving');
     ui.promptTitle.textContent = near.game.title;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
-  } else if (leaving) {
-    ui.prompt.hidden = false;
-    ui.prompt.classList.add('leaving');
-    ui.promptTitle.textContent = 'The way out';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd> to close' : '<kbd>E</kbd> to close the arcade';
   } else {
     ui.prompt.hidden = true;
   }
@@ -869,57 +846,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near || leaving ? 'play' : state.mode === 'fly' ? 'descend' : 'run');
-
-  // Standing in the ring is an offer, not a trapdoor: you leave when you say
-  // so. Walking through a doorway could be an accident; pressing a key cannot.
-  atTheDoor = leaving;
-}
-
-function leaveArcade() {
-  if (phase === 'leaving') return;
-  phase = 'leaving';
-  input.clear();
-  sfx.back();
-  sfx.stopAmbience();
-  sfx.stopMusic();
-  ui.prompt.hidden = true;
-  ui.fade.hidden = false;
-
-  // Leave when the room has finished going dark, driven off the fade's own
-  // transition rather than a timer set to a number that has to be kept equal
-  // to the CSS. It is also the only version that works everywhere: a plain
-  // setTimeout here is throttled away in a headless renderer, whereas anything
-  // frame-driven runs exactly as long as the fade the player can see. The
-  // rAF deadline is the backstop for a browser that never sends transitionend
-  // — reduced motion, or a tab hidden halfway through.
-  let gone = false;
-  const go = () => {
-    if (gone) return;
-    gone = true;
-    // Only ever reached from an installed window (the ring is hidden
-    // otherwise), so this closes the app. If the browser refuses after all,
-    // undo the fade rather than leaving the player staring at a black screen
-    // they cannot get out of.
-    window.ArcadeExit?.quit().then((how) => {
-      if (how !== 'refused') return;
-      phase = 'floor';
-      ui.fade.classList.remove('out');
-      ui.fade.hidden = true;
-      sfx.startAmbience();
-    });
-  };
-  ui.fade.addEventListener('transitionend', go, { once: true });
-  const deadline = performance.now() + 1200;
-  const tick = () => {
-    if (gone) return;
-    if (performance.now() >= deadline) go();
-    else requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(() => {
-    ui.fade.classList.add('out');
-    requestAnimationFrame(tick);
-  });
+  input.setAction(near ? 'play' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -1032,7 +959,6 @@ function render() {
       // it behind `near` short-circuits and banks the press for later.
       const coin = input.tookCoin();
       if (near && coin) startDive(near);
-      else if (atTheDoor && coin) leaveArcade();
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
       if (platform?.id !== 'calm') sfx.tickAmbience(dt);
@@ -1073,7 +999,6 @@ ui.walkIn.addEventListener('click', () => {
 ui.resume.addEventListener('click', unpause);
 ui.pauseBtn = $('pause-btn');
 ui.pauseBtn.addEventListener('click', () => (phase === 'paused' ? unpause() : pause()));
-ui.leave.addEventListener('click', leaveArcade);
 
 /** Both switches read as a label plus a state, and say so to a screen reader. */
 const paintToggle = (el, label, on) => {

@@ -65,9 +65,6 @@ export const SKY = { x: [-36, 36], z: [-34, 34], y: [-20, 28] };
 /** Where the gopher arrives, and where the world puts it back if it must. */
 export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
 
-/** Stand in the ring on the welcome cloud to go back to the 2D launcher. */
-export const HOME = { x: -3.6, y: 0, z: 2.2, radius: 1.5 };
-
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
   dam: { x: 23, y: 1, z: -18, top: 5.0 },

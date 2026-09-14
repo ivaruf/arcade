@@ -581,13 +581,6 @@ kbd {
   color: var(--muted);
 }
 
-/* An exit prompt is a different errand, so it takes the coral wall light. */
-.prompt.leaving {
-  border-color: rgba(242, 30, 82, .45);
-  box-shadow: 0 0 26px rgba(242, 30, 82, .22);
-}
-.prompt.leaving .prompt-title { color: #ffd3de; text-shadow: 0 0 16px rgba(242, 30, 82, .6); }
-
 /* ---------- the game, growing out of the CRT ---------- */
 
 .cabinet {
@@ -731,20 +724,6 @@ kbd {
 
 
 .tbtn.active { border-color: var(--mint); background: rgba(18, 217, 184, .22); }
-
-/* ---------- walking out ---------- */
-
-.fade {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: var(--enamel);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .55s ease;
-}
-
-.fade.out { opacity: 1; }
 
 /* Tablets and phones get the sticks; the keyboard hints would only lie. */
 @media (max-height: 520px) {

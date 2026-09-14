@@ -310,15 +310,10 @@ text("Hint line1", "JUMP, THEN JUMP AGAIN", (0, 1.78, -4.44), 0.30, gold)
 text("Hint line2", "to ride the cloud and fly", (0, 1.34, -4.44), 0.22, white)
 text("Hint line3", "the machines are out there", (0, 0.92, -4.44), 0.17, cloudy)
 
-# The way home: a ring you step into, back to the 2D launcher.
-HOME = (-3.6, 0.0, 2.2)
-for i in range(28):
-    a = (i / 28) * math.tau
-    box("Home ring", (HOME[0] + math.cos(a) * 1.25, HOME[1] + 0.02, HOME[2] + math.sin(a) * 1.25), (0.22, 0.04, 0.22), pink, 0)
-for sx in (-1.35, 1.35):
-    box("Home post", (HOME[0] + sx, 1.15, HOME[2]), (0.16, 2.3, 0.16), navy, 0.03)
-box("Home lintel", (HOME[0], 2.42, HOME[2]), (3.1, 0.34, 0.24), navy, 0.05)
-text("Home sign", "WAY OUT", (HOME[0], 2.34, HOME[2] - 0.14), 0.22, pink)
+# There is deliberately no WAY OUT doorway on this cloud any more. One stood at
+# (-3.6, 0, 2.2) and closed an installed arcade, and a browser only lets a page
+# close a window whose history holds a single entry — which the first game
+# played ends for the rest of the session. js/main.js says the rest.
 
 # Something to sit on, because the welcome cloud is also where you come back to.
 for bx in (-4.6, 4.6):
