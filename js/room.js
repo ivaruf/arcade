@@ -1,5 +1,6 @@
 import { createAquariumSwimmers } from './aquarium.js';
 import { createGearAnimation } from './gears.js';
+import { createIslandSwirls } from './swirls.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -283,8 +284,9 @@ export async function buildWorld(scene) {
     if (!swimmers.movingMeshes.has(mesh) && !gears.movingMeshes.has(mesh)) mesh.freezeWorldMatrix();
   }
 
+  const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   return {
     blockers: [...FURNITURE],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); },
   };
 }

@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.6.0'; // Framed means leave; a tab means go. Neither means close.
+const VERSION = 'v2.6.1'; // Swirls island aurora ribbons and orbiting motes.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -47,6 +47,7 @@ const SHELL_FILES = [
   './js/room.js',
   './js/aquarium.js',
   './js/gears.js',
+  './js/swirls.js',
   './js/cabinets.js',
   './js/gopher.js',
   './js/launcher.js',

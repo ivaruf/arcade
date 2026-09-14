@@ -368,3 +368,16 @@ spacecraft-hangar finish while retaining the original moving gear machinery.
 The north/east approach to the arcade remains clear. Display and console
 colliders are kept in `js/room.js`; the unused second cabinet slot is removed.
 No playtesting or preview rendering was performed.
+
+## Living Swirls around the quiet cloud
+
+`js/swirls.js` adapts Aurora Veil and Still Orbits from the actual Swirls
+`effects.js`: matching mint/blue/violet and pink palettes, curling aurora
+spines, elliptical orbit trails and slow precession. Three auroras and two
+small constellations float outside the island perimeter, clear of the pergola,
+entrance, rear sign and cabinet. These are decorative 3D adaptations rather
+than the full canvas simulation.
+
+The world update drives a fixed number of reusable meshes at 30 Hz; no new
+textures, point lights, collision boxes or Blender export are required.
+The module is precached with the arcade shell. No playtesting was performed.
