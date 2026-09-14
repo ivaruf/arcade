@@ -89,6 +89,10 @@
   <button id="resume" class="neon" type="button">Back to the floor</button>
   <button id="music" class="ghost" type="button" aria-pressed="true">Theme music: on</button>
   <button id="sound" class="ghost" type="button" aria-pressed="true">Room sound: on</button>
+  <!-- Set once on an older tablet and then forgotten, which is exactly why it
+       is behind the pause menu and not on the HUD. js/quality.js writes the
+       label; a ?scale= probe takes the button over and says so. -->
+  <button id="quality" class="ghost" type="button" aria-pressed="true">Sky detail: full</button>
   <!-- Waving the title card's offer away must not delete the feature, so this
        is the way back to it. js/install.js reveals it on the same devices and
        leaves it alone afterwards; it never carries a badge or a count. -->

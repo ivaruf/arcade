@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.4.2'; // Rotating gears and signs at the rear of the islands
+const VERSION = 'v2.5.0'; // Dam Break gets its own reservoir island
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -53,6 +53,7 @@ const SHELL_FILES = [
   './js/registry.js',
   './js/controls.js',
   './js/audio.js',
+  './js/quality.js',
   './js/signs.js',
   './js/screen.js',
   './js/install.js',

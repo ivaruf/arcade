@@ -38,6 +38,7 @@ import * as input from './controls.js';
 import * as sfx from './audio.js';
 import { createLauncher, hashSlug, pushSlug, dropSlug } from './launcher.js';
 import { setupScreen, registerWorker } from './screen.js';
+import * as quality from './quality.js';
 
 // ---------------------------------------------------------------------------
 // Tuning. A gopher is about 0.8 m tall, so these are small numbers on purpose:
@@ -122,6 +123,7 @@ const ui = {
   resume: $('resume'),
   sound: $('sound'),
   music: $('music'),
+  quality: $('quality'),
   leave: $('leave'),
   touch: $('touch'),
   cabinet: $('cabinet'),
@@ -142,8 +144,12 @@ if (typeof BABYLON === 'undefined') {
 // Engine and scene
 // ---------------------------------------------------------------------------
 
+// Antialiasing stays on everywhere, which is not the obvious call on a tablet.
+// Apple and Mali GPUs are tile-based: they resolve MSAA inside tile memory and
+// never pay for it in bandwidth, so turning it off saves close to nothing and
+// costs every thin mast and railing in the sky. Resolution is the knob that
+// actually moves a frame here, and quality.js owns it.
 const engine = new BABYLON.Engine(ui.canvas, true, { stencil: false, powerPreference: 'high-performance' });
-engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 2));
 
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0.02, 0.03, 0.05, 1);
@@ -195,16 +201,21 @@ sun.diffuse = new BABYLON.Color3(0.86, 0.92, 1);
 sun.autoCalcShadowZBounds = true;
 
 // Two pools of light down the room, so crossing the floor is not uniform.
-for (const z of [-3.4, 2.6]) {
+// Held in a list because the lighter tier switches them off: a point light is
+// not a local cost, it is another term in the shader of every lit pixel on
+// screen, and four lights over an untextured PBR world is most of a frame.
+const lamps = [-3.4, 2.6].map((z) => {
   const lamp = new BABYLON.PointLight(`lamp${z}`, new BABYLON.Vector3(0, 4.7, z), scene);
   lamp.intensity = 34;
   lamp.range = 16;
   lamp.diffuse = new BABYLON.Color3(0.55, 0.85, 0.82);
   lamp.specular = new BABYLON.Color3(0.2, 0.3, 0.35);
-}
+  return lamp;
+});
 
+// Only the gopher casts (gopher.js), so the map itself is a cheap pass at any
+// size. What costs is the filter, which every receiving pixel in the sky runs.
 const shadows = new BABYLON.ShadowGenerator(input.IS_TOUCH ? 1024 : 2048, sun);
-shadows.usePercentageCloserFiltering = true;
 shadows.filteringQuality = input.IS_TOUCH ? BABYLON.ShadowGenerator.QUALITY_LOW : BABYLON.ShadowGenerator.QUALITY_MEDIUM;
 shadows.bias = 0.004;
 shadows.normalBias = 0.03;
@@ -214,6 +225,10 @@ shadows.normalBias = 0.03;
 // pass rather than a light per tube.
 const glow = new BABYLON.GlowLayer('glow', scene, { blurKernelSize: 28, mainTextureRatio: 0.5 });
 glow.intensity = 0.5;
+
+/** Everything quality.js is allowed to turn down, in one place. */
+const knobs = { engine, shadows, lamps, glow };
+quality.apply(knobs);
 
 // ---------------------------------------------------------------------------
 // Player state, shared with the animation code
@@ -308,6 +323,17 @@ async function boot() {
 
   ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines in the sky`;
   ui.boot.hidden = true;
+
+  // Everything that will ever glow exists by now — world, cabinets, signs and
+  // gopher — so this is the first moment the glow layer can be told where the
+  // neon actually is. Before this point the answer would be "the world only".
+  quality.focusGlow(glow, scene);
+
+  // Nothing on this floor swaps a texture or a blend mode after boot; the only
+  // material change per frame is the screens' emissiveColor, which is a uniform
+  // and keeps working. So stop Babylon re-checking 104 materials for shader
+  // recompiles it is never going to need. Pure CPU, nothing visible.
+  scene.blockMaterialDirtyMechanism = true;
 
   dressTheSky();
   engine.runRenderLoop(render);
@@ -1086,6 +1112,28 @@ ui.music.addEventListener('click', () => {
   sfx.setMusicEnabled(!sfx.isMusicEnabled());
   paintAudio();
   sfx.startMusic().then(paintAudio);
+  sfx.click();
+});
+
+/**
+ * How hard the sky pushes. It lives in the pause menu rather than the HUD
+ * because it is set once and then never thought about again, and because a
+ * frame rate is the one thing a player can judge for themselves — so this is
+ * a switch to feel the difference with, not a number to be told.
+ */
+const paintQuality = () => {
+  const lighter = quality.tier() === 'lighter';
+  ui.quality.textContent = quality.probing()
+    ? `Sky detail: ${Math.round(quality.pixels() * 100) / 100}x (from the link)`
+    : `Sky detail: ${lighter ? 'runs lighter' : 'full'}`;
+  ui.quality.setAttribute('aria-pressed', String(!lighter));
+  ui.quality.disabled = quality.probing();
+};
+paintQuality();
+
+ui.quality.addEventListener('click', () => {
+  quality.setTier(quality.tier() === 'lighter' ? 'full' : 'lighter', knobs);
+  paintQuality();
   sfx.click();
 });
 
