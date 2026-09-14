@@ -1,4 +1,4 @@
-import { makeAccessories } from './customization.js';
+import { makeAccessories, ACCESSORIES, selectAccessory } from './customization.js';
 /* =============================================================================
  * gopher.js — the player: two models, one pivot, and no animation clips.
  *
@@ -194,7 +194,7 @@ export async function createGopher(scene, shadows) {
   }
 
   // Each model gets its own head-mounted meshes; choices live only in memory.
-  const accessories = { topHat: false, sunglasses: false };
+  const accessories = Object.fromEntries(ACCESSORIES.map(item => [item.id, false]));
   const outfits = [...new Set(Object.values(forms))].flatMap(form =>
     form.parts.Head ? [makeAccessories(form.parts.Head.node, scene, shadows)] : []);
 
@@ -352,7 +352,7 @@ export async function createGopher(scene, shadows) {
     getAccessories() { return { ...accessories }; },
     setAccessory(item, enabled) {
       if (!Object.hasOwn(accessories, item)) return;
-      accessories[item] = !!enabled;
+      selectAccessory(accessories, item, enabled);
       for (const outfit of outfits) outfit.set(accessories);
     },
     get form() {

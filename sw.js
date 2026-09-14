@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.6.2'; // Session-only gopher dressing station.
+const VERSION = 'v2.6.7'; // Dresser and accessories in the world's PBR, so the lamps light them like everything else.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

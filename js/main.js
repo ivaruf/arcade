@@ -1,4 +1,4 @@
-import { createCustomizationStation } from './customization.js';
+import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
  *
@@ -842,7 +842,7 @@ function updatePrompt(dt) {
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
   } else if (nearCustomization) {
     ui.prompt.hidden = false;
-    ui.promptTitle.textContent = 'Silly Stuff';
+    ui.promptTitle.textContent = 'Dresser';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>DRESS</kbd>' : '<kbd>E</kbd> customize gopher';
   } else {
     ui.prompt.hidden = true;
@@ -868,7 +868,12 @@ scene.onPointerObservable.add((info) => {
 function updateCamera(dt) {
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
-  if (phase === 'diving' || phase === 'playing' || phase === 'rising' || phase === 'customizing') return;
+  if (phase === 'customizing') {
+    const aspect = engine.getRenderWidth() * .58 / engine.getRenderHeight();
+    camera.radius = Math.max(2.8, .50 / (Math.tan(camera.fov / 2) * aspect));
+    return;
+  }
+  if (phase === 'diving' || phase === 'playing' || phase === 'rising') return;
 
   const look = input.lookState();
   if (look.x || look.y) {
@@ -1107,38 +1112,72 @@ registerWorker();
 
 // Dress-up is a local modal, not a game launch or a persisted profile.
 const outfitDialog = $('customize-dialog');
+const inventory = $('outfit-items');
+for (const item of ACCESSORIES) {
+  const button = document.createElement('button');
+  button.type = 'button'; button.className = 'outfit-item'; button.dataset.accessory = item.id;
+  button.setAttribute('aria-pressed', 'false');
+  button.innerHTML = `<span class="item-photo"><img alt="" hidden/><span class="item-photo-status">Loading preview…</span></span><span>${item.label}</span><small>${item.slotLabel} slot</small>`;
+  button.addEventListener('click', () => {
+    if (phase !== 'customizing') return;
+    gopher.setAccessory(item.id, !gopher.getAccessories()[item.id]); paintOutfit(); sfx.click();
+  });
+  inventory.append(button);
+}
 function paintOutfit() {
   const worn = gopher.getAccessories();
-  for (const [id, key, label] of [['wear-sunglasses','sunglasses','Silly sunglasses'],['wear-tophat','topHat','Top hat']]) {
-    const button = $(id);
-    button.setAttribute('aria-pressed', String(worn[key]));
-    button.textContent = `${label}: ${worn[key] ? 'on' : 'off'}`;
-  }
+  for (const button of inventory.children) button.setAttribute('aria-pressed', String(worn[button.dataset.accessory]));
+  const count = Object.values(worn).filter(Boolean).length;
+  $('outfit-count').textContent = count ? `${count} ${count === 1 ? 'item' : 'items'} selected` : 'Nothing on yet';
+  $('outfit-clear').disabled = count === 0;
+  $('outfit-slots').textContent = [...new Set(ACCESSORIES.map(i => i.slot))].map(slot => {
+    const items = ACCESSORIES.filter(i => i.slot === slot);
+    return `${items[0].slotLabel}: ${items.find(i => worn[i.id])?.label || 'empty'}`;
+  }).join(' · ');
 }
 function openCustomization() {
   if (phase !== 'floor' || !nearCustomization) return;
   phase = 'customizing'; input.clear(); ui.prompt.hidden = true;
+  document.body.classList.add('dressing-room');
   state.vx = state.vz = 0; state.speed01 = 0;
   gopher.pivot.position.copyFrom(customizationStation.stand);
   state.yaw = 0; gopher.pivot.rotation.y = 0;
-  outfitCamera = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
+  outfitCamera = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, viewport: camera.viewport };
+  camera.viewport = new BABYLON.Viewport(0, 0, .58, 1);
   camera.detachControl();
   camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
   cameraTarget.position.copyFrom(gopher.pivot.position);
-  cameraTarget.position.y += .82;
+  cameraTarget.position.y += .85;
   camera.alpha = Math.PI / 2; camera.beta = 1.30; camera.radius = 3.1;
-  paintOutfit(); outfitDialog.showModal(); $('wear-sunglasses').focus();
+  paintOutfit(); outfitDialog.showModal(); inventory.firstElementChild.focus();
+  accessoryPreviews().then(images => {
+    for (const button of inventory.children) {
+      const image = button.querySelector('img');
+      image.src = images[button.dataset.accessory]; image.hidden = false;
+      button.querySelector('.item-photo-status').hidden = true;
+    }
+  }).catch(error => {
+    console.warn('[dresser] Item preview unavailable', error);
+    for (const status of inventory.querySelectorAll('.item-photo-status')) status.textContent = 'Preview unavailable';
+  });
 }
 function closeCustomization() {
   if (phase !== 'customizing') return;
   outfitDialog.close(); input.clear(); phase = 'floor';
+  document.body.classList.remove('dressing-room');
   Object.assign(camera, outfitCamera); outfitCamera = null;
   camera.attachControl(ui.canvas, false); ui.canvas.focus();
 }
-for (const [id, key] of [['wear-sunglasses','sunglasses'],['wear-tophat','topHat']]) {
+$('outfit-clear').addEventListener('click', () => {
+  if (phase !== 'customizing') return;
+  for (const item of ACCESSORIES) gopher.setAccessory(item.id, false);
+  paintOutfit();
+});
+for (const [id, direction] of [['outfit-left', -1], ['outfit-right', 1]]) {
   $(id).addEventListener('click', () => {
     if (phase !== 'customizing') return;
-    gopher.setAccessory(key, !gopher.getAccessories()[key]); paintOutfit(); sfx.click();
+    state.yaw += direction * Math.PI / 6;
+    gopher.pivot.rotation.y = state.yaw;
   });
 }
 $('customize-done').addEventListener('click', closeCustomization);

@@ -85,12 +85,16 @@
 </div>
 
 <dialog id="customize-dialog" aria-labelledby="customize-title">
-  <h2 id="customize-title" class="sign small">Silly Stuff</h2>
-  <p>One, both, or neither. Make it yours.</p>
-  <button id="wear-sunglasses" class="ghost" type="button" aria-pressed="false">Silly sunglasses: off</button>
-  <button id="wear-tophat" class="ghost" type="button" aria-pressed="false">Top hat: off</button>
-  <p class="customize-note">Your look stays until you reload this page.</p>
-  <button id="customize-done" class="neon" type="button">Looking good — done</button>
+  <section class="outfit-preview" aria-label="Live gopher preview">
+    <div class="outfit-preview-heading"><span class="outfit-eyebrow">THE DRESSING ROOM</span><h2>Your gopher</h2></div>
+    <div class="outfit-turn"><button id="outfit-left" type="button" aria-label="Turn gopher left">↶</button><span>Take a look around</span><button id="outfit-right" type="button" aria-label="Turn gopher right">↷</button></div>
+  </section>
+  <section class="outfit-inventory">
+    <header><span class="outfit-eyebrow">MIX &amp; MATCH</span><h2 id="customize-title">Dresser</h2><p>One item per slot. Pick a new item to swap it in, or select it again to take it off.</p></header>
+    <p id="outfit-slots" class="outfit-slots" aria-live="polite"></p>
+    <div id="outfit-items" class="outfit-items" role="group" aria-label="Accessory inventory"></div>
+    <footer><p id="outfit-count" aria-live="polite">Nothing on yet</p><button id="outfit-clear" class="ghost" type="button">Take everything off</button><button id="customize-done" class="neon" type="button">Wear this look</button><p class="customize-note">Your look stays until you reload this page.</p></footer>
+  </section>
 </dialog>
 
 <div id="pause" class="card pause" hidden>

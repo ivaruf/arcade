@@ -395,3 +395,41 @@ toggles, a front camera view and Done / Escape exit, pausing movement while
 open. The counter has a matching blocker and sits beside the starter path.
 The station is runtime geometry; no Blender rebuild is needed. Accessory unit
 checks and syntax checks passed. No playtesting was performed.
+
+The dressing room now presents an eight-item inventory beside a dedicated live
+camera viewport. Hat, sunglasses, monocle, mustache, bow tie, clown nose, gold
+hoops and alien antennae can all be selected independently, including together.
+Cards show selected states; rotate buttons inspect the result and Clear removes
+every item. The camera viewport is restored on exit. Selection still lives only
+in the current page. No playtesting.
+
+## Dresser machine and equipment slots
+
+The welcome station is now an enclosed Dresser machine with illuminated side
+casings, a recessed mannequin display, a button deck and a named marquee. Its
+blocker covers the full shell. Inventory images are rendered on demand from
+the same meshes worn by the gopher, using a temporary shared preview renderer
+that is disposed after its eight photos are cached in memory. No icon stand-ins.
+
+Equipment enforces one item per slot in the gopher state: hat/antennae share
+Head; sunglasses/monocle share Eyes; mustache, nose, bow tie and earrings use
+Mouth, Nose, Neck and Ears. Selecting another item replaces the previous item
+in that slot and updates both forms. Choices remain session-only.
+No playtesting was performed.
+
+The Dresser now sits at (-4.9, 0, 2.3), facing inward from the welcome cloud’s
+west edge. Its shell has rounded pillars, eight chunky buttons, three levers,
+twin needle gauges, a large adjustment dial, cooling fins, external brass
+pipes and a ready beacon. Controls are decorative; the inventory interaction
+is unchanged. The rotated collision box and approach point match the new
+placement, leaving the central route and the nearby bench clear.
+
+The Dresser and the worn accessories are PBR materials, like every prop the
+GLBs bring in. They were StandardMaterials first and rendered pure white with
+cyan fringes: the two intensity-34 point lamps are tuned for PBR's inverse-
+square falloff, and StandardMaterial reads them through Babylon's linear range
+falloff instead, which from the dresser's spot is 15-20x per lamp. Capping the
+material at its first two lights (sky and sun) only held by creation order, so
+the machine now simply speaks the world's material and is lit by all four
+lights the way its neighbours are. Not playtested; `paint()` in
+`js/customization.js` carries the reasoning.
