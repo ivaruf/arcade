@@ -90,29 +90,20 @@ export const PLACEMENT = {
 };
 
 /**
- * Cabinet standings per platform, and which way each machine looks.
- *
- * A cabinet's screen faces its local +Z, and under a Y rotation that direction
- * becomes (sin yaw, cos yaw). So to face the welcome cloud at the origin from
- * (x, z) the screen has to point along (-x, -z), which is exactly what
- * `facingHub` returns. It is DERIVED rather than written down because a yaw
- * typed by hand is a yaw that goes stale the moment an island moves — which is
- * how half of these ended up showing the sky their backs: you flew across,
- * landed, and had to walk around the machine to find its screen.
- *
- * The positions themselves stay where they were relative to their island,
- * because each one was chosen to miss that island's own furniture — the tank
- * and its stools, the boiler, the pergola posts.
+ * Screens face local +Z. Most cabinets face the welcome cloud; where scenery
+ * defines a walking lane, face back along that lane instead.
  */
 const facingHub = (x, z) => Math.atan2(-x, -z);
 const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
 
 export const SLOTS = {
-  dam: [stand(14.3, -15)],
+  // Enter from the southwest, pass the reservoir on the right, then play.
+  dam: [{ x: 15, z: -20.3, yaw: 0 }],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
   race: [stand(-21.2, -2.4), stand(-16.8, -2.4)],
   mine: [stand(24.0, -2.0), stand(24.0, 2.0)],
-  calm: [stand(0.0, 15.4), stand(0.0, 20.6)],
+  // Walk through the pergola and across the floor inlay to reach Swirls.
+  calm: [stand(0.0, 20.0)],
 };
 
 /**
@@ -219,8 +210,8 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
-  // Miniature dam and reservoir, behind the open cabinet approach.
-  { x: 19, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1 },
+  // Miniature dam and reservoir, east of the western walking lane.
+  { x: 20, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1 },
   // Steamworks plant stays at the west/south perimeter, clear of cabinet fronts.
   { x: -22, z: 2, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
   { x: -21.75, z: .72, hx: .55, hz: .4, top: 3, base: 1.5 },
@@ -251,7 +242,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=dam-island-1', scene);
+  const held = await container('cloud-world.glb?v=interior-approaches-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

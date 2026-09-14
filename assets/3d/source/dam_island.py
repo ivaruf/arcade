@@ -1,7 +1,7 @@
 """Dam Break's miniature reservoir. Static scenery, not a second game simulation.
-All dimensions use game coordinates; the cabinet approach stays southwest.
+All dimensions use game coordinates; the western walking lane leads from arrival to the cabinet.
 """
-DX,DY,DZ=DAM['x']+1,DAM['y'],DAM['z']-1.7
+DX,DY,DZ=DAM['x']+2,DAM['y'],DAM['z']-1.7
 concrete=material('Dam weathered concrete',(.46,.48,.44),0,0,.8)
 capstone=material('Dam pale coping',(.67,.65,.54),0,0,.66)
 basin=material('Reservoir deep blue',(.025,.19,.25),.05,0,.19)

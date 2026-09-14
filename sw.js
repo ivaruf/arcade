@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.5.2'; // The clouds go back in the glow layer, where they were holding the depth
+const VERSION = 'v2.5.3'; // Dam Break and Swirls: scenery first, cabinets farther inside.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

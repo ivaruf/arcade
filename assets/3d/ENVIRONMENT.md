@@ -282,8 +282,10 @@ back at the hub. No playtest.
 ## Dam Break reservoir island
 
 Dam Break got a dedicated northeast island at (18, 1, -18) with an 11 × 11 m
-limestone landing area, its machine on the clear southwest approach facing the
-welcome cloud, and its sign at the far edge. Fishtank kept the aquarium island.
+limestone landing area and its sign at the far edge. Enter from the southwest
+and follow the western lane past the reservoir to the cabinet at (15, -20.3),
+facing south along that lane. The diorama is centered at (20, -19.7), with its
+collision bounds moved alongside it. Fishtank kept the aquarium island.
 
 The miniature holds a concrete dam, raised reservoir, retaining banks, crown
 walkway and handrail, three closed spillway gates, stepped buttresses, a lower
@@ -313,3 +315,12 @@ answer — the model's draw calls were not the limit.
 
 A first attempt also restricted the glow layer to emissive meshes and was
 reverted; see the invariant above.
+
+## Scenery before the cabinet
+
+Swirls sits at (0, 20), facing the northern entrance. Walk through the leafy
+pergola and across the circular floor inlay before reaching the machine, with
+the benches to either side and the sign behind it. Its old entrance slot is
+removed. Both this cabinet and Dam Break retain standing space inside their
+islands; the editable Blender scene includes their updated reference positions.
+No playtesting or preview rendering was performed.
