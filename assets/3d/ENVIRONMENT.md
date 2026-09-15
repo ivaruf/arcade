@@ -433,3 +433,18 @@ material at its first two lights (sky and sun) only held by creation order, so
 the machine now simply speaks the world's material and is lit by all four
 lights the way its neighbours are. Not playtested; `paint()` in
 `js/customization.js` carries the reasoning.
+
+## NeonFox island
+
+NeonFox keeps its actual repository/URL slug `trailblazers`. Its dedicated
+12 × 12 m cloud at (-19, 2, -18) has a rear sign, alloy flooring and a
+miniature neon trail arena on the north side. Two decorative riders use
+the real fox/orb model from `trailblazers/models/fox-detailed.glb`, frozen
+and simplified for display; the source copy lives under `source/neonfox/`.
+
+`source/build_double_cabinet.py` makes `machine-double.glb` from the classic
+cabinet with a double-width shared screen and two separate joystick/button
+banks. Runtime screen size, standing/camera distance and footprint match
+the wide shell. Its single entry launches NeonFox's existing game/lobby;
+the game owns multiplayer. The southeast entrance and central route stay clear.
+Rebuild the double cabinet before `render_environment.py`. No playtesting.

@@ -47,6 +47,7 @@ const ASSETS = './assets/3d/';
  * finding a game is never the puzzle. The fun is the flying, not the hunting.
  */
 export const PLATFORMS = [
+  { id: 'neonfox', name: 'The neon arena', x: [-25, -13], z: [-24, -12], y: 2 },
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
   { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
   { id: 'race', name: 'The gyro hangar', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
@@ -70,6 +71,7 @@ export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
+  neonfox: { x: -24.5, y: 2, z: -18, top: 5.4 },
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
   water: { x: 0, y: -2.5, z: -23.5, top: 5.4 },
   race: { x: -23, y: 1.5, z: 0, top: 5.0 },
@@ -85,6 +87,7 @@ export const BEACONS = {
  * bearings, and a machine on it would be the one everybody played.
  */
 export const PLACEMENT = {
+  trailblazers: 'neonfox',
   maxgear: 'race',
   fishtank: 'water',
   dam_break: 'dam',
@@ -101,6 +104,7 @@ const facingHub = (x, z) => Math.atan2(-x, -z);
 const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
 
 export const SLOTS = {
+  neonfox: [{ x: -22, z: -18, yaw: Math.PI / 2 }],
   // Enter from the southwest, pass the reservoir on the right, then play.
   dam: [{ x: 15, z: -20.3, yaw: 0 }],
   water: [stand(4.0, -21.0), stand(4.0, -17.0)],
@@ -186,6 +190,7 @@ export function blockerFor(slot, local) {
  * metre and a half into a platform that is only nine metres across.
  */
 const FOOTPRINT = {
+  double: [{ x: 0, z: .11, hx: 1.2, hz: .62, top: 2.32 }],
   classic: [{ x: 0, z: 0.11, hx: 0.6, hz: 0.62, top: 2.32 }],
 };
 
@@ -216,6 +221,7 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  { x: -18.5, z: -21.4, hx: 4.5, hz: 1.4, top: 4.25, base: 2 },
   // Gyro-wedge landing display and its rear diagnostics console.
   { x: -18, z: 1.05, hx: 1.6, hz: 1.6, top: 3.05, base: 1.5 },
   { x: -20.15, z: 2.48, hx: .42, hz: .31, top: 2.85, base: 1.5 },
@@ -263,7 +269,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=supermine-clear-path-1', scene);
+  const held = await container('cloud-world.glb?v=neonfox-island-1', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

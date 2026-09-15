@@ -6,6 +6,11 @@
     "dam_break",
     "supermine",
     "supermine_adventure",
-    "maxgear"
+    "maxgear",
+    {
+      "slug": "trailblazers",
+      "name": "NeonFox",
+      "accent": "#39daf2"
+    }
   ]
 }

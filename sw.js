@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.6.7'; // Dresser and accessories in the world's PBR, so the lamps light them like everything else.
+const VERSION = 'v2.7.0'; // NeonFox double cabinet and dedicated neon island.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 

@@ -61,7 +61,8 @@ MINE = dict(x=20.0, y=-5.5, z=0.0, hx=8.0, hz=6.0)      # east
 CALM = dict(x=0.0, y=6.0, z=18.0, hx=4.5, hz=4.5)       # south, and highest
 DAM = dict(x=18.0, y=1.0, z=-18.0, hx=5.5, hz=5.5)  # northeast
 ADVENTURE = dict(x=20.0, y=-5.5, z=18.0, hx=6.0, hz=6.0)  # linked to Supermine
-DECKS = [WELCOME, RACE, WATER, MINE, CALM, DAM, ADVENTURE]
+NEONFOX = dict(x=-19.0,y=2.0,z=-18.0,hx=6.0,hz=6.0)
+DECKS = [WELCOME, RACE, WATER, MINE, CALM, DAM, ADVENTURE, NEONFOX]
 
 # ---------------------------------------------------------------------------
 # Materials: the kit's palette, plus what a sky needs.

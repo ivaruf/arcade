@@ -40,12 +40,13 @@ import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, PLATFORMS } from 
  * now, and the variety is the tint.
  */
 const KINDS = [{ kind: 'classic', accentMaterial: 'Mint neon', stand: 1.3, cinema: 1.25 }];
+const DOUBLE = { kind: 'double', accentMaterial: 'Mint neon', stand: 1.55, cinema: 1.65, width: 2 };
 
 /** The CRT, read off build_arcade.py's `Display` box and converted. */
-const SCREEN = { y: 1.5, z: 0.288, width: 0.7, height: 0.49, tilt: 0.1396 };
+const BASE_SCREEN = { y: 1.5, z: 0.288, width: 0.7, height: 0.49, tilt: 0.1396 };
 
 /** The marquee box's front face, just in front of the lettering we remove. */
-const MARQUEE = { y: 2.012, z: 0.337, width: 1.0, height: 0.2 };
+const BASE_MARQUEE = { y: 2.012, z: 0.337, width: 1.0, height: 0.2 };
 
 const TAU = Math.PI * 2;
 
@@ -272,6 +273,8 @@ function emissivePanel(name, texture, scene) {
  * camera goes when a coin drops.
  */
 async function machine(scene, shadows, held, spec, game, slot) {
+  const SCREEN = { ...BASE_SCREEN, width: BASE_SCREEN.width * (spec.width || 1) };
+  const MARQUEE = { ...BASE_MARQUEE, width: BASE_MARQUEE.width * (spec.width || 1) };
   const floor = slot.floor ?? 0;
   const holder = new BABYLON.TransformNode(`cabinet:${game ? game.slug : spec.kind}`, scene);
   holder.position.set(slot.x, floor, slot.z);
@@ -341,7 +344,7 @@ async function machine(scene, shadows, held, spec, game, slot) {
 
   // ---- the CRT ----
   const icon = await loadIcon(game.icon);
-  const screenTex = new BABYLON.DynamicTexture(`crt:${game.slug}`, { width: 512, height: 360 }, scene, true);
+  const screenTex = new BABYLON.DynamicTexture(`crt:${game.slug}`, { width: 512 * (spec.width || 1), height: 360 }, scene, true);
   screenTex.hasAlpha = false;
   const screen = panel(`crt:${game.slug}`, SCREEN, scene);
   screen.parent = holder;
@@ -350,13 +353,13 @@ async function machine(scene, shadows, held, spec, game, slot) {
   screen.material = emissivePanel(`crtMat:${game.slug}`, screenTex, scene);
 
   // ---- the marquee ----
-  const marqueeTex = new BABYLON.DynamicTexture(`marquee:${game.slug}`, { width: 1024, height: 204 }, scene, true);
+  const marqueeTex = new BABYLON.DynamicTexture(`marquee:${game.slug}`, { width: 1024 * (spec.width || 1), height: 204 }, scene, true);
   const marquee = panel(`marquee:${game.slug}`, MARQUEE, scene);
   marquee.parent = holder;
   marquee.position.set(0, MARQUEE.y, MARQUEE.z);
   marquee.material = emissivePanel(`marqueeMat:${game.slug}`, marqueeTex, scene);
   const mctx = marqueeTex.getContext();
-  drawMarquee(mctx, 1024, 204, game, accent);
+  drawMarquee(mctx, marqueeTex.getSize().width, 204, game, accent);
   marqueeTex.anisotropicFilteringLevel = 8;
   marqueeTex.update();
   for (const layer of scene.effectLayers || []) if (layer.addExcludedMesh) layer.addExcludedMesh(marquee);
@@ -412,7 +415,8 @@ async function machine(scene, shadows, held, spec, game, slot) {
 export function setLit(cabinet, lit) {
   if (!cabinet.screenTex || cabinet.lit === lit) return;
   cabinet.lit = lit;
-  drawScreen(cabinet.screenTex.getContext(), 512, 360, cabinet.game, cabinet.accent, cabinet.icon, lit);
+  const { width, height } = cabinet.screenTex.getSize();
+  drawScreen(cabinet.screenTex.getContext(), width, height, cabinet.game, cabinet.accent, cabinet.icon, lit);
   cabinet.screenTex.update();
   if (cabinet.decalMat) cabinet.decalMat.alpha = lit ? 0.5 : 0.16;
 }
@@ -467,7 +471,7 @@ export async function placeCabinets(scene, shadows, games) {
   const cabinets = [];
   const plan = floorPlan(games);
   for (let i = 0; i < plan.length; i++) {
-    const spec = KINDS[i % KINDS.length];
+    const spec = plan[i].game.slug === 'trailblazers' ? DOUBLE : KINDS[i % KINDS.length];
     try {
       cabinets.push(await machine(scene, shadows, await need(spec.kind), spec, plan[i].game, plan[i].slot));
     } catch (err) {
