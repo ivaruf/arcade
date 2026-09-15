@@ -436,7 +436,8 @@ lights the way its neighbours are. Not playtested; `paint()` in
 
 ## NeonFox island
 
-NeonFox keeps its actual repository/URL slug `trailblazers`. Its dedicated
+NeonFox uses the published URL slug `neonfox`; its local source folder was
+`trailblazers` when the display assets were imported. Its dedicated
 12 × 12 m cloud at (-19, 2, -18) has a rear sign, alloy flooring and a
 miniature neon trail arena on the north side. Two decorative riders use
 the real fox/orb model from `trailblazers/models/fox-detailed.glb`, frozen
@@ -448,3 +449,26 @@ banks. Runtime screen size, standing/camera distance and footprint match
 the wide shell. Its single entry launches NeonFox's existing game/lobby;
 the game owns multiplayer. The southeast entrance and central route stay clear.
 Rebuild the double cabinet before `render_environment.py`. No playtesting.
+
+Fishtank also uses the double cabinet, with two control banks and a shared
+screen. It keeps its aquarium-island position at (4, -21); the wider footprint
+and standing distance leave the aquarium, stools and arrival route clear.
+The Blender reference scene and generator use the matching double cabinet.
+
+## NeonFox floor arena
+
+The miniature display and fox riders are replaced by an open midnight-blue
+12 × 12 grid across the whole island. `source/neonfox_island.py` supplies the
+slab and static grid; `js/neonfox.js` overlays its surface 4 mm above collision
+height with the game's grid styling and six player colors. Fading trails follow
+smooth bounded paths at different speeds, drawn into one 768 px texture at
+24 Hz. They remain in the floor, with no foxes or raised obstacles.
+The old display collider is removed; the rear sign and double cabinet stay put.
+The display is unlit and excluded individually from glow to preserve its dark
+background under arcade lighting. No global glow filtering changes.
+Blender outputs rebuilt without rendering; no playtesting.
+
+The NeonFox display uses a black `emissiveColor`: StandardMaterial adds this
+color to `emissiveTexture`, so white clips the entire floor to white even with
+lighting disabled. The texture alone now supplies emission. No Blender rebuild
+is needed for this material correction; no playtesting.

@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.7.0'; // NeonFox double cabinet and dedicated neon island.
+const VERSION = 'v2.7.5'; // Preserve NeonFox floor texture colors instead of adding white.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -48,6 +48,7 @@ const SHELL_FILES = [
   './js/aquarium.js',
   './js/gears.js',
   './js/swirls.js',
+  './js/neonfox.js',
   './js/cabinets.js',
   './js/gopher.js',
   './js/customization.js',
@@ -59,6 +60,10 @@ const SHELL_FILES = [
   './js/signs.js',
   './js/screen.js',
   './js/install.js',
+  // NeonFox's cabinet art. Held here rather than fetched from the game so the
+  // screen is right before the game is published, and so a cabinet never
+  // depends on a round trip to another origin to have a face.
+  './assets/games/neonfox-192.png',
   './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',

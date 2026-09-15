@@ -1,6 +1,7 @@
 import { createAquariumSwimmers } from './aquarium.js';
 import { createGearAnimation } from './gears.js';
 import { createIslandSwirls } from './swirls.js';
+import { createNeonFoxFloor } from './neonfox.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -87,7 +88,7 @@ export const BEACONS = {
  * bearings, and a machine on it would be the one everybody played.
  */
 export const PLACEMENT = {
-  trailblazers: 'neonfox',
+  neonfox: 'neonfox',
   maxgear: 'race',
   fishtank: 'water',
   dam_break: 'dam',
@@ -221,7 +222,6 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
-  { x: -18.5, z: -21.4, hx: 4.5, hz: 1.4, top: 4.25, base: 2 },
   // Gyro-wedge landing display and its rear diagnostics console.
   { x: -18, z: 1.05, hx: 1.6, hz: 1.6, top: 3.05, base: 1.5 },
   { x: -20.15, z: 2.48, hx: .42, hz: .31, top: 2.85, base: 1.5 },
@@ -269,7 +269,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=neonfox-island-1', scene);
+  const held = await container('cloud-world.glb?v=neonfox-floor-2', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);
@@ -291,8 +291,9 @@ export async function buildWorld(scene) {
   }
 
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
+  const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
   return {
     blockers: [...FURNITURE],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); },
   };
 }

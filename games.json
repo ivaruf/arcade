@@ -8,9 +8,10 @@
     "supermine_adventure",
     "maxgear",
     {
-      "slug": "trailblazers",
+      "slug": "neonfox",
       "name": "NeonFox",
-      "accent": "#39daf2"
+      "accent": "#39daf2",
+      "icon": "assets/games/neonfox-192.png"
     }
   ]
 }

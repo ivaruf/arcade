@@ -471,7 +471,7 @@ export async function placeCabinets(scene, shadows, games) {
   const cabinets = [];
   const plan = floorPlan(games);
   for (let i = 0; i < plan.length; i++) {
-    const spec = plan[i].game.slug === 'trailblazers' ? DOUBLE : KINDS[i % KINDS.length];
+    const spec = ['neonfox', 'fishtank'].includes(plan[i].game.slug) ? DOUBLE : KINDS[i % KINDS.length];
     try {
       cabinets.push(await machine(scene, shadows, await need(spec.kind), spec, plan[i].game, plan[i].slot));
     } catch (err) {
