@@ -22,7 +22,7 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.7.6'; // The dresser stacks on a phone instead of hiding its items in a 160px gutter.
+const VERSION = 'v2.7.6'; // The dresser shows its items on a phone: two columns sideways, stacked upright.
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
