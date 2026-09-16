@@ -464,7 +464,7 @@ function floorPlan(games) {
 export async function placeCabinets(scene, shadows, games) {
   const containers = new Map();
   const need = async (kind) => {
-    if (!containers.has(kind)) containers.set(kind, await container(`machine-${kind}.glb`, scene));
+    if (!containers.has(kind)) containers.set(kind, await container(`machine-${kind}.glb${kind === 'double' ? '?v=side-clearance-2' : ''}`, scene));
     return containers.get(kind);
   };
 

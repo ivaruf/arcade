@@ -22,6 +22,14 @@ function creature(scene, id) {
     const m=B.MeshBuilder.CreateSphere(`${id} ${name}`,{diameter:1,segments:16},scene);
     m.parent=parent;m.material=mat;m.position.set(...pos);m.scaling.set(...scale);m.isPickable=false;return m;
   }
+  function smile(width,y,z) {
+    const path=Array.from({length:17},(_,i)=>{
+      const u=i/8-1;
+      return new B.Vector3(u*width/2,y+.018*u*u,z-.008*u*u);
+    });
+    const mouth=B.MeshBuilder.CreateTube(`${id} gentle smile`,{path,radius:.006,tessellation:8,cap:B.Mesh.CAP_ALL},scene);
+    mouth.parent=body;mouth.material=dark;mouth.isPickable=false;
+  }
   const feet=[],ears=[];
   let tail;
   if(id==='pip') {
@@ -43,6 +51,7 @@ function creature(scene, id) {
       roundedPetBox(scene,'Pip tooth',body,white,[side*.025,.508,.235],[.041,.056,.025],.8);
     }
     ball('nose',body,pink,[0,.595,.267],[.057,.04,.034]);
+    smile(.19,.546,.263);
     tail=ball('cotton tail',body,cream,[0,.24,-.245],[.23,.22,.23]);
   } else {
     // Low, long axolotl: four splayed feet, broad smile, feathery gills and fin tail.
@@ -66,7 +75,7 @@ function creature(scene, id) {
         for(let j=0;j<3;j++)for(const branch of [-1,1])ball('gill frond',gill,pink,[branch*.041,.09+j*.065,0],[.09,.035,.037]).rotation.z=branch*.4;
       }
     }
-    ball('smile',body,dark,[0,.286,.459],[.16,.016,.01]);
+    smile(.19,.279,.462);
     tail=new B.TransformNode('Noodle fin tail',scene);tail.parent=body;tail.position.set(0,.22,-.40);
     for(let i=0;i<5;i++)ball('tail segment',tail,fur,[Math.sin(i*.5)*.06,0,-i*.085],[.23-i*.037,.21-i*.032,.18]);
     ball('translucent-look tail fin',tail,pink,[.035,.04,-.21],[.055,.31,.42]);
