@@ -87,6 +87,19 @@ const CATCH_AFTER = 0.5;
  */
 const CAMERA = { height: 0.62, radius: 5, beta: 1.16, titleRadius: 6.4, titleBeta: 1.25, maxRadius: 8 };
 
+/**
+ * Whether the welcome card is shown at all, in the key family the arcade's
+ * other settings already use (§6: `<slug>.<thing>.v<n>`).
+ *
+ * Declared up here with the tuning rather than beside the two functions that
+ * read it, because `boot()` asks before the module body has finished running.
+ * That works today only because boot awaits the machines and the models first;
+ * a `const` reached later would be a temporal-dead-zone throw the day someone
+ * makes boot return sooner, and the failure would look like the arcade not
+ * opening at all.
+ */
+const WELCOME_KEY = 'arcade.cloudnine.welcome.v1';
+
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const damp = (a, b, rate, dt) => a + (b - a) * (1 - Math.exp(-rate * dt));
 const smooth = (t) => t * t * (3 - 2 * t);
@@ -357,9 +370,18 @@ async function boot() {
     enterFloor(false);
     standAt(wanted);
     startDive(wanted, true);
-  } else {
+  } else if (welcomeWanted()) {
     phase = 'title';
     ui.title.hidden = false;
+  } else {
+    // Waved away, so walk in for them. Everything the Play button does, minus
+    // the sound: no click happened, so there is no gesture to start an
+    // AudioContext with and the browser would refuse. armSound waits for the
+    // first one the player makes instead of starting silent for ever.
+    enterFloor(false);
+    easeCamera(CAMERA.beta, CAMERA.radius, 1.8, Math.PI / 2);
+    if (input.IS_TOUCH) ui.touch.hidden = false;
+    armSound();
   }
 }
 
@@ -386,6 +408,30 @@ function enterFloor(withSound = true) {
     sfx.startMusic().then(paintAudio);
     sfx.duckMusic(false);
   }
+}
+
+/**
+ * Start the room's sound on the first gesture the player makes, whenever that
+ * is. Only used when the welcome card was skipped: every other way in goes
+ * through a button, and a button IS the gesture.
+ *
+ * Not wired unconditionally at boot, because a deliberate `enterFloor(false)`
+ * elsewhere means what it says — a #play= link dives straight into a game, and
+ * the arcade's music has no business starting over it.
+ */
+let soundArmed = false;
+function armSound() {
+  if (soundArmed) return;
+  soundArmed = true;
+  const events = ['pointerdown', 'keydown'];
+  const go = () => {
+    for (const event of events) window.removeEventListener(event, go);
+    sfx.unlock();
+    sfx.startAmbience();
+    sfx.startMusic().then(paintAudio);
+    sfx.duckMusic(false);
+  };
+  for (const event of events) window.addEventListener(event, go);
 }
 
 function pause() {
@@ -1055,6 +1101,53 @@ function render() {
 input.attachKeyboard(window);
 if (input.attachTouch(ui.touch)) ui.touch.hidden = phase !== 'floor';
 
+/**
+ * Whether the welcome card is shown at all. Its own key, in the family the
+ * rest of the arcade's settings already use, and wrapped like all of them:
+ * private mode throws on the getter, and a player who cannot store a
+ * preference should still get an arcade rather than a blank screen. Defaulting
+ * to `true` on failure is the right way to be wrong — a card that comes back
+ * is a mild annoyance, a floor nobody asked for is a launcher behaving oddly.
+ */
+function welcomeWanted() {
+  try {
+    return localStorage.getItem(WELCOME_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+function rememberWelcome(on) {
+  try {
+    localStorage.setItem(WELCOME_KEY, on ? 'on' : 'off');
+  } catch {
+    // Nothing to do and nothing worth saying: the card simply returns.
+  }
+}
+
+// The card's own shortcut is offered only to an installed arcade — see the
+// comment on the button. exit.js answers "installed" for the whole hub and
+// answers it properly, `navigator.standalone` included, which is the iOS
+// signal that matches no display-mode query. Missing means the file failed to
+// load, and then we do not ask: the pause menu still holds the same setting.
+ui.skipWelcome = $('skip-welcome');
+try {
+  if (window.ArcadeExit?.standalone() === true) {
+    ui.skipWelcome.setAttribute('aria-pressed', String(!welcomeWanted()));
+    ui.skipWelcome.hidden = false;
+  }
+} catch {
+  /* not installed, or no exit.js: leave it hidden */
+}
+
+ui.skipWelcome.addEventListener('click', () => {
+  const skip = ui.skipWelcome.getAttribute('aria-pressed') !== 'true';
+  ui.skipWelcome.setAttribute('aria-pressed', String(skip));
+  rememberWelcome(!skip);
+  paintToggle(ui.welcome, 'Welcome screen', !skip);
+  sfx.unlock();
+  sfx.click();
+});
+
 ui.walkIn.addEventListener('click', () => {
   sfx.unlock();
   sfx.click();
@@ -1089,6 +1182,20 @@ const paintAudio = () => {
   }
 };
 paintAudio();
+
+// The setting itself, which every player has whether or not the card offered
+// them the shortcut. Both controls write the same key, so they paint each
+// other: turning the card back on here unticks the box over there.
+ui.welcome = $('welcome');
+paintToggle(ui.welcome, 'Welcome screen', welcomeWanted());
+ui.welcome.addEventListener('click', () => {
+  const on = ui.welcome.getAttribute('aria-pressed') !== 'true';
+  rememberWelcome(on);
+  paintToggle(ui.welcome, 'Welcome screen', on);
+  ui.skipWelcome.setAttribute('aria-pressed', String(!on));
+  sfx.unlock();
+  sfx.click();
+});
 
 ui.sound.addEventListener('click', () => {
   sfx.unlock();
