@@ -919,3 +919,31 @@ body.choosing-pet #touch, body.choosing-pet #hud { visibility: hidden; }
   .pet-choices button { min-height:48px; padding:8px 12px; }
   .pet-picker footer p { margin:0 0 5px; }
 }
+
+body.reading-parents #touch, body.reading-parents #hud { visibility:hidden; }
+#parents-dialog { box-sizing:border-box; width:min(940px,96vw); height:min(700px,92dvh); max-width:none; max-height:96dvh; padding:0; border:1px solid #93b7a9; border-radius:22px; overflow:hidden; background:#17343d; color:#fff4df; }
+#parents-dialog[open] { display:grid; grid-template-columns:38% minmax(0,1fr); }
+#parents-dialog::backdrop { background:#071824c9; }
+.parents-portrait { min-height:0; padding:16px; display:flex; align-items:center; justify-content:center; background:#739ad1; }
+.parents-portrait img { width:100%; height:100%; object-fit:contain; min-height:0; }
+.parents-panel { min-width:0; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; }
+.parents-copy { overflow-y:auto; overscroll-behavior:contain; padding:30px; line-height:1.65; font-size:16px; user-select:text; }
+.parents-copy h2 { font-size:30px; line-height:1.2; margin:8px 0 22px; }
+.parents-copy p { margin:0 0 18px; }
+.parents-copy .parents-eyebrow { font-size:11px; letter-spacing:.16em; color:#a7dfca; }
+.parents-panel footer { padding:12px 24px max(16px,env(safe-area-inset-bottom)); border-top:1px solid #426069; }
+.parents-panel button { min-height:44px; width:100%; border-radius:10px; background:#9bdec0; color:#15333b; font-weight:700; }
+#parents-dialog :focus-visible { outline:3px solid #f5d799; outline-offset:-3px; }
+@media (max-width:600px) and (orientation:portrait) {
+  #parents-dialog[open] { grid-template-columns:1fr; grid-template-rows:29% minmax(0,1fr); }
+  .parents-portrait { padding:8px; }
+  .parents-copy { padding:18px 22px; }
+  .parents-copy h2 { font-size:25px; }
+}
+@media (max-height:500px) and (orientation:landscape) {
+  #parents-dialog { width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
+  #parents-dialog[open] { grid-template-columns:32% minmax(0,1fr); }
+  .parents-copy { padding:16px max(22px,env(safe-area-inset-right)) 10px 20px; }
+  .parents-copy h2 { font-size:24px; margin-bottom:14px; }
+  .parents-panel footer { padding-top:8px; padding-bottom:max(8px,env(safe-area-inset-bottom)); }
+}

@@ -1,3 +1,4 @@
+import { createParentsSign } from './parents.js';
 import { seatNear } from './seating.js';
 import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
@@ -271,6 +272,8 @@ let cabinets = [];
 let customizationStation = null;
 let nearCustomization = false;
 let pets = null;
+let parentsSign = null;
+let nearParents = false;
 let nearPets = false;
 let nearSeat = null;
 let seatReturn = null;
@@ -311,7 +314,8 @@ async function boot() {
   cabinets = await placeCabinets(scene, shadows, machines);
   customizationStation = createCustomizationStation(scene, shadows);
   pets = createPets(scene);
-  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, ...cabinets.flatMap((c) => c.blockers)];
+  parentsSign = createParentsSign(scene);
+  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
@@ -826,13 +830,14 @@ function findNear() {
 
 function updatePrompt(dt) {
   if (state.seated) {
-    near = null; nearPets = nearCustomization = false; nearSeat = null;
+    near = null; nearParents = nearPets = nearCustomization = false; nearSeat = null;
     gopher.setReach(0, dt);
     ui.prompt.hidden = false; ui.promptTitle.textContent = sitMotion ? 'Sitting down…' : standMotion ? 'Getting up…' : 'Taking a break';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>STAND</kbd> to get up' : '<kbd>E</kbd> stand up · move or jump to leave';
     if (standMotion || sitMotion) ui.promptCue.textContent = '';
     input.setAction('stand'); return;
   }
+  nearParents = state.mode === 'walk' && state.grounded && parentsSign.inReach(gopher.pivot.position);
   nearSeat = state.mode === 'walk' && state.grounded ? seatNear(gopher.pivot.position) : null;
   nearPets = state.mode === 'walk' && state.grounded && pets.inReach(gopher.pivot.position);
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
@@ -871,6 +876,9 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.promptTitle.textContent = 'Dresser';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>DRESS</kbd>' : '<kbd>E</kbd> customize gopher';
+  } else if (nearParents) {
+    ui.prompt.hidden = false; ui.promptTitle.textContent = 'For parents and guardians';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>READ</kbd>' : '<kbd>E</kbd> read';
   } else if (nearSeat) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';
@@ -881,7 +889,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -896,7 +904,7 @@ scene.onPointerObservable.add((info) => {
 });
 
 function updateCamera(dt) {
-  if (phase === 'pets') return;
+  if (phase === 'pets' || phase === 'reading') return;
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'customizing') {
@@ -990,6 +998,7 @@ function render() {
       else if (phase === 'paused') unpause();
       else if (phase === 'customizing') closeCustomization();
       else if (phase === 'pets') pets.close();
+      else if (phase === 'reading') closeParents();
     }
 
     if (phase === 'floor') {
@@ -1017,6 +1026,7 @@ function render() {
       } else if (near && coin) startDive(near);
       else if (nearPets && coin) openPets();
       else if (nearCustomization && coin) openCustomization();
+      else if (nearParents && coin) openParents();
       else if (nearSeat && coin) sitOnSeat(nearSeat);
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
@@ -1351,3 +1361,24 @@ function updateStandMotion(dt) {
     updatePrompt(1);
   }
 }
+
+const parentsDialog = document.getElementById('parents-dialog');
+function openParents() {
+  if (phase !== 'floor' || !nearParents) return;
+  phase = 'reading'; input.clear(); ui.prompt.hidden = true;
+  state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
+  camera.detachControl();
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+  document.body.classList.add('reading-parents');
+  parentsDialog.showModal();
+  parentsDialog.querySelector('.parents-copy').scrollTop = 0;
+  document.getElementById('parents-close').focus();
+}
+function closeParents() {
+  if (phase !== 'reading') return;
+  parentsDialog.close(); input.clear(); phase = 'floor';
+  document.body.classList.remove('reading-parents');
+  camera.attachControl(ui.canvas, false); ui.canvas.focus();
+}
+document.getElementById('parents-close').addEventListener('click', closeParents);
+parentsDialog.addEventListener('cancel', event => { event.preventDefault(); closeParents(); });
