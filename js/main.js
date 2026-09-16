@@ -1101,6 +1101,10 @@ function render() {
 input.attachKeyboard(window);
 if (input.attachTouch(ui.touch)) ui.touch.hidden = phase !== 'floor';
 
+// Tell the card which machine it is on. Both hints ship hidden, so the wrong
+// one can never be the one that shows if this line is ever moved or removed.
+$(input.IS_TOUCH ? 'hint-touch' : 'hint-keys').hidden = false;
+
 /**
  * Whether the welcome card is shown at all. Its own key, in the family the
  * rest of the arcade's settings already use, and wrapped like all of them:

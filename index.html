@@ -65,11 +65,28 @@
        stop greeting you. The pause menu owns the same setting for everyone,
        so a tab can still turn it off — it just is not asked. -->
   <button id="skip-welcome" class="skip-next" type="button" aria-pressed="false" hidden>Go straight in next time</button>
-  <p class="fine">
+  <!-- Two hints, not one line rewritten in place. A phone has no W, A, S or D,
+       and a card that opens by telling a child to press them is the kind of
+       small lie that makes them decide the game is broken. js/main.js reveals
+       exactly one, off the same input.IS_TOUCH the prompt cue already uses, so
+       the card and the callout can never describe different machines.
+
+       The touch copy names the buttons by position rather than by glyph. ▲ and
+       » carry their meaning as art, which a screen reader cannot read out, and
+       the markup below already says what they are: the top one is always up,
+       the one under it is whatever the gopher can do where it stands. -->
+  <p id="hint-keys" class="fine" hidden>
     <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
     <kbd>Space</kbd> hop, again for the cloud &middot;
     <kbd>E</kbd> play &middot;
     drag to look
+    <br>fall off a cloud and the cloud comes back for you
+  </p>
+  <p id="hint-touch" class="fine" hidden>
+    left thumb walks &middot;
+    the top button hops, again for the cloud &middot;
+    the one under it plays at a machine &middot;
+    drag the sky to look
     <br>fall off a cloud and the cloud comes back for you
   </p>
 </div>
