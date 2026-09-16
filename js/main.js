@@ -268,6 +268,8 @@ let cabinets = [];
 let customizationStation = null;
 let nearCustomization = false;
 let outfitCamera = null;
+/** Width over height of the dresser's preview pane; fitOutfitPreview measures it. */
+let outfitAspect = 1;
 let gopher = null;
 let blockers = [];
 let near = null;
@@ -869,8 +871,11 @@ function updateCamera(dt) {
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'customizing') {
-    const aspect = engine.getRenderWidth() * .58 / engine.getRenderHeight();
-    camera.radius = Math.max(2.8, .50 / (Math.tan(camera.fov / 2) * aspect));
+    // Back off far enough that a gopher's width fits across the preview pane,
+    // whatever shape the dialog left it — a tall column beside the drawer, or
+    // a short band above it on a phone. fitOutfitPreview measures the pane;
+    // guessing the split a second time here is how the two used to disagree.
+    camera.radius = Math.max(2.8, .50 / (Math.tan(camera.fov / 2) * outfitAspect));
     return;
   }
   if (phase === 'diving' || phase === 'playing' || phase === 'rising') return;
@@ -1113,6 +1118,41 @@ registerWorker();
 // Dress-up is a local modal, not a game launch or a persisted profile.
 const outfitDialog = $('customize-dialog');
 const inventory = $('outfit-items');
+const outfitPane = outfitDialog.querySelector('.outfit-preview');
+
+/**
+ * Put the render where the dialog left a hole for it, whatever shape that is.
+ *
+ * The preview half is a column beside the drawer on a desktop, a band above it
+ * on an upright phone and a narrower column on a phone turned sideways, and
+ * which one applies is decided by a media query in style.css. Measuring the
+ * pane we were given — rather than hard-coding the same fractions a second
+ * time here — means the two cannot drift apart, and it re-fits for free when
+ * the phone is turned or Safari's URL bar slides away, neither of which tells
+ * this file anything except through the box changing.
+ *
+ * Babylon's viewport is normalised against the render target and measures y
+ * from the BOTTOM, which is the one conversion worth doing carefully.
+ *
+ * Watched with a ResizeObserver rather than window.resize: turning a phone,
+ * Safari's URL bar sliding away and entering fullscreen all move this box, and
+ * only some of them are a resize event. The box changing is the one signal
+ * that is true in every case.
+ */
+function fitOutfitPreview() {
+  if (phase !== 'customizing') return;
+  const stage = ui.canvas.getBoundingClientRect();
+  const pane = outfitPane.getBoundingClientRect();
+  if (!stage.width || !stage.height || !pane.width || !pane.height) return;
+  camera.viewport = new BABYLON.Viewport(
+    (pane.left - stage.left) / stage.width,
+    (stage.bottom - pane.bottom) / stage.height,
+    pane.width / stage.width,
+    pane.height / stage.height,
+  );
+  outfitAspect = pane.width / pane.height;
+}
+new ResizeObserver(fitOutfitPreview).observe(outfitPane);
 for (const item of ACCESSORIES) {
   const button = document.createElement('button');
   button.type = 'button'; button.className = 'outfit-item'; button.dataset.accessory = item.id;
@@ -1143,13 +1183,13 @@ function openCustomization() {
   gopher.pivot.position.copyFrom(customizationStation.stand);
   state.yaw = 0; gopher.pivot.rotation.y = 0;
   outfitCamera = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, viewport: camera.viewport };
-  camera.viewport = new BABYLON.Viewport(0, 0, .58, 1);
   camera.detachControl();
   camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
   cameraTarget.position.copyFrom(gopher.pivot.position);
   cameraTarget.position.y += .85;
-  camera.alpha = Math.PI / 2; camera.beta = 1.30; camera.radius = 3.1;
-  paintOutfit(); outfitDialog.showModal(); inventory.firstElementChild.focus();
+  camera.alpha = Math.PI / 2; camera.beta = 1.30;
+  // The pane has no box until the dialog is open, so the fit comes after it.
+  paintOutfit(); outfitDialog.showModal(); fitOutfitPreview(); inventory.firstElementChild.focus();
   accessoryPreviews().then(images => {
     for (const button of inventory.children) {
       const image = button.querySelector('img');

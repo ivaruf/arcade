@@ -772,7 +772,13 @@ kbd {
 .outfit-inventory { display: flex; flex-direction: column; min-height: 0; padding: clamp(14px,3vw,34px); background: #10252bf5; border-left: 1px solid #466559; }
 .outfit-inventory header h2 { font-size: clamp(24px,4vw,40px); margin: 5px 0 10px; }
 .outfit-inventory header p { font-size: 13px; line-height: 1.5; color: #bad2cb; margin: 0 0 18px; }
-.outfit-items { overflow-y: auto; min-height: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 3px; align-content: start; }
+/* The one thing on the page a finger is allowed to drag. `body` turns touch
+   panning off wholesale so that flying the gopher is never read as scrolling
+   the page, and a touch inherits the intersection of every ancestor's
+   touch-action — so a scroll container under that body scrolls with a
+   trackpad and a scrollbar and refuses to move under a thumb. It has to say
+   so for itself, and contain the scroll rather than chain it to the sky. */
+.outfit-items { overflow-y: auto; min-height: 0; touch-action: pan-y; overscroll-behavior: contain; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 3px; align-content: start; }
 .outfit-item { position: relative; min-height: 112px; padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; border-radius: 13px; border: 1px solid #45635b; background: #203a40; color: #fae7bb; font: inherit; font-size: 12px; cursor: pointer; }
 .outfit-item svg { width: 45px; height: 45px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .outfit-item[aria-pressed="true"] { border: 2px solid #8defc4; background: #28574b; }
@@ -782,17 +788,6 @@ kbd {
 .outfit-inventory footer button { width: 100%; margin-top: 8px; }
 #outfit-count { font-size: 12px; margin: 0; color: #aae9d0; }
 .customize-note { font-size: 10px; color: #b2c2be; margin: 10px 0 0; }
-@media (max-width: 560px) {
-  .outfit-inventory { padding: 12px 8px; }
-  .outfit-items { grid-template-columns: 1fr; gap: 8px; }
-  .outfit-item { min-height: 92px; }
-  .outfit-preview-heading { left: 12px; top: 20px; }
-  .outfit-turn { gap: 8px; bottom: 22px; }
-  .outfit-turn span { display: none; }
-  .outfit-inventory header p { font-size: 11px; margin-bottom: 10px; }
-  .outfit-inventory footer button { font-size: 11px; padding: 10px 5px; }
-}
-
 .dressing-room #hud, .dressing-room #touch { visibility: hidden; }
 
 .item-photo { position: relative; display: grid; place-items: center; width: min(100%, 160px); aspect-ratio: 1; flex: 0 0 auto; overflow: hidden; border-radius: 8px; background: #1a2e36; }
@@ -800,3 +795,83 @@ kbd {
 .item-photo-status { font-size: 10px; color: #b5cec5; padding: 8px; }
 .outfit-item small { color: #aad2c3; font-size: 10px; }
 .outfit-slots { font-size: 11px; line-height: 1.6; color: #bad2cb; margin: 0 0 12px; }
+
+/* ---------------------------------------------------------------------------
+ * The dresser on a phone.
+ *
+ * 58/42 is a desktop shape. Held upright, 42% of a phone is a 160px gutter,
+ * and an item card with a 160px photo in it is taller than the strip of scroll
+ * area left once the header and the footer have taken their share — so the
+ * drawer opened on a sliver of one hat with seven more somewhere below it.
+ * Upright therefore stops splitting sideways and stacks: the gopher takes a
+ * band across the top, the drawer takes the full width underneath.
+ *
+ * Turned sideways it is height that runs out instead, so the panel borrows
+ * maxgear's trick and becomes two sub-columns over the same markup, by grid
+ * area: the words and the buttons down one side, the items down the other with
+ * the whole height to scroll in. Nothing moves in index.html, nothing is
+ * hidden, and a tablet — taller than 560px whichever way up — keeps the
+ * layout above.
+ *
+ * js/main.js measures the preview pane's own box for the Babylon viewport
+ * rather than repeating the split, so whichever of these fires, the render and
+ * the panel meant to sit beside it cannot disagree.
+ * ------------------------------------------------------------------------- */
+@media (orientation: portrait) and (max-width: 760px) {
+  #customize-dialog[open] { grid-template-columns: 1fr; grid-template-rows: minmax(0,32%) minmax(0,1fr); }
+  .outfit-inventory { padding: 10px 12px 12px; border-left: 0; border-top: 1px solid #466559; }
+  .outfit-preview-heading { top: 12px; left: 14px; }
+  .outfit-preview h2 { font-size: 22px; margin: 3px 0; }
+  /* A band this short has no spare inches under the gopher's feet, so the two
+     turn buttons go either side of it instead of across the bottom of it. */
+  .outfit-turn { top: 50%; bottom: auto; transform: translateY(-50%); justify-content: space-between; padding: 0 12px; }
+  .outfit-turn span { display: none; }
+  .outfit-inventory header h2 { font-size: 21px; margin: 3px 0 6px; }
+  .outfit-inventory header p { font-size: 11.5px; margin-bottom: 8px; }
+  .outfit-slots { margin-bottom: 8px; }
+  /* Two ways out of the drawer, side by side and the same size, because they
+     are the same kind of choice; the gradient says which one we mean. */
+  .outfit-inventory footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; }
+  .outfit-inventory footer button { width: auto; margin-top: 0; font-size: 12px; padding: 11px 6px; }
+  #outfit-count, .customize-note { grid-column: 1 / -1; }
+  .customize-note { margin: 0; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  /* The gopher is framed by height here, not width, so it can give the drawer
+     back the room it does not need. */
+  #customize-dialog[open] { grid-template-columns: 38% 62%; }
+  .outfit-inventory {
+    display: grid; padding: 10px 12px; column-gap: 12px;
+    grid-template-columns: minmax(0,38%) minmax(0,1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "head items" "slots items" "foot items";
+    /* A net, not a plan: the words column fits with room to spare on anything
+       375px tall, and only a viewport shorter than that makes the panel move. */
+    overflow: auto;
+  }
+  .outfit-inventory header { grid-area: head; }
+  .outfit-slots { grid-area: slots; margin: 0 0 8px; }
+  .outfit-items { grid-area: items; }
+  .outfit-inventory footer { grid-area: foot; padding-top: 8px; }
+  .outfit-inventory header h2 { font-size: 20px; margin: 3px 0 5px; }
+  .outfit-inventory header p { font-size: 11px; margin-bottom: 0; }
+  .outfit-inventory footer button { font-size: 11px; padding: 9px 5px; margin-top: 6px; }
+  .customize-note { font-size: 9.5px; margin-top: 6px; }
+  .outfit-preview-heading { top: 10px; left: 14px; }
+  .outfit-preview h2 { font-size: 20px; margin: 3px 0; }
+  .outfit-turn { bottom: 8px; gap: 8px; }
+  .outfit-turn span { display: none; }
+  .outfit-turn button { width: 40px; height: 40px; font-size: 21px; }
+}
+/* Either way up: the cards are what the player opened the thing for, so they
+   shrink until several are on screen at once and the grid reads as a drawer
+   rather than as a keyhole. auto-fill rather than a column count, because the
+   space they are dividing up is a different width in each layout above. */
+@media (max-width: 760px), (max-height: 560px) {
+  .outfit-items { grid-template-columns: repeat(auto-fill, minmax(108px,1fr)); gap: 8px; }
+  .outfit-item { min-height: 0; padding: 9px 5px; gap: 6px; font-size: 11px; }
+  .outfit-item small { font-size: 9.5px; }
+  .item-photo { width: min(100%, 58px); }
+  /* The words that stand in for a photo have to fit the smaller frame too. */
+  .item-photo-status { font-size: 8.5px; padding: 3px; line-height: 1.3; }
+}
