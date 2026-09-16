@@ -819,7 +819,7 @@ kbd {
  * ------------------------------------------------------------------------- */
 @media (orientation: portrait) and (max-width: 760px) {
   #customize-dialog[open] { grid-template-columns: 1fr; grid-template-rows: minmax(0,32%) minmax(0,1fr); }
-  .outfit-inventory { padding: 10px 12px 12px; border-left: 0; border-top: 1px solid #466559; }
+  .outfit-inventory { padding: 10px 12px max(12px, env(safe-area-inset-bottom)); border-left: 0; border-top: 1px solid #466559; }
   .outfit-preview-heading { top: 12px; left: 14px; }
   .outfit-preview h2 { font-size: 22px; margin: 3px 0; }
   /* A band this short has no spare inches under the gopher's feet, so the two
@@ -840,8 +840,14 @@ kbd {
   /* The gopher is framed by height here, not width, so it can give the drawer
      back the room it does not need. */
   #customize-dialog[open] { grid-template-columns: 38% 62%; }
+  /* Sideways is where the notch and the home bar are, and the panel is the
+     half pressed against them — the HUD has guarded this since it was written
+     (see .hud) and the dresser never did. The panel keeps its background
+     full-bleed and moves its contents in, rather than insetting the dialog and
+     leaving a strip of sky down the edge of an opaque panel. */
   .outfit-inventory {
-    display: grid; padding: 10px 12px; column-gap: 12px;
+    display: grid; column-gap: 12px;
+    padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) 12px;
     grid-template-columns: minmax(0,38%) minmax(0,1fr);
     grid-template-rows: auto auto 1fr;
     grid-template-areas: "head items" "slots items" "foot items";
@@ -857,7 +863,7 @@ kbd {
   .outfit-inventory header p { font-size: 11px; margin-bottom: 0; }
   .outfit-inventory footer button { font-size: 11px; padding: 9px 5px; margin-top: 6px; }
   .customize-note { font-size: 9.5px; margin-top: 6px; }
-  .outfit-preview-heading { top: 10px; left: 14px; }
+  .outfit-preview-heading { top: 10px; left: max(14px, env(safe-area-inset-left)); }
   .outfit-preview h2 { font-size: 20px; margin: 3px 0; }
   .outfit-turn { bottom: 8px; gap: 8px; }
   .outfit-turn span { display: none; }
