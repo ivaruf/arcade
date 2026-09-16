@@ -276,7 +276,8 @@ function paintAction() {
   if (!actionEl) return;
   actionEl.textContent = action.glyph;
   actionEl.setAttribute('aria-label', action.label);
-  actionEl.classList.toggle('is-play', action === ACTIONS.play);
+  // Every nearby tap interaction uses E; run/descend remain unhighlighted.
+  actionEl.classList.toggle('is-play', action.code === 'KeyE');
 }
 
 /**
