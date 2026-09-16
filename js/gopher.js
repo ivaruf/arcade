@@ -272,6 +272,24 @@ export async function createGopher(scene, shadows) {
     active.holder.position.set(0, active.lift + 0.04 * reach, 0);
   }
 
+  function sitPose(P, t, dt, state) {
+    const p = state.standProgress ?? 0;
+    const unfold = p * p * (3 - 2 * p);
+    const seated = 1 - unfold;
+    const lean = Math.sin(Math.PI * p);
+    anim.run = anim.air = anim.reach = 0;
+    rot(P.LegL, -1.35 * seated + .22 * lean, 0, -.07 * seated);
+    rot(P.LegR, -1.35 * seated - .22 * lean, 0, .07 * seated);
+    rot(P.ArmL, -.35 * seated + .18 * lean, 0, -.12 * seated);
+    rot(P.ArmR, -.35 * seated - .18 * lean, 0, .12 * seated);
+    pos(P.Body, 0, 0, 0); scl(P.Body, 1, 1 + Math.sin(t * 2) * .006, 1);
+    rot(P.Head, .03 * seated - .1 * lean, Math.sin(t * .5) * .07, 0);
+    rot(P.Tail, 0, Math.sin(t * 1.5) * .12, 0);
+    blinkAndBreathe(P, t, dt);
+    active.holder.rotation.set(.18 * lean, 0, 0);
+    active.holder.position.set(0, active.lift, 0);
+  }
+
   function flyPose(P, t, dt, state) {
     anim.run = damp(anim.run, 0, 10, dt);
     anim.air = damp(anim.air, 0, 14, dt);
@@ -349,6 +367,11 @@ export async function createGopher(scene, shadows) {
 
   return {
     pivot,
+    // Torso underside in the authored walk form; accessories do not affect it.
+    get seatOffset() {
+      const body = forms.walk.parts.Body;
+      return body?.node.getBoundingInfo ? body.pos.y + body.node.getBoundingInfo().boundingBox.minimum.y : .07;
+    },
     getAccessories() { return { ...accessories }; },
     setAccessory(item, enabled) {
       if (!Object.hasOwn(accessories, item)) return;
@@ -369,7 +392,8 @@ export async function createGopher(scene, shadows) {
     animate(t, dt, state) {
       if (!active) return;
       const P = active.parts;
-      if (state.mode === 'fly') flyPose(P, t, dt, state);
+      if (state.seated) sitPose(P, t, dt, state);
+      else if (state.mode === 'fly') flyPose(P, t, dt, state);
       else walkPose(P, t, dt, state);
       scarfPose(P, dt, state);
 

@@ -45,6 +45,7 @@ const SHELL_FILES = [
   './games.json',
   './manifest.webmanifest',
   './js/main.js',
+  './js/seating.js',
   './js/pets.js',
   './js/room.js',
   './js/aquarium.js',

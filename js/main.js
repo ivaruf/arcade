@@ -1,3 +1,4 @@
+import { seatNear } from './seating.js';
 import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
 /* =============================================================================
@@ -233,6 +234,7 @@ quality.apply(knobs);
 // ---------------------------------------------------------------------------
 
 const state = {
+  seated: false,
   mode: 'walk', // 'walk' | 'fly'
   vx: 0, vy: 0, vz: 0,
   grounded: true,
@@ -270,6 +272,10 @@ let customizationStation = null;
 let nearCustomization = false;
 let pets = null;
 let nearPets = false;
+let nearSeat = null;
+let seatReturn = null;
+let standMotion = null;
+let sitMotion = null;
 let outfitCamera = null;
 /** Width over height of the dresser's preview pane; fitOutfitPreview measures it. */
 let outfitAspect = 1;
@@ -411,6 +417,7 @@ function standAt(cabinet) {
 // ---------------------------------------------------------------------------
 
 function startDive(cabinet, silent = false) {
+  if (state.seated) standFromSeat(true);
   phase = 'diving';
   atMachine = cabinet;
   input.clear();
@@ -818,6 +825,15 @@ function findNear() {
 }
 
 function updatePrompt(dt) {
+  if (state.seated) {
+    near = null; nearPets = nearCustomization = false; nearSeat = null;
+    gopher.setReach(0, dt);
+    ui.prompt.hidden = false; ui.promptTitle.textContent = sitMotion ? 'Sitting down…' : standMotion ? 'Getting up…' : 'Taking a break';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>STAND</kbd> to get up' : '<kbd>E</kbd> stand up · move or jump to leave';
+    if (standMotion || sitMotion) ui.promptCue.textContent = '';
+    input.setAction('stand'); return;
+  }
+  nearSeat = state.mode === 'walk' && state.grounded ? seatNear(gopher.pivot.position) : null;
   nearPets = state.mode === 'walk' && state.grounded && pets.inReach(gopher.pivot.position);
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
   const previous = near;
@@ -855,6 +871,9 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.promptTitle.textContent = 'Dresser';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>DRESS</kbd>' : '<kbd>E</kbd> customize gopher';
+  } else if (nearSeat) {
+    ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';
   } else {
     ui.prompt.hidden = true;
   }
@@ -862,7 +881,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -974,8 +993,13 @@ function render() {
     }
 
     if (phase === 'floor') {
-      if (state.mode === 'fly') updateFly(dt);
-      else updateWalk(dt);
+      const wasSeatMoving = !!(standMotion || sitMotion);
+      if (sitMotion) updateSitMotion(dt);
+      else if (standMotion) updateStandMotion(dt);
+      else if (!state.seated) {
+        if (state.mode === 'fly') updateFly(dt);
+        else updateWalk(dt);
+      }
       updatePlatform();
       updatePrompt(dt);
       // Read the coin edge unconditionally, even with nothing in reach. Guarding
@@ -985,9 +1009,15 @@ function render() {
       // One read of the coin edge, wherever the gopher is standing: guarding
       // it behind `near` short-circuits and banks the press for later.
       const coin = input.tookCoin();
-      if (near && coin) startDive(near);
+      if (wasSeatMoving) {
+        input.tookHop();
+      } else if (state.seated) {
+        const move = input.moveAxes(), hop = input.tookHop();
+        if (coin || hop || Math.hypot(move.x, move.y) > .2) standFromSeat();
+      } else if (near && coin) startDive(near);
       else if (nearPets && coin) openPets();
       else if (nearCustomization && coin) openCustomization();
+      else if (nearSeat && coin) sitOnSeat(nearSeat);
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
       if (platform?.id !== 'calm') sfx.tickAmbience(dt);
@@ -1247,4 +1277,77 @@ function openPets() {
     input.clear(); phase = 'floor'; document.body.classList.remove('choosing-pet');
     camera.attachControl(ui.canvas, false); ui.canvas.focus();
   });
+}
+
+function sitOnSeat(seat) {
+  if (state.seated || sitMotion || standMotion) return;
+  seatReturn = gopher.pivot.position.clone(); // Keep the safe approach point for standing.
+  sitMotion = {
+    from: seatReturn.clone(),
+    to: new BABYLON.Vector3(seat.x, seat.y - gopher.seatOffset, seat.z),
+    fromYaw: state.yaw, toYaw: seat.yaw, elapsed: 0,
+  };
+  state.seated = true; state.mode = 'walk'; state.grounded = true;
+  state.standProgress = 1; // Reverse the standing pose: straight legs to seated.
+  state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = state.yawRate = 0;
+  gopher.use('walk');
+  input.clear(); updatePrompt(1);
+}
+function updateSitMotion(dt) {
+  const motion = sitMotion;
+  motion.elapsed += dt;
+  const p = Math.min(1, motion.elapsed / .80);
+  const smooth = t => t * t * (3 - 2 * t);
+  const step = smooth(Math.min(1, p / .84));
+  const lift = smooth(Math.min(1, p / .65));
+  // Reverse the exit arc: ease onto the seat, then gently settle the hips.
+  gopher.pivot.position.set(
+    motion.from.x + (motion.to.x - motion.from.x) * step,
+    motion.from.y + (motion.to.y - motion.from.y) * lift + .10 * Math.sin(Math.PI * p),
+    motion.from.z + (motion.to.z - motion.from.z) * step,
+  );
+  const turn = Math.atan2(Math.sin(motion.toYaw - motion.fromYaw), Math.cos(motion.toYaw - motion.fromYaw));
+  state.yaw = motion.fromYaw + turn * smooth(Math.min(1, p / .7));
+  gopher.pivot.rotation.y = state.yaw;
+  state.standProgress = 1 - p;
+  if (p === 1) {
+    sitMotion = null; state.standProgress = null;
+    updatePrompt(1);
+  }
+}
+function standFromSeat(immediate = false) {
+  if (!state.seated) return;
+  if (sitMotion) {
+    if (!immediate) return;
+    updateSitMotion(1);
+  }
+  if (!standMotion) {
+    standMotion = { from: gopher.pivot.position.clone(), to: seatReturn.clone(), elapsed: 0 };
+    state.standProgress = 0;
+    input.clear();
+  }
+  // A direct game launch owns the camera and player from this point onward.
+  if (immediate) updateStandMotion(1);
+}
+function updateStandMotion(dt) {
+  const motion = standMotion;
+  motion.elapsed += dt;
+  const p = Math.min(1, motion.elapsed / .72);
+  state.standProgress = p;
+  const smooth = t => t * t * (3 - 2 * t);
+  // Lean first, then ease away from the seat; settle onto the approach point.
+  const step = smooth(Math.max(0, (p - .16) / .84));
+  const settle = smooth(Math.max(0, (p - .35) / .65));
+  gopher.pivot.position.set(
+    motion.from.x + (motion.to.x - motion.from.x) * step,
+    motion.from.y + (motion.to.y - motion.from.y) * settle + .10 * Math.sin(Math.PI * p),
+    motion.from.z + (motion.to.z - motion.from.z) * step,
+  );
+  if (p === 1) {
+    state.seated = false; state.standProgress = null;
+    standMotion = seatReturn = null;
+    state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
+    state.grounded = true;
+    updatePrompt(1);
+  }
 }

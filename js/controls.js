@@ -230,6 +230,8 @@ export function attachTouch(root) {
  * ------------------------------------------------------------------------ */
 
 const ACTIONS = {
+  sit:     { code: 'KeyE', glyph: 'SIT', label: 'Sit down' },
+  stand:   { code: 'KeyE', glyph: 'STAND', label: 'Stand up' },
   pets:    { code: 'KeyE', glyph: 'PETS', label: 'Choose a pet' },
   dress:   { code: 'KeyE', glyph: 'DRESS', label: 'Customize gopher' },
   run:     { code: 'ShiftLeft', glyph: '\u00bb',  label: 'Run' },
