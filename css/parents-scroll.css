@@ -1,0 +1,16 @@
+/* Separate from the philosophy's text and layout files so copy can evolve freely. */
+.parents-scroll-shell { min-width:0; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 62px; padding-right:max(10px,env(safe-area-inset-right)); }
+.parents-scroll-shell > .parents-copy { min-width:0; min-height:0; scrollbar-width:none; padding-right:16px; }
+.parents-scroll-shell > .parents-copy::-webkit-scrollbar { display:none; }
+.parents-scroll-rail { display:grid; grid-template-rows:44px minmax(0,1fr) 44px; gap:6px; min-height:0; padding:12px 2px; user-select:none; }
+.parents-panel .parents-scroll-arrow { box-sizing:border-box; min-height:44px; width:100%; padding:0; border:2px solid #ae9465; border-radius:10px; color:#193740; font-size:20px; background:linear-gradient(110deg,#fff0bd,#d5b677 55%,#aa8650); box-shadow:inset 1px 2px 0 #fff8d4,inset -2px -3px 0 #826137,0 3px 4px #061b25aa; cursor:pointer; }
+.parents-panel .parents-scroll-arrow:active:not(:disabled) { transform:translateY(2px); box-shadow:inset 1px 2px 3px #735934; }
+.parents-panel .parents-scroll-arrow:disabled { opacity:.45; cursor:default; }
+.parents-scroll-track { position:relative; min-height:0; margin:0 3px; border:2px solid #51686b; border-radius:14px; background:linear-gradient(90deg,#061923,#16313a 48%,#071a24); box-shadow:inset 3px 2px 6px #000b,1px 1px 0 #8aa49b55; touch-action:none; }
+.parents-scroll-thumb { box-sizing:border-box; position:absolute; top:0; left:1px; right:1px; min-height:0; border:2px solid #acd9c0; border-radius:11px; background:linear-gradient(90deg,#ccf6d9,#81caaa 50%,#4e937e); box-shadow:inset 2px 2px 0 #e5ffe9,inset -2px -3px 0 #336856,2px 4px 6px #0009; display:flex; align-items:center; justify-content:center; color:#2a6453; cursor:grab; touch-action:none; }
+.parents-scroll-thumb span { font:bold 27px/1 system-ui; text-shadow:0 1px 0 #ddffe3; pointer-events:none; }
+.parents-scroll-thumb.is-dragging { cursor:grabbing; filter:brightness(1.13); }
+.parents-scroll-thumb[aria-disabled="true"] { opacity:.45; cursor:default; }
+@media (max-height:500px) and (orientation:landscape) {
+  .parents-scroll-rail { padding:6px 2px; gap:4px; grid-template-rows:44px minmax(0,1fr) 44px; }
+}

@@ -46,6 +46,8 @@ const SHELL_FILES = [
   './manifest.webmanifest',
   './js/main.js',
   './js/parents.js',
+  './js/parents-scroll.js',
+  './css/parents-scroll.css',
   './assets/images/parents-gopher.png',
   './js/seating.js',
   './js/pets.js',

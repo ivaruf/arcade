@@ -1,3 +1,4 @@
+import './parents-scroll.js';
 /** Only the title appears in-world; the full philosophy lives in the HTML dialog. */
 export function createParentsSign(scene) {
   const B=BABYLON,root=new B.TransformNode('Parents and guardians sign',scene);
