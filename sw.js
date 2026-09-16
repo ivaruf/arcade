@@ -42,6 +42,9 @@ const SHELL_FILES = [
   './index.html',
   './css/style.css',
   './exit.js',
+  // Has to be IN the cache, not merely deployed: the players this rescues are
+  // the ones whose browser has stopped asking this origin for anything.
+  './moved.js',
   './games.json',
   './manifest.webmanifest',
   './js/main.js',
