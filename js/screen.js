@@ -69,7 +69,7 @@ export function setupScreen(onResize) {
       // physically held the other way round. The overlay still says which way.
       pinned = false;
       if (active && note) {
-        note.textContent = 'This device will not lock sideways — please turn it.';
+        note.textContent = 'This device will not lock sideways. Please turn it.';
         note.hidden = false;
       }
     }
