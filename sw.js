@@ -22,7 +22,8 @@
  * at /swirls/ is controlled by swirls' own worker, not this one.
  * ========================================================================== */
 
-const VERSION = 'v2.7.6'; // The dresser shows its items on a phone: two columns sideways, stacked upright.
+importScripts('./js/version.js');
+const VERSION = self.GOPHER_CLOUD_VERSION;
 const SHELL = `arcade-shell-${VERSION}`;
 const RUNTIME = 'arcade-runtime';
 
@@ -44,6 +45,7 @@ const SHELL_FILES = [
   './games.json',
   './manifest.webmanifest',
   './js/main.js',
+  './js/pets.js',
   './js/room.js',
   './js/aquarium.js',
   './js/gears.js',
@@ -58,6 +60,7 @@ const SHELL_FILES = [
   './js/audio.js',
   './js/quality.js',
   './js/signs.js',
+  './js/version.js',
   './js/screen.js',
   './js/install.js',
   // NeonFox's cabinet art. Held here rather than fetched from the game so the

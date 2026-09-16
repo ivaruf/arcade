@@ -132,8 +132,9 @@ for o in root.children_recursive:
 # Slatted benches use the same footprints and heights as the collision boxes.
 remove('Welcome bench');remove('Bench leg');remove('Calm bench')
 for bx in [-4.6,4.6]:
-    for i in range(4):box('Welcome cedar seat',(bx-.255+i*.17,.35,-1),(.15,.13,1.96),wood,.035)
-    for bz in [-1.75,-.25]:
+    bench_z=-.385 if bx>0 else -1
+    for i in range(4):box('Welcome cedar seat',(bx-.255+i*.17,.35,bench_z),(.15,.13,1.96),wood,.035)
+    for bz in [bench_z-.75,bench_z+.75]:
         box('Welcome bench trestle',(bx,.17,bz),(.58,.31,.12),structural,.025)
         box('Welcome bench shoe',(bx,.035,bz),(.64,.07,.22),brass,.025)
 # Relative to CALM, not written out. These were the one thing on this island

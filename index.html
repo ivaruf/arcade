@@ -84,6 +84,23 @@
   <span id="prompt-cue" class="prompt-cue"><kbd>E</kbd> play game</span>
 </div>
 
+<dialog id="pets-dialog" aria-labelledby="pets-title">
+  <section class="pet-preview" aria-label="Live 3D pet preview">
+    <canvas aria-label="Selected creature on its own cloud"></canvas>
+    <span>Your cloud companion</span>
+  </section>
+  <section class="pet-picker">
+    <header><p class="pet-eyebrow">A LITTLE COMPANY</p><h2 id="pets-title">Pets</h2><p>Pick one friend to follow you, on foot and in the sky.</p></header>
+    <div class="pet-choices" role="group" aria-label="Choose your companion">
+      <button type="button" data-pet="pip" aria-pressed="false"><strong>Pip</strong><span>Leaf-eared rabbit · cotton tail</span></button>
+      <button type="button" data-pet="noodle" aria-pressed="false"><strong>Noodle</strong><span>Frilly axolotl · swishing fin tail</span></button>
+      <button type="button" data-pet="nyan" aria-pressed="false"><strong>Nyan Cat</strong><span>Pastry cat · rainbow trail in flight</span></button>
+      <button type="button" data-pet="" aria-pressed="true"><strong>No pet</strong><span>Travel solo</span></button>
+    </div>
+    <footer><p id="pet-status" role="status"></p><button type="button" data-pet-done>Done</button></footer>
+  </section>
+</dialog>
+
 <dialog id="customize-dialog" aria-labelledby="customize-title">
   <section class="outfit-preview" aria-label="Live gopher preview">
     <div class="outfit-preview-heading"><span class="outfit-eyebrow">THE DRESSING ROOM</span><h2>Your gopher</h2></div>

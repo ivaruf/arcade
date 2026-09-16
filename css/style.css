@@ -881,3 +881,41 @@ kbd {
   /* The words that stand in for a photo have to fit the smaller frame too. */
   .item-photo-status { font-size: 8.5px; padding: 3px; line-height: 1.3; }
 }
+
+/* Pet picker: bounded panes and a persistent footer on short landscape screens. */
+body.choosing-pet #touch, body.choosing-pet #hud { visibility: hidden; }
+#pets-dialog { box-sizing:border-box; padding:0; width:min(920px,96vw); max-width:none; height:min(650px,92dvh); max-height:96dvh; border:1px solid #6caaa0; border-radius:22px; background:#122d36; color:#fff5df; overflow:hidden; }
+#pets-dialog[open] { display:grid; grid-template-columns:1fr 1fr; }
+#pets-dialog::backdrop { background:#071924bd; }
+.pet-preview { position:relative; min-width:0; min-height:0; overflow:hidden; }
+.pet-preview canvas { display:block; width:100%; height:100%; touch-action:none; }
+.pet-preview > span { position:absolute; bottom:18px; left:0; right:0; text-align:center; color:#aadccc; pointer-events:none; font-size:13px; }
+.pet-picker { min-width:0; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:14px; padding:26px; }
+.pet-picker h2 { font-size:36px; margin:0 0 8px; }
+.pet-picker header p { margin:0 0 8px; font-size:14px; color:#bad0c9; }
+.pet-picker .pet-eyebrow { font-size:11px; letter-spacing:.16em; color:#87ddbe; }
+.pet-choices { overflow-y:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:10px; padding:3px; }
+.pet-choices button { flex:none; text-align:left; padding:14px; border:1px solid #547d79; background:#203f47; color:#fff5df; border-radius:12px; min-height:58px; }
+.pet-choices strong,.pet-choices span { display:block; }
+.pet-choices span { font-size:12px; margin-top:4px; color:#bdd5cc; }
+.pet-choices button[aria-pressed="true"] { border-color:#95f5c6; background:#285c51; box-shadow:inset 0 0 0 1px #95f5c6; }
+.pet-picker button:focus-visible { outline:3px solid #f5d78f; outline-offset:2px; }
+.pet-picker footer p { margin:0 0 10px; font-size:12px; min-height:1.2em; }
+.pet-picker footer button { min-height:44px; width:100%; border-radius:10px; background:#87dbb7; color:#102d30; font-weight:700; }
+@media (max-width:600px) and (orientation:portrait) {
+  #pets-dialog[open] { grid-template-columns:1fr; grid-template-rows:34% minmax(0,1fr); }
+  .pet-picker { padding:14px 20px; gap:8px; }
+  .pet-picker h2 { font-size:25px; }
+  .pet-picker header p { font-size:12px; }
+}
+@media (max-height:500px) and (orientation:landscape) {
+  #pets-dialog { width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
+  #pets-dialog[open] { grid-template-columns:42% 58%; }
+  .pet-picker { padding:10px max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) 14px; gap:6px; }
+  .pet-picker h2 { font-size:24px; margin:0 0 3px; }
+  .pet-picker header p { font-size:11px; margin:0 0 3px; }
+  .pet-picker .pet-eyebrow { display:none; }
+  .pet-choices { gap:6px; }
+  .pet-choices button { min-height:48px; padding:8px 12px; }
+  .pet-picker footer p { margin:0 0 5px; }
+}

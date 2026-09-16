@@ -243,7 +243,7 @@ const FURNITURE = [
   // blocker went with the signpost — the islands ring the hub now, so there is
   // nothing left to point at.
   { x: -4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
-  { x: 4.6, z: -1.0, hx: 0.4, hz: 1.05, top: 0.46 },
+  { x: 4.6, z: -.385, hx: 0.4, hz: 1.05, top: 0.46 },
   { x: 4.95, z: -3.25, hx: 0.22, hz: 1.28, top: 3.1 },
   // the aquarium: the tank, and the stools you watch from
   { x: -3.6, z: -19, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
@@ -269,7 +269,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const held = await container('cloud-world.glb?v=neonfox-floor-2', scene);
+  const held = await container('cloud-world.glb?v=centered-welcome-bench-3', scene);
   held.addAllToScene();
 
   const swimmers = createAquariumSwimmers(held);

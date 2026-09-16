@@ -472,3 +472,50 @@ The NeonFox display uses a black `emissiveColor`: StandardMaterial adds this
 color to `emissiveTexture`, so white clips the entire floor to white even with
 lighting disabled. The texture alone now supplies emission. No Blender rebuild
 is needed for this material correction; no playtesting.
+
+## Welcome version sign
+
+`js/signs.js` refaces the existing welcome sideboard at (4.95, 2, -3.25)
+with Gopher Cloud, the current version and BETA. Original baked lettering is
+hidden at runtime; the existing backing, supports and collision remain.
+`js/version.js` supplies the version to both the sign and service worker; bump
+that shared value on release. The dark face is unlit with texture-only emission.
+No Blender rebuild or playtesting.
+
+## Pet companion station
+
+`js/pets.js` builds the PETS machine opposite the Dresser at (4.9, 0, 2.3),
+facing inward. Its footprint is included in the player blockers. Pip (mint, leaf
+ears) and Noodle (violet, little horns) share their procedural 3D geometry across
+the machine display, live picker preview and following companion. Choose one or
+none; selection lasts until reload. Pets follow behind the gopher, avoid prop
+footprints and spawn their own cloud when airborne, removing it on landing.
+
+The native modal pauses movement and restores input/camera control on close.
+The portrait preview stacks above the picker; short landscape keeps it alongside
+a scrolling inventory and fixed Done footer, with 44 px minimum action targets.
+Its temporary preview renderer is disposed on close. The module is precached;
+shared release version is v2.8.0. Syntax and non-rendering behavior checks passed;
+no playtesting or Blender rebuild.
+
+## Nyan Cat and centered welcome bench
+
+The east welcome bench moves from z=-1 to z=-0.385, centered in the gap
+between the PETS machine and welcome board; its collider moves with it.
+`js/pets.js` adds a grey, pixel-shaped pastry cat with pink frosting and candy
+pixels. Nyan Cat has no cloud meshes. Six reusable rainbow ribbons follow its
+recent world positions while airborne and disappear on landing; the picker
+shows the same flight effect. All three machine display pets are sized to fit.
+No playtesting; Blender rebuilt without preview rendering.
+
+## Distinct pet silhouettes
+
+Pip is an upright leaf-eared rabbit with a separate head, pear-shaped body,
+long hind paws, small arms, leaf veins, buck teeth and cotton tail. Noodle is
+a low, long axolotl with four splayed feet, toes, six feathery gills, dorsal
+scallops and a swishing fin tail. Their walking motions differ accordingly.
+Nyan Cat follows the supplied reference with softened pastry and icing,
+magenta sprinkles, a rounded grey face, pointed ears, pink cheeks, a smile
+and curled tail. Rounded cuboids use remapped sphere geometry with rebuilt
+normals. Geometry is shared by the machine, inventory preview and follower.
+Cloud/rainbow behavior is preserved. No playtesting.

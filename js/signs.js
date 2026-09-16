@@ -23,6 +23,7 @@
  * ========================================================================== */
 
 import { BEACONS, PLATFORMS } from './room.js';
+import './version.js';
 
 const css = (c) => `rgb(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)})`;
 
@@ -89,6 +90,7 @@ function drawBeacon(ctx, w, h, titles, subtitle, tint) {
  * one games.json hoped for.
  */
 export function raiseSigns(scene, cabinets) {
+  raiseWelcomeSign(scene);
   const byPlatform = new Map();
   for (const cabinet of cabinets) {
     if (!cabinet.game) continue;
@@ -118,4 +120,41 @@ export function raiseSigns(scene, cabinets) {
     // Face the welcome cloud, which is where anyone reading it is standing.
     sign.rotation.y = Math.atan2(-mast.x, -mast.z) + Math.PI;
   }
+}
+
+/** Reface the existing sideboard, preserving its legs and collision footprint. */
+function raiseWelcomeSign(scene) {
+  for (const mesh of scene.meshes) {
+    if (/^Welcome sideboard (Brand|Arcade|Guide)/.test(mesh.name)) mesh.setEnabled(false);
+  }
+  const texture = new BABYLON.DynamicTexture('welcome:version', { width: 1536, height: 1280 }, scene, true);
+  const ctx = texture.getContext();
+  enamel(ctx, 1536, 1280, '#82ebd7');
+  ctx.fillStyle = '#a9c8c4';
+  lettering(ctx, 'WELCOME TO THE ARCADE', 768, 220, 1260, 55, 550);
+  ctx.fillStyle = '#fff8e9';
+  lettering(ctx, 'Gopher Cloud', 768, 455, 1280, 154, 750);
+  ctx.fillStyle = '#82ebd7';
+  lettering(ctx, `${globalThis.GOPHER_CLOUD_VERSION}  —  BETA`, 768, 680, 1250, 94, 650);
+  ctx.strokeStyle = '#567b77'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(270, 845); ctx.lineTo(1266, 845); ctx.stroke();
+  ctx.fillStyle = '#cfddd6';
+  lettering(ctx, 'Jump twice to fly', 768, 985, 1230, 66, 550);
+  lettering(ctx, 'Find your next game in the clouds', 768, 1090, 1230, 43, 450);
+  texture.hasAlpha = false;
+  texture.anisotropicFilteringLevel = 8;
+  texture.update();
+  const mat = new BABYLON.StandardMaterial('welcome:version ink', scene);
+  mat.disableLighting = true;
+  // StandardMaterial adds the emissive color to its texture: no added white.
+  mat.emissiveColor = BABYLON.Color3.Black();
+  mat.emissiveTexture = texture;
+  mat.diffuseColor = mat.specularColor = BABYLON.Color3.Black();
+  const face = BABYLON.MeshBuilder.CreatePlane('welcome:version face', { width: 2.30, height: 1.92 }, scene);
+  face.position.set(4.815, 2.0, -3.25);
+  face.rotation.y = Math.PI / 2; // Front faces inward, toward the island centre.
+  face.material = mat;
+  face.isPickable = false;
+  for (const layer of scene.effectLayers || []) layer.addExcludedMesh?.(face);
+  face.freezeWorldMatrix();
 }

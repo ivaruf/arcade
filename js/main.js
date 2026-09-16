@@ -1,3 +1,4 @@
+import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
@@ -267,6 +268,8 @@ let stepPhase = 0;
 let cabinets = [];
 let customizationStation = null;
 let nearCustomization = false;
+let pets = null;
+let nearPets = false;
 let outfitCamera = null;
 /** Width over height of the dresser's preview pane; fitOutfitPreview measures it. */
 let outfitAspect = 1;
@@ -301,7 +304,8 @@ async function boot() {
   say(`wheeling in ${machines.length} cabinet${machines.length === 1 ? '' : 's'}…`);
   cabinets = await placeCabinets(scene, shadows, machines);
   customizationStation = createCustomizationStation(scene, shadows);
-  blockers = [...world.blockers, customizationStation.blocker, ...cabinets.flatMap((c) => c.blockers)];
+  pets = createPets(scene);
+  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
@@ -814,6 +818,7 @@ function findNear() {
 }
 
 function updatePrompt(dt) {
+  nearPets = state.mode === 'walk' && state.grounded && pets.inReach(gopher.pivot.position);
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
   const previous = near;
   near = findNear();
@@ -842,6 +847,10 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false;
     ui.promptTitle.textContent = near.game.title;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
+  } else if (nearPets) {
+    ui.prompt.hidden = false;
+    ui.promptTitle.textContent = 'Pets';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PETS</kbd>' : '<kbd>E</kbd> choose companion';
   } else if (nearCustomization) {
     ui.prompt.hidden = false;
     ui.promptTitle.textContent = 'Dresser';
@@ -853,7 +862,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearCustomization ? 'dress' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -868,6 +877,7 @@ scene.onPointerObservable.add((info) => {
 });
 
 function updateCamera(dt) {
+  if (phase === 'pets') return;
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'customizing') {
@@ -960,6 +970,7 @@ function render() {
       if (phase === 'floor') pause();
       else if (phase === 'paused') unpause();
       else if (phase === 'customizing') closeCustomization();
+      else if (phase === 'pets') pets.close();
     }
 
     if (phase === 'floor') {
@@ -975,6 +986,7 @@ function render() {
       // it behind `near` short-circuits and banks the press for later.
       const coin = input.tookCoin();
       if (near && coin) startDive(near);
+      else if (nearPets && coin) openPets();
       else if (nearCustomization && coin) openCustomization();
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
@@ -991,6 +1003,7 @@ function render() {
     if (gopher) gopher.animate(time, dt, state);
     animateCabinets(cabinets, near, time);
     animateWorld(dt);
+    if (phase === 'floor') pets?.animate(dt, time, gopher?.pivot.position, state, groundAt, blockers);
   }
   scene.render();
 }
@@ -1222,3 +1235,16 @@ for (const [id, direction] of [['outfit-left', -1], ['outfit-right', 1]]) {
 }
 $('customize-done').addEventListener('click', closeCustomization);
 outfitDialog.addEventListener('cancel', event => { event.preventDefault(); closeCustomization(); });
+
+function openPets() {
+  if (phase !== 'floor' || !nearPets) return;
+  phase = 'pets'; input.clear(); ui.prompt.hidden = true;
+  state.vx = state.vz = 0; state.speed01 = 0;
+  camera.detachControl();
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+  document.body.classList.add('choosing-pet');
+  pets.open(() => {
+    input.clear(); phase = 'floor'; document.body.classList.remove('choosing-pet');
+    camera.attachControl(ui.canvas, false); ui.canvas.focus();
+  });
+}
