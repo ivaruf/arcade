@@ -51,7 +51,7 @@ export function createNeonFoxFloor(scene, platform) {
   floor.freezeWorldMatrix();
   // Painted halos supply glow without blooming the whole display into white.
   for (const layer of scene.effectLayers || []) layer.addExcludedMesh?.(floor);
-  const colors = ['#3aa0ff', '#ff5fb4', '#5cf07a', '#ffa03c', '#b07cff', '#ffe14a'];
+  const colors = ['#3aa0ff', '#ff5fb4', '#5cf07a', '#ffa03c', '#7838e8', '#ed3038'];
   const ctx = texture.getContext();
   let time = 0, pending = 0;
   // Bounded continuous paths at different tempos; sample past positions for
