@@ -52,8 +52,9 @@ function creature(scene, id) {
     ball('muzzle',body,cream,[0,.285,.425],[.40,.11,.06]);
     for(const side of [-1,1]) {
       for(const z of [-.32,.22]) {
-        const foot=ball('splayed foot',body,fur,[side*.24,.07,z],[.22,.13,.19]);feet.push(foot);
-        for(let toe=0;toe<3;toe++)ball('toe',body,pink,[side*(.29+toe*.015),.055,z+.065-toe*.05],[.075,.063,.065]);
+        const foot=new B.TransformNode('Noodle foot pivot',scene);foot.parent=body;foot.position.set(side*.24,.07,z);feet.push(foot);
+        ball('splayed foot',foot,fur,[0,0,0],[.22,.13,.19]);
+        for(let toe=0;toe<3;toe++)ball('toe',foot,pink,[side*(.05+toe*.015),-.015,.065-toe*.05],[.075,.063,.065]);
       }
       ball('eye',body,dark,[side*.178,.398,.432],[.092,.104,.038]);
       ball('eye glint',body,white,[side*.178-.016,.42,.453],[.027,.029,.012]);
@@ -74,10 +75,20 @@ function creature(scene, id) {
   const cloud=new B.TransformNode(`${id} personal cloud`,scene);cloud.parent=root;
   for(const [x,y,z,s] of [[0,-.08,0,1],[-.28,-.04,0,.65],[.28,-.04,.02,.65],[0,-.02,-.18,.7],[0,-.07,.22,.65]])ball('cloud puff',cloud,white,[x,y,z],[.76*s,.26*s,.59*s]);
   cloud.setEnabled(false);
+  const footRest=feet.map(foot=>({y:foot.position.y,z:foot.position.z}));
+  let tuck=0,lastPoseTime=null;
   return {root,cloud,animate(t,moving,flying){
+    const dt=lastPoseTime===null?1/60:Math.max(0,Math.min(.1,t-lastPoseTime));
+    lastPoseTime=t;
+    tuck+=((flying?1:0)-tuck)*(1-Math.exp(-12*dt));
     body.position.y=flying?Math.sin(t*3)*.025:Math.abs(Math.sin(t*(id==='pip'?9:6)))*(id==='pip'?.065:.015)*moving;
-    body.rotation.z=Math.sin(t*6)*.025*moving;
-    feet.forEach((foot,i)=>foot.rotation.x=Math.sin(t*12+i*Math.PI)*.3*moving);
+    body.rotation.z=flying?Math.sin(t*2.4)*.018:Math.sin(t*6)*.025*moving;
+    feet.forEach((foot,i)=>{
+      const walk=flying?0:Math.sin(t*12+i*Math.PI)*.3*moving;
+      foot.rotation.x=walk*(1-tuck)-(id==='pip'?1.05:.85)*tuck;
+      foot.position.y=footRest[i].y+.075*tuck;
+      foot.position.z=footRest[i].z+.04*tuck;
+    });
     ears.forEach((ear,i)=>ear.rotation.x=Math.sin(t*3+i*.5)*.09);
     tail.rotation.y=Math.sin(t*(id==='pip'?5:7))*(id==='pip'?.2:.4);
   }};
