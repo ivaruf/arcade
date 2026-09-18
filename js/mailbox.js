@@ -339,6 +339,36 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
    * out of localStorage sixty times a second to answer "is the flag up" is the
    * sort of thing that only shows up on somebody else's phone.
    */
+  /**
+   * Fit the panel to what the keyboard leaves.
+   *
+   * iOS does not shrink the layout viewport when the on-screen keyboard comes
+   * up — it slides over the top — so `100dvh` keeps POST IT underneath the keys
+   * being typed on, which sideways on a phone is most of the panel. Only
+   * visualViewport knows the real size, and where it is absent (rather than
+   * wrong) none of this runs and the panel behaves as it did before.
+   */
+  const viewport = window.visualViewport;
+  function fitToKeyboard() {
+    if (window.innerHeight - viewport.height > 120) {
+      el.style.height = `${viewport.height}px`;
+      el.style.top = `${viewport.offsetTop}px`;
+      el.classList.add('keyboard-up');
+    } else {
+      el.style.height = el.style.top = '';
+      el.classList.remove('keyboard-up');
+    }
+  }
+  function watchKeyboard(on) {
+    if (!viewport) return;
+    const how = on ? 'addEventListener' : 'removeEventListener';
+    viewport[how]('resize', fitToKeyboard);
+    viewport[how]('scroll', fitToKeyboard);
+    if (on) return fitToKeyboard();
+    el.style.height = el.style.top = '';
+    el.classList.remove('keyboard-up');
+  }
+
   let unread = 0;
   function recount() {
     const read = load(READ, 0);
@@ -495,6 +525,7 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
       // still display:none silently does nothing and the box opens showing
       // the oldest thing in it.
       el.showModal();
+      watchKeyboard(true);
       drawThread();
       markRead();
       // On a tablet, focusing the sheet throws the on-screen keyboard over the
@@ -510,6 +541,7 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
       });
     },
     close() {
+      watchKeyboard(false);
       el.close();
     },
   };
