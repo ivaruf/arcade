@@ -24,7 +24,12 @@
  *
  * WHAT A LETTER CARRIES:
  *
- *     { message, game, version, mailbox }
+ *     { message, version, mailbox }
+ *
+ * There was a `game` field and a row of tags to set it. Both are gone: on a
+ * phone the tags took a third of the panel and clipped, the titles arrived in
+ * each game's own casing so the row shouted in three registers, and a letter
+ * says what it is about in its first sentence anyway.
  *
  * `mailbox` is the id below, and it is the whole reason an answer can find its
  * way back. No name, no account, no email — but it is not nothing, and the
@@ -292,46 +297,24 @@ function plainMailbox(root, scene, shadows) {
 const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
 
 /**
- * Wire up the panel. `subjects` is what a letter can be about, which is the
- * arcade itself plus whatever machines are actually on the floor — the same
- * list the cabinets were built from, so a game added to games.json turns up
- * here without anyone editing this file.
- *
- * `onShut` closes the world side of things (phase, camera, the door) and
+ * Wire up the panel. `onShut` closes the world side of things (phase, camera, the door) and
  * `onRead` drops the flag; this module only ever asks.
  */
-export function createLetterPanel({ subjects, onShut, onRead }) {
+export function createLetterPanel({ onShut, onRead }) {
   const el = document.getElementById('mailbox-dialog');
   const text = document.getElementById('letter-text');
   const room = document.getElementById('letter-room');
   const status = document.getElementById('letter-status');
   const post = document.getElementById('letter-post');
   const shut = document.getElementById('letter-shut');
-  const choices = document.getElementById('letter-subjects');
   const thread = document.getElementById('letter-thread');
 
   text.maxLength = ROOM;
-  let subject = 'arcade';
   let sending = false;
   let postedAt = 0;
   /** Everything this browser has sent, which is the player's half of the thread. */
   let sent = load(SENT, []);
   let answers = [];
-
-  for (const option of [{ slug: 'arcade', title: 'The arcade' }, ...subjects]) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = option.title;
-    button.dataset.slug = option.slug;
-    button.setAttribute('aria-pressed', String(option.slug === subject));
-    button.addEventListener('click', () => {
-      subject = option.slug;
-      for (const other of choices.children) {
-        other.setAttribute('aria-pressed', String(other.dataset.slug === subject));
-      }
-    });
-    choices.append(button);
-  }
 
   /**
    * Counted when something changes, never asked for. updatePrompt reads this
@@ -456,7 +439,6 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
         body: JSON.stringify({
           blocks: [
             { type: 'text', name: 'message', value: message },
-            { type: 'text', name: 'game', value: subject },
             { type: 'text', name: 'mailbox', value: deviceId(true) },
             { type: 'text', name: 'version', value: globalThis.GOPHER_CLOUD_VERSION },
           ],
@@ -473,7 +455,7 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
       postedAt = Date.now();
       // Kept here and nowhere else: this is the player's half of the thread,
       // and the arcade never has to publish it back to show them the exchange.
-      sent = [...sent, { at: postedAt, game: subject, text: message }];
+      sent = [...sent, { at: postedAt, text: message }];
       save(SENT, sent);
       text.value = '';
       remember('');

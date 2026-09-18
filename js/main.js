@@ -333,10 +333,7 @@ async function boot() {
   pets = createPets(scene);
   parentsSign = createParentsSign(scene);
   mailbox = await createMailbox(scene, shadows);
-  // What a letter can be about is whatever is actually on the floor, so a slug
-  // added to games.json turns up in the panel without anyone editing it.
   letter = createLetterPanel({
-    subjects: cabinets.filter((c) => c.game).map((c) => ({ slug: c.game.slug, title: c.game.title })),
     onShut: closeMailbox,
     onRead: () => mailbox.lowerFlag(),
   });
