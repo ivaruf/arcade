@@ -968,22 +968,33 @@ body.reading-parents #touch, body.reading-parents #hud { visibility:hidden; }
   .parents-panel footer { padding-top:8px; padding-bottom:max(8px,env(safe-area-inset-bottom)); }
 }
 
-/* The mailbox letter. Its colours come off the model itself
+/* The mailbox. Its colours come off the model itself
    (source/build_mailbox.py) rather than off this stylesheet's neon: petrol
    enamel, aged brass and a sheet of warm paper, so the panel reads as the
-   inside of the box you just opened and not as a contact form. */
+   inside of the box you just opened and not as a contact form. Two panes,
+   because it is a correspondence and not a form: what has been said on the
+   left, what you are about to say on the right. */
 body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
-#mailbox-dialog { box-sizing:border-box; padding:0; width:min(720px,96vw); height:min(640px,92dvh); max-width:none; max-height:96dvh; border:1px solid #b9a06e; border-radius:22px; overflow:hidden; background:#14313a; color:#fff4df; }
+#mailbox-dialog { box-sizing:border-box; padding:0; width:min(900px,96vw); height:min(660px,92dvh); max-width:none; max-height:96dvh; border:1px solid #b9a06e; border-radius:22px; overflow:hidden; background:#14313a; color:#fff4df; }
 #mailbox-dialog[open] { display:grid; }
 #mailbox-dialog::backdrop { background:#071824c9; }
 /* overflow is a safety net on a viewport shorter than anything anticipated,
-   not the plan: the landscape rules below are the plan. */
-.letter-panel { min-width:0; min-height:0; overflow:auto; display:grid; gap:14px; padding:26px 28px max(20px,env(safe-area-inset-bottom)); grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto auto; grid-template-areas:"head" "about" "sheet" "care" "foot"; }
-.letter-head { grid-area:head; }
-.letter-head h2 { font-size:32px; line-height:1.15; margin:2px 0 8px; }
-.letter-head p { margin:0; font-size:14px; color:#c3d4cd; }
+   not the plan: the thread is the one pane that scrolls. */
+.letter-panel { min-width:0; min-height:0; overflow:auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.letter-log { min-width:0; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr); gap:12px; padding:24px 16px 20px 26px; border-right:1px solid #2f5a63; }
+.letter-write { min-width:0; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; gap:12px; padding:24px 26px max(20px,env(safe-area-inset-bottom)) 20px; }
+.letter-head h2 { font-size:30px; line-height:1.15; margin:2px 0 8px; }
+.letter-head p { margin:0; font-size:13px; line-height:1.5; color:#a8bcb6; }
 .letter-eyebrow { margin:0; font-size:11px; letter-spacing:.16em; color:#e3c288; }
-.letter-about { grid-area:about; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+.letter-thread { min-height:0; overflow-y:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:10px; padding-right:8px; }
+.letter-empty { margin:auto 0; font-size:13px; line-height:1.5; color:#8fa6a1; }
+.note { max-width:90%; padding:9px 12px; border-radius:13px; font-size:14px; line-height:1.45; }
+.note .who { display:block; margin-bottom:3px; font-size:11px; opacity:.72; }
+.note p { margin:0; overflow-wrap:anywhere; }
+/* Your own letters are the paper you wrote them on; answers are the box. */
+.note.mine { align-self:flex-end; border:1px solid #9a835a; border-bottom-right-radius:4px; background:#f2e5c8; color:#1d2f36; }
+.note.theirs { align-self:flex-start; border:1px solid #4c7076; border-bottom-left-radius:4px; background:#1b3f47; color:#e7f2ec; }
+.letter-about { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
 .letter-about > span { flex:0 0 auto; font-size:12px; color:#a8bcb6; }
 /* Tags, not doors: the equal-size rule is for a row of alternatives that carry
    the same weight, and seven game names forced to one width truncate the long
@@ -991,14 +1002,14 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 .letter-subjects { display:flex; flex-wrap:wrap; gap:6px; }
 .letter-subjects button { flex:0 1 auto; min-height:34px; padding:6px 12px; border-radius:999px; border:1px solid #4c7076; background:#1b3f47; color:#dce9e2; font:inherit; font-size:13px; cursor:pointer; }
 .letter-subjects button[aria-pressed="true"] { border-color:#e3c288; background:#3a3423; color:#ffeec6; box-shadow:inset 0 0 0 1px #e3c288; }
-.letter-sheet { grid-area:sheet; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:6px; }
+.letter-sheet { min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:6px; }
 /* Ruled paper: one rule per line box, so the period below must stay equal to
    the textarea's line-height or the lines drift away from the writing. */
 .letter-sheet textarea { box-sizing:border-box; width:100%; min-height:0; resize:none; padding:6px 14px; border:1px solid #9a835a; border-radius:10px; font:inherit; font-size:16px; line-height:28px; color:#1d2f36; background-color:#f2e5c8; background-image:repeating-linear-gradient(#f2e5c8 0 27px,#d6c49e 27px 28px); background-origin:content-box; background-attachment:local; box-shadow:inset 0 2px 6px #00000038; }
 .letter-sheet textarea::placeholder { color:#8d8163; }
 .letter-room { margin:0; text-align:right; font-size:12px; color:#9db2ac; }
-.letter-care { grid-area:care; margin:0; font-size:12px; line-height:1.45; color:#b7a887; }
-.letter-foot { grid-area:foot; display:grid; gap:10px; }
+.letter-care { margin:0; font-size:12px; line-height:1.45; color:#b7a887; }
+.letter-foot { display:grid; gap:10px; }
 .letter-foot > p { margin:0; min-height:1.2em; font-size:13px; color:#c3d4cd; }
 .letter-foot > p[data-tone="good"] { color:#9fe9c8; }
 .letter-foot > p[data-tone="bad"] { color:#f6b6a1; }
@@ -1007,22 +1018,26 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 .letter-actions > button { flex:1 1 0; margin:0; }
 .letter-actions .neon:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
 #mailbox-dialog :focus-visible { outline:3px solid #f5d799; outline-offset:2px; }
-@media (max-width:600px) and (orientation:portrait) {
-  .letter-panel { padding:18px 20px max(16px,env(safe-area-inset-bottom)); gap:11px; }
-  .letter-head h2 { font-size:25px; }
-  .letter-head p { font-size:13px; }
+/* Upright and narrow: the thread on top, the sheet under it, both alive. */
+@media (max-width:640px) and (orientation:portrait) {
+  #mailbox-dialog { width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
+  .letter-panel { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; }
+  .letter-log { padding:16px 18px 10px 20px; border-right:0; border-bottom:1px solid #2f5a63; }
+  .letter-write { grid-template-rows:auto auto auto auto; padding:12px 20px max(14px,env(safe-area-inset-bottom)); gap:9px; }
+  .letter-head h2 { font-size:24px; margin:0 0 5px; }
+  .letter-head p { font-size:12px; }
+  .letter-sheet textarea { min-height:104px; }
 }
-/* A sideways phone has width where it lacks height: the same markup, laid out
-   in two columns by grid area, so the way out never falls off the bottom. */
+/* A sideways phone has width where it lacks height: the two panes it already
+   has, tightened, so the way out never falls off the bottom. */
 @media (max-height:500px) and (orientation:landscape) {
   #mailbox-dialog { width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
-  /* The invitation and the promise go down the left, everything you touch down
-     the right. head spans the first two rows so the sheet, not the prose, is
-     what gives up height when the pills wrap onto a third line. */
-  .letter-panel { padding:10px max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); gap:8px 18px; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); grid-template-rows:auto minmax(0,1fr) auto; grid-template-areas:"head about" "head sheet" "care foot"; }
-  .letter-head h2 { font-size:23px; margin:0 0 4px; }
-  .letter-head p { font-size:12px; }
+  .letter-log { padding:10px 12px 8px max(16px,env(safe-area-inset-left)); gap:8px; }
+  .letter-write { padding:10px max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) 14px; gap:8px; }
+  .letter-head h2 { font-size:21px; margin:0 0 3px; }
+  .letter-head p { font-size:11px; line-height:1.4; }
   .letter-eyebrow { display:none; }
+  .note { font-size:13px; padding:7px 10px; }
   .letter-subjects button { min-height:30px; padding:4px 10px; font-size:12px; }
   .letter-sheet textarea { font-size:15px; line-height:24px; background-image:repeating-linear-gradient(#f2e5c8 0 23px,#d6c49e 23px 24px); }
   .letter-care { font-size:11px; }

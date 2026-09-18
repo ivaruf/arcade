@@ -338,8 +338,12 @@ async function boot() {
   letter = createLetterPanel({
     subjects: cabinets.filter((c) => c.game).map((c) => ({ slug: c.game.slug, title: c.game.title })),
     onShut: closeMailbox,
-    onPosted: () => mailbox.raiseFlag(),
+    onRead: () => mailbox.lowerFlag(),
   });
+  // Deliberately not awaited: a letter waiting in the sky is worth a flag, not
+  // a slower boot, and the flag going up a second after the gopher lands reads
+  // as the post arriving rather than as a page still loading.
+  letter.checkMail().then((waiting) => { if (waiting) mailbox.raiseFlag(); });
   blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
@@ -939,8 +943,14 @@ function updatePrompt(dt) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = 'For parents and guardians';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>READ</kbd>' : '<kbd>E</kbd> read';
   } else if (nearMailbox) {
-    ui.prompt.hidden = false; ui.promptTitle.textContent = 'The mailbox';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>WRITE</kbd>' : '<kbd>E</kbd> write a letter';
+    ui.prompt.hidden = false;
+    // The flag is up for a reason, and the prompt says the reason out loud
+    // rather than making the player work out what changed about the model.
+    const mail = letter.hasUnread();
+    ui.promptTitle.textContent = mail ? 'The mailbox — an answer for you' : 'The mailbox';
+    ui.promptCue.innerHTML = input.IS_TOUCH
+      ? `tap <kbd>WRITE</kbd>${mail ? ' to read it' : ''}`
+      : `<kbd>E</kbd> ${mail ? 'read your answer' : 'write a letter'}`;
   } else if (nearSeat) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';

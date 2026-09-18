@@ -115,6 +115,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // local dev against the live site: pass through
 
+  // Mail never goes near a cache. Everything else here is stale-while-
+  // revalidate, which answers from yesterday and refreshes for tomorrow — fine
+  // for a stylesheet and wrong for an answer somebody is standing at the box
+  // waiting to read. It is one small request per visit, on purpose.
+  if (url.pathname.includes('/mail/')) return;
+
   const inScope = url.href.startsWith(self.registration.scope);
   if (req.mode === 'navigate' && !inScope) return;
 

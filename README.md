@@ -58,14 +58,19 @@ flying across, landing, and then walking round it to find the screen.
   middle of the arrival island too, with an arm pointing at each platform; the
   islands ring the hub now, so it was pointing at things already in view.
 
-- **A mailbox on the welcome cloud**, beside the dresser: press `E` and you get
-  a sheet of paper, a row of tags for what the letter is about, and a box to
-  post it in. A letter carries `{ game, version, message }` and nothing else —
-  no key, no session id, no name — which is why the arcade cannot write back to
-  you personally, and why answers are meant to go up in public instead. The
-  letters land at Forminit, chosen for EEA storage and an archive that does not
-  expire; `POST_TO` in `js/mailbox.js` is the whole wiring, and emptying it
-  turns the box off without taking it out of the world.
+- **A mailbox on the welcome cloud**, beside the dresser, and it answers back.
+  Press `E` for the thread so far, a row of tags for what the letter is about,
+  and a sheet to write on. A letter carries `{ message, game, version, mailbox }`
+  — that last one a random name for the browser, minted on the first letter,
+  which is the only reason an answer can find its way home. It is not the
+  cosmetics key and must not become one (§7).
+  **The conversation is stored in two halves and joined on the device**: what
+  the player wrote never leaves their browser, and what the arcade wrote is
+  `mail/<id>.json`, committed by hand. So answering never republishes a child's
+  words. Letters arrive at Forminit (EEA storage, no expiring archive);
+  `POST_TO` in `js/mailbox.js` is the whole inbound wiring, and emptying it
+  turns the box off without taking it out of the world. Answering is
+  `node tools/reply.mjs <id> "…"` and a push — see `mail/README.md`.
 
 ## How it finds the games
 
