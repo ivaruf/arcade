@@ -1,10 +1,13 @@
 # The shop, and players without a server
 
-**Status: PARKED 2026-09-11.** A design, not a thing that exists — §7 of the
-hub rules says to design toward the cosmetics layer and not build it until
-asked. **Nothing is implemented, no domain is bought, no payment account has
-been created, and no money has been spent.** If you are picking this up later,
-start at "Where to start again" below rather than at §1.
+**Status: PARKED 2026-09-11, amended 2026-09-18.** A design, not a thing that
+exists — §7 of the hub rules says to design toward the cosmetics layer and not
+build it until asked. **No part of the shop is implemented, no payment account
+has been created, and no money has been spent.** Two things have changed under
+it since: the domain is registered, and the arcade has shipped a mailbox that
+mints an id of its own — **§12 says why that id is not this one**, and it is
+the first thing to read if you have just found it in `localStorage`. If you are
+picking up the shop itself, start at "Where to start again" below.
 
 ---
 
@@ -53,7 +56,7 @@ Two things learned the slow way, recorded so nobody repeats them:
 
 | deferred | what would settle it |
 | --- | --- |
-| **The domain** | `gophercloud.games` was unregistered at 549 NOK/yr; `gophercloudarcade.com` at 249. Not urgent — see the sequence rule in §4. The owner has said the swirls Android TWA may lapse, so §13 of the hub CLAUDE.md needs updating **if** a move happens |
+| ~~**The domain**~~ | **SETTLED 2026-09-16: `gophercloud.games` is registered** and the account site's `CNAME` publishes every project under it. The swirls TWA was accepted as a dead end rather than chased; hub CLAUDE.md §13 carries the detail |
 | **The storage key** (§10a) | genuinely irreversible; wants real code in front of it |
 | **Ed25519 or P-256** (§10d) | one Safari check |
 | **How shared code reaches the games** (§10b) | `exit.js` is the obvious precedent now that it has shipped, but §7 says ask |
@@ -707,6 +710,11 @@ makes a hacked-in hat socially pointless without a line of enforcement code.
 here. Profiles keyed by id allow it and the data model already does, but
 whether there is a switcher is a product call rather than a technical one.
 
+**(g) Whether letters carry the profile name.** New with the mailbox (§12).
+Signing a letter would let the arcade answer a person rather than a box, and
+it would put a chosen name into a file this repo publishes. Product call, with
+the child rather than the design in mind.
+
 ## 11. The order I would build it
 
 1. `merge` and the profile shape, with tests. No UI, no network, no shop. This
@@ -722,3 +730,78 @@ whether there is a switcher is a product call rather than a technical one.
 7. Pairing in the world (5b).
 8. The shop shelf and signed grants (§6), last, because it is the only part
    that involves anyone's money.
+
+## 12. The mailbox, and the id it already mints
+
+Added 2026-09-18, because the arcade has since shipped the first thing in the
+hub that mints an identifier by itself, and the next person to open this
+document will find it there and reasonably wonder whether it is the profile id.
+
+It is not. Nothing above changes.
+
+### What shipped
+
+A mailbox on the welcome cloud: you write a letter, it goes to a form backend,
+and the arcade answers by committing `mail/<id>.json`, which the panel fetches
+and joins against the letters the device kept locally. The letter carries
+`{ message, game, version, mailbox }`. That last field is a random 60-bit name
+in `arcade.mailbox.id.v1`, minted **on the first letter and never before**, so
+somebody who only reads is given nothing. `js/mailbox.js` holds the whole of
+it, including the reasons, at length.
+
+### Why it cannot be the profile id
+
+In order of how much the mistake would cost:
+
+1. **It is published.** Every id that has been answered is a filename in this
+   public repo and every answer is a line in it, and deleting a file leaves
+   both in the history. An id that anyone can `git clone` cannot gate
+   anything — not a hat, and certainly not something bought.
+2. **It is silent.** §4a rests the hub's whole privacy posture on a profile
+   existing *because somebody asked for one*. This id is minted without
+   ceremony the instant a letter is posted. That is right for routing a reply
+   and wrong as the basis of ownership.
+3. **It is disposable on purpose.** iOS Safari wipes script-writable storage
+   after seven days without a visit, and both the panel and the parents page
+   tell the player plainly that a lost mailbox is a lost conversation. A
+   profile holding paid items cannot make that promise, which is exactly what
+   the continue code (§5a) and the receipt (§6) exist for.
+
+The same three points are why one device id cannot simply serve both purposes,
+which was the owner's instinct on the day — fewer ids on a device is the right
+taste, and the way to honour it is that **the cosmetics layer needs no device
+id at all**: earned items are local state, and bought items are recovered by
+something the player carries.
+
+### What it does confirm for §6
+
+- A static page on this origin can **POST** to a third-party endpoint and read
+  the answer: the preflight is answered (`access-control-allow-origin: *`),
+  measured against Forminit on 2026-09-18. §6 had only established that the
+  two licence endpoints were readable; posting works too.
+- **Per-id JSON files fetched straight out of this repo work**, which is the
+  shape a grant ledger would take. One thing had to be learned: `sw.js` must
+  pass that path straight through, or stale-while-revalidate serves yesterday's
+  file and the player refreshes to find nothing. Delivering is then a content
+  push and not a release.
+
+### How the two should meet, once a profile exists
+
+- **Letters stay device-scoped and keep their own id.** Do not thread them onto
+  the profile; a mailbox that followed you between devices is a worse mailbox,
+  and it would put a durable identity into a public file.
+- **A named player could sign letters with the name, never the id.** §4a
+  already calls the name the one thing that leaves the device, and names are
+  suggested rather than typed precisely so the path of least resistance is not
+  a real one. It would let the arcade answer "Hello Ada" rather than "Hello".
+  It also puts a chosen name into a public file, so it is a decision — §10(g).
+- **Purchase support must not go through the mailbox.** "I lost my hat" needs
+  an order id or the address a receipt went to; that is personal data, the
+  mailbox is public by construction, and the panel tells children not to write
+  anything of the sort in it. Lost-purchase recovery is the licence-key box in
+  the shop and an email address — which is an argument for building §5a early,
+  so the answer to a lost hat is a code the player already has rather than a
+  conversation with a stranger.
+- **Everything else belongs in the mailbox.** "The bullets are too fast" is
+  most of what anyone will ever write, and it now has somewhere to go and
+  something that comes back.
