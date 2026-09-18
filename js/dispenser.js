@@ -25,7 +25,7 @@
  * copies must agree; if the trap is ever refined, refine both.
  * ========================================================================== */
 
-import { container } from './room.js';
+import { container, blockerFor } from './room.js';
 
 /**
  * Where the machines stand, in world metres. `yaw` faces the way the cabinet
@@ -39,8 +39,29 @@ import { container } from './room.js';
  * player a machine that sometimes plays the game instead.
  */
 const MACHINES = [
-  { slug: 'neonfox', title: 'NeonFox', x: -22, z: -21, y: 2, yaw: Math.PI / 2 },
+  { slug: 'neonfox', title: 'NeonFox', x: -22, z: -21, y: 2, yaw: Math.PI / 2, accent: '#39daf2' },
 ];
+
+/**
+ * The model, measured rather than assumed: 0.72 wide, 0.746 deep including the
+ * tray that sticks out at the front, 1.242 tall. Its front is +Z once Babylon
+ * has it, the same way a cabinet's is, and the box below is in those local
+ * metres — the tray pushes the centre 7cm forward of the post, so this is not
+ * symmetric and blockerFor turns it with the machine.
+ */
+const BOX = { x: 0, z: .073, hx: .36, hz: .373 };
+const TALL = 1.25;
+
+/**
+ * No clips ship with it — the pivots are there and the motion is ours. Which
+ * way each one goes was measured on the real file rather than derived from
+ * Blender's axes, because the exporter's Y-up conversion and Babylon's mirrored
+ * __root__ both sit between the two: local +Z is out of the front, local -Z is
+ * into the machine, and a positive rotation about local X swings the flap
+ * inward. The cartridge keeps its 90-degree rest rotation and is only ever
+ * translated.
+ */
+const PARTS = ['InstallButtonPivot', 'DeliveryFlapPivot', 'DispenseCartridgePivot'];
 
 /** How far out in front the gopher stands, and how close it has to be. */
 const STEP = 1.1;
@@ -66,20 +87,19 @@ function inStandaloneArcade() {
 // ---------------------------------------------------------------------------
 
 /**
- * Stand the machines up. The model is Astra's (assets/3d/DISPENSER.md holds the
- * contract it has to meet); until it lands, and on any visit where it fails to
- * load, the procedural stand-in below has the same silhouette and the same
- * reach, because a missing asset must cost the arcade a nice object and never
- * the platform it stands on.
+ * Stand the machines up. The model is Astra's — assets/3d/TAKE-HOME-DISPENSER.md
+ * documents it and source/build_take_home.py builds it — and on any visit where
+ * it fails to load the procedural stand-in below has the same silhouette and
+ * the same reach, because a missing asset must cost the arcade a nice object
+ * and never the platform it stands on.
  */
 export async function createDispensers(scene, shadows) {
   let held = null;
   try {
-    held = await container('dispenser.glb', scene);
-  } catch {
-    // Not an error worth a stack trace: for now this file is expected to be
-    // absent. It says so once, quietly, and the boxes take over.
-    console.info('[cloudnine] dispenser.glb not here yet; using the plain one');
+    held = await container('take-home-dispenser.glb', scene);
+  } catch (err) {
+    // A missing model costs a nice object, never the platform under it.
+    console.warn('[cloudnine] take-home-dispenser.glb did not load; plain one instead', err);
   }
 
   const built = MACHINES.map((spec) => {
@@ -87,14 +107,36 @@ export async function createDispensers(scene, shadows) {
     root.position.set(spec.x, spec.y, spec.z);
     root.rotation.y = spec.yaw;
 
+    const parts = {};
     if (held) {
       const copy = held.instantiateModelsToScene((name) => `${spec.slug}:${name}`, false);
       for (const node of copy.rootNodes) node.parent = root;
+      // Nothing is auto-played here — there is nothing to play — but a future
+      // clip would be, so this stays as the mailbox's does.
       for (const group of copy.animationGroups) group.stop();
+      for (const node of root.getDescendants()) {
+        const part = PARTS.find((name) => node.name.endsWith(name));
+        if (part) parts[part] = node;
+      }
+      let tint = null;
       for (const mesh of root.getChildMeshes()) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
         shadows?.addShadowCaster(mesh, false);
+        // Astra left one material named for this: the mint trim is the game's
+        // colour, so a second machine beside another cabinet is that game's.
+        // Cloned per machine, because instantiating shares materials and a
+        // shared one would repaint every dispenser at once.
+        if (/recolor per game/i.test(mesh.material?.name || '')) {
+          if (!tint) {
+            tint = mesh.material.clone(`${spec.slug} accent`);
+            tint.albedoColor = BABYLON.Color3.FromHexString(spec.accent).toLinearSpace();
+            if (tint.emissiveColor && !tint.emissiveColor.equals(BABYLON.Color3.Black())) {
+              tint.emissiveColor = BABYLON.Color3.FromHexString(spec.accent).toLinearSpace().scale(.55);
+            }
+          }
+          mesh.material = tint;
+        }
       }
     } else {
       plainDispenser(root, scene, shadows);
@@ -107,17 +149,17 @@ export async function createDispensers(scene, shadows) {
     return {
       spec,
       stand,
-      // Turned with the machine: 0.7 across the front, 0.8 deep, and the yaws
-      // here are right angles, so swapping the half-extents is exact.
-      blocker: {
-        x: spec.x, z: spec.z,
-        hx: Math.abs(0.35 * Math.cos(spec.yaw)) + Math.abs(0.40 * Math.sin(spec.yaw)),
-        hz: Math.abs(0.35 * Math.sin(spec.yaw)) + Math.abs(0.40 * Math.cos(spec.yaw)),
-        base: spec.y, top: spec.y + 1.95,
-      },
+      blocker: blockerFor(
+        { x: spec.x, z: spec.z, yaw: spec.yaw, base: spec.y },
+        { ...BOX, top: spec.y + TALL },
+      ),
       inReach(p) {
         return Math.abs(p.y - spec.y) < .3 && Math.hypot(p.x - stand.x, p.z - stand.z) < REACH;
       },
+      /** Press the button, swing the flap in, slide a cartridge into the tray. */
+      dispense() { work(parts, true); },
+      /** Tidy itself up behind the player rather than staying gaping open. */
+      reset() { work(parts, false); },
     };
   });
 
@@ -125,10 +167,63 @@ export async function createDispensers(scene, shadows) {
     blockers: built.map((m) => m.blocker),
     /** The machine the gopher is standing at, or null. */
     near(position) {
-      for (const machine of built) if (machine.inReach(position)) return machine.spec;
+      for (const machine of built) if (machine.inReach(position)) return machine;
       return null;
     },
   };
+}
+
+/** One animation, started and forgotten: Babylon holds the last frame. */
+function move(node, property, from, to, ms) {
+  BABYLON.Animation.CreateAndStartAnimation(
+    `${node.name}:${property}`, node, property, 60, Math.max(1, Math.round(ms * 0.06)),
+    from, to, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+    new BABYLON.CubicEase(),
+  );
+}
+
+/**
+ * The whole performance, forwards or backwards. Rest values are read off the
+ * nodes the first time rather than written down here, so a rebuild of the model
+ * that nudges a pivot does not quietly move the animation with it.
+ */
+const rests = new WeakMap();
+function work(parts, out) {
+  const flap = parts.DeliveryFlapPivot;
+  const button = parts.InstallButtonPivot;
+  const cartridge = parts.DispenseCartridgePivot;
+
+  if (button) {
+    const rest = restOf(button).position;
+    // In is -Z, and it comes straight back: a button that stays pressed is a
+    // broken button.
+    move(button, 'position', rest.clone(), rest.add(new BABYLON.Vector3(0, 0, out ? -.014 : 0)), 110);
+    if (out) setTimeout(() => move(button, 'position', button.position.clone(), rest.clone(), 130), 130);
+  }
+  if (flap) {
+    // glTF gives these quaternions, and animating `rotation` on a node that has
+    // one does nothing at all. Drop it once, keeping the euler it stood at.
+    if (flap.rotationQuaternion) {
+      flap.rotation = flap.rotationQuaternion.toEulerAngles();
+      flap.rotationQuaternion = null;
+    }
+    const rest = restOf(flap).rotation;
+    move(flap, 'rotation.x', flap.rotation.x, out ? rest.x + .55 : rest.x, 320);
+  }
+  if (cartridge) {
+    const rest = restOf(cartridge).position;
+    move(cartridge, 'position', cartridge.position.clone(), out ? rest.add(new BABYLON.Vector3(0, 0, .11)) : rest.clone(), 460);
+  }
+}
+
+function restOf(node) {
+  if (!rests.has(node)) {
+    rests.set(node, {
+      position: node.position.clone(),
+      rotation: (node.rotationQuaternion ? node.rotationQuaternion.toEulerAngles() : node.rotation).clone(),
+    });
+  }
+  return rests.get(node);
 }
 
 /** A cabinet's little sibling in five boxes: a body, a hood, a window, a slot

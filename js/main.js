@@ -295,6 +295,7 @@ let nearMailbox = false;
 let dispensers = null;
 let takeaway = null;
 let nearDispenser = null;
+let atDispenser = null;
 let nearPets = false;
 let nearSeat = null;
 let seatReturn = null;
@@ -956,7 +957,7 @@ function updatePrompt(dt) {
       ? `tap <kbd>WRITE</kbd>${mail ? ' to read it' : ''}`
       : `<kbd>E</kbd> ${mail ? 'read your answer' : 'write a letter'}`;
   } else if (nearDispenser) {
-    ui.prompt.hidden = false; ui.promptTitle.textContent = `${nearDispenser.title} to take home`;
+    ui.prompt.hidden = false; ui.promptTitle.textContent = `${nearDispenser.spec.title} to take home`;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>TAKE</kbd>' : '<kbd>E</kbd> keep it on your device';
   } else if (nearSeat) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
@@ -1582,7 +1583,7 @@ function openMailbox() {
   letter.open();
 }
 /** The machine beside a cabinet, which hands out a copy rather than a game. */
-function openTakeaway(spec) {
+function openTakeaway(machine) {
   if (phase !== 'floor' || !nearDispenser) return;
   panelOpenedAt = performance.now();
   phase = 'taking'; input.clear(); ui.prompt.hidden = true;
@@ -1590,12 +1591,20 @@ function openTakeaway(spec) {
   camera.detachControl();
   camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
   document.body.classList.add('taking-home');
-  takeaway.open(spec);
+  // The machine does its bit while the card comes up: button in, flap open, a
+  // cartridge into the tray. It is behind the dialog on a phone and beside it
+  // on a desktop, and either way it is the thing that makes this an object
+  // rather than a menu.
+  atDispenser = machine;
+  machine.dispense();
+  takeaway.open(machine.spec);
 }
 function closeTakeaway() {
   if (phase !== 'taking') return;
   takeaway.close(); input.clear(); phase = 'floor';
   document.body.classList.remove('taking-home');
+  atDispenser?.reset();
+  atDispenser = null;
   camera.attachControl(ui.canvas, false); ui.canvas.focus();
 }
 
