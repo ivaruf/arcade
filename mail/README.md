@@ -44,3 +44,13 @@ a version bump: answering the post is a content push, not a release.
 half of the thread go with it, and the file here is orphaned — answers to
 somebody who can no longer find them. Deleting an orphan is safe; nothing in
 the arcade points at it.
+
+## Threads that live on one machine
+
+A browser on `localhost` gets its own id, because storage is per origin. Answer
+it and you have a real conversation that only exists on the machine it happened
+on — the live site could never serve that file to the device that wants it.
+
+Those files are listed in `.gitignore` one by one, not by pattern: ignoring
+`mail/` would quietly stop every real answer from ever being delivered. The
+first conversation this mailbox ever held is one of them.

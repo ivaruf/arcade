@@ -1,0 +1,9 @@
+# One conversation that stays where it happened.
+#
+# mail/<id>.json is normally COMMITTED — those files are the delivery
+# mechanism, and ignoring the directory would mean no answer ever reaches
+# anybody. This is a single exception: the id belongs to a browser on
+# localhost, so on the live site nothing could ever fetch it, and the file
+# would ship as an orphan. It stays untracked so the first conversation the
+# mailbox ever held keeps working on the machine it happened on.
+mail/gc-w47c-zz9n-hqy1.json
