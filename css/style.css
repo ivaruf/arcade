@@ -1003,13 +1003,18 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 /* Tags, not doors: the equal-size rule is for a row of alternatives that carry
    the same weight, and seven game names forced to one width truncate the long
    ones to make room for white space beside the short ones. */
-.letter-subjects { display:flex; flex-wrap:wrap; gap:6px; }
+/* Eight games wrap to four rows in a half-width column and there is nothing to
+   stop them: every row they take comes off the sheet, which had no floor until
+   now and collapsed to a slot. So the row has a ceiling of its own and scrolls
+   past it — the tags are a way to say what a letter is about, not the point of
+   the panel. */
+.letter-subjects { display:flex; flex-wrap:wrap; gap:6px; max-height:5.5em; overflow-y:auto; overscroll-behavior:contain; }
 .letter-subjects button { flex:0 1 auto; min-height:34px; padding:6px 12px; border-radius:999px; border:1px solid #4c7076; background:#1b3f47; color:#dce9e2; font:inherit; font-size:13px; cursor:pointer; }
 .letter-subjects button[aria-pressed="true"] { border-color:#e3c288; background:#3a3423; color:#ffeec6; box-shadow:inset 0 0 0 1px #e3c288; }
 .letter-sheet { min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:6px; }
 /* Ruled paper: one rule per line box, so the period below must stay equal to
    the textarea's line-height or the lines drift away from the writing. */
-.letter-sheet textarea { box-sizing:border-box; width:100%; min-height:0; resize:none; padding:6px 14px; border:1px solid #9a835a; border-radius:10px; font:inherit; font-size:16px; line-height:28px; color:#1d2f36; background-color:#f2e5c8; background-image:repeating-linear-gradient(#f2e5c8 0 27px,#d6c49e 27px 28px); background-origin:content-box; background-attachment:local; box-shadow:inset 0 2px 6px #00000038; }
+.letter-sheet textarea { box-sizing:border-box; width:100%; min-height:112px; resize:none; padding:6px 14px; border:1px solid #9a835a; border-radius:10px; font:inherit; font-size:16px; line-height:28px; color:#1d2f36; background-color:#f2e5c8; background-image:repeating-linear-gradient(#f2e5c8 0 27px,#d6c49e 27px 28px); background-origin:content-box; background-attachment:local; box-shadow:inset 0 2px 6px #00000038; }
 .letter-sheet textarea::placeholder { color:#8d8163; }
 .letter-room { margin:0; text-align:right; font-size:12px; color:#9db2ac; }
 .letter-care { margin:0; font-size:12px; line-height:1.45; color:#b7a887; }
@@ -1023,14 +1028,18 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 .letter-actions .neon:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
 #mailbox-dialog :focus-visible { outline:3px solid #f5d799; outline-offset:2px; }
 /* Upright and narrow: the thread on top, the sheet under it, both alive. */
-@media (max-width:640px) and (orientation:portrait) {
+@media (max-width:900px) and (orientation:portrait) {
   #mailbox-dialog { width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
   .letter-panel { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; }
   .letter-log { padding:16px 18px 10px 20px; border-right:0; border-bottom:1px solid #2f5a63; }
   .letter-write { grid-template-rows:auto auto auto auto; padding:12px 20px max(14px,env(safe-area-inset-bottom)); gap:9px; }
   .letter-head h2 { font-size:24px; margin:0 0 5px; }
   .letter-head p { font-size:12px; }
-  .letter-sheet textarea { min-height:104px; }
+  .letter-sheet textarea { min-height:132px; }
+  /* One row that scrolls sideways rather than four that push the sheet off the
+     bottom. The selected tag is first, so the default is never out of sight. */
+  .letter-subjects { flex-wrap:nowrap; max-height:none; overflow-x:auto; overflow-y:hidden; padding-bottom:2px; }
+  .letter-subjects button { flex:0 0 auto; }
 }
 /* A sideways phone has width where it lacks height: the two panes it already
    has, tightened, so the way out never falls off the bottom. */
@@ -1043,7 +1052,7 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
   .letter-eyebrow { display:none; }
   .note { font-size:13px; padding:7px 10px; }
   .letter-subjects button { min-height:30px; padding:4px 10px; font-size:12px; }
-  .letter-sheet textarea { font-size:15px; line-height:24px; background-image:repeating-linear-gradient(#f2e5c8 0 23px,#d6c49e 23px 24px); }
+  .letter-sheet textarea { min-height:72px; font-size:15px; line-height:24px; background-image:repeating-linear-gradient(#f2e5c8 0 23px,#d6c49e 23px 24px); }
   .letter-care { font-size:11px; }
   .letter-actions > button { padding:9px 14px; min-height:38px; }
 }
