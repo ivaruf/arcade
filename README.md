@@ -62,9 +62,10 @@ flying across, landing, and then walking round it to find the screen.
   a sheet of paper, a row of tags for what the letter is about, and a box to
   post it in. A letter carries `{ game, version, message }` and nothing else —
   no key, no session id, no name — which is why the arcade cannot write back to
-  you personally, and why answers are meant to go up in public instead. Nothing
-  is collecting from the box yet: `POST_TO` in `js/mailbox.js` is empty, the
-  panel says so rather than pretending, and one URL there turns it on.
+  you personally, and why answers are meant to go up in public instead. The
+  letters land at Forminit, chosen for EEA storage and an archive that does not
+  expire; `POST_TO` in `js/mailbox.js` is the whole wiring, and emptying it
+  turns the box off without taking it out of the world.
 
 ## How it finds the games
 

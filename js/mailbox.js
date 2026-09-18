@@ -25,22 +25,34 @@
  * party. It sees the message text and the IP address that sent it, and no
  * promise of ours binds it. Against that, it needs nothing running and nothing
  * paid for, nobody has to sign up to write, and a box that cannot be written
- * to is not a mailbox. Choose the vendor deliberately rather than by default —
- * with children writing, EU data residency is worth paying attention to — and
- * name the one you chose here when you do.
+ * to is not a mailbox.
+ *
+ * The one chosen, on 2026-09-18, is FORMINIT (forminit.com, formerly
+ * Getform.io, running since 2015). What decided it, in order: submissions are
+ * stored inside the EEA, on AWS in Ireland, so letters from Norwegian children
+ * never leave it; its free tier keeps them indefinitely rather than ageing
+ * them out of the archive after thirty days, which is what ruled out the
+ * better-known alternative; and its public mode wants no API key, so this page
+ * holds no secret it would only be pretending to keep. The rate limiting and
+ * spam filtering are its own, which is the point — they are the controls
+ * nothing running in a browser can enforce. Retention is set in its dashboard
+ * rather than here, and is deliberately finite.
  * ========================================================================== */
 
 import { container } from './room.js';
 import { IS_TOUCH } from './controls.js';
 
 /**
- * Where a posted letter goes. EMPTY ON PURPOSE until a service is picked: the
- * box stands in the world and the letter can be written and kept, but the
- * panel says out loud that nothing is collecting yet rather than swallowing
- * what a child typed and thanking them for it. One URL here turns the whole
- * feature on, and it is the only line in this file that should need to change.
+ * Where a posted letter goes. Not a secret and never was — it is one URL in a
+ * file anybody can read, which is exactly why the service behind it has to be
+ * one that expects that (see the trade above).
+ *
+ * Emptying it is the off switch, and a graceful one: the box still stands in
+ * the world and a letter can still be written and kept on the device, but the
+ * panel says out loud that nothing is collecting rather than swallowing what a
+ * child typed and thanking them for it.
  */
-export const POST_TO = '';
+export const POST_TO = 'https://forminit.com/f/9st7655jtog';
 
 /**
  * South-west corner of the welcome cloud, on the same wall as the parents sign
