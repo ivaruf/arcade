@@ -1307,6 +1307,36 @@ document.addEventListener('visibilitychange', () => {
 // ---------------------------------------------------------------------------
 registerWorker();
 
+/* ---------------------------------------------------------------------------
+ * The tap that opens a panel must not also press a button inside it.
+ *
+ * The touch action button fires on `pointerdown`, because it is a HOLD for run
+ * and descend and only a tap for E. So by the time the finger lifts, the panel
+ * is already open underneath it — and iOS then synthesises a `click` at that
+ * same coordinate, which `preventDefault()` on pointerdown does not reliably
+ * suppress. Whatever is now under the thumb gets pressed.
+ *
+ * It showed up as the dresser opening and shutting in one tap, and only the
+ * dresser: it is the one panel that is `100vw × 100dvh`, so "Wear this look"
+ * sits on the screen's bottom edge exactly where the action button is. Pets and
+ * the parents sign are 96vw × 92dvh and were saved by their own margins, which
+ * is luck rather than design — the mailbox is full-bleed upright too, and its
+ * POST IT is live the moment a draft is restored.
+ *
+ * So: for a moment after a panel opens, clicks inside it are swallowed in the
+ * capture phase, before they can reach a button. Nobody reads a panel and
+ * decides inside 400ms; a thumb lifting takes about 60.
+ * ------------------------------------------------------------------------- */
+let panelOpenedAt = -Infinity;
+const GHOST = 400;
+function guardOpeningTap(dialog) {
+  dialog.addEventListener('click', (event) => {
+    if (performance.now() - panelOpenedAt > GHOST) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+}
+
 // Dress-up is a local modal, not a game launch or a persisted profile.
 const outfitDialog = $('customize-dialog');
 const inventory = $('outfit-items');
@@ -1369,6 +1399,7 @@ function paintOutfit() {
 }
 function openCustomization() {
   if (phase !== 'floor' || !nearCustomization) return;
+  panelOpenedAt = performance.now();
   phase = 'customizing'; input.clear(); ui.prompt.hidden = true;
   document.body.classList.add('dressing-room');
   state.vx = state.vz = 0; state.speed01 = 0;
@@ -1412,11 +1443,16 @@ for (const [id, direction] of [['outfit-left', -1], ['outfit-right', 1]]) {
     gopher.pivot.rotation.y = state.yaw;
   });
 }
+for (const panel of ['customize-dialog', 'pets-dialog', 'parents-dialog', 'mailbox-dialog']) {
+  guardOpeningTap($(panel));
+}
+
 $('customize-done').addEventListener('click', closeCustomization);
 outfitDialog.addEventListener('cancel', event => { event.preventDefault(); closeCustomization(); });
 
 function openPets() {
   if (phase !== 'floor' || !nearPets) return;
+  panelOpenedAt = performance.now();
   phase = 'pets'; input.clear(); ui.prompt.hidden = true;
   state.vx = state.vz = 0; state.speed01 = 0;
   camera.detachControl();
@@ -1504,6 +1540,7 @@ function updateStandMotion(dt) {
 const parentsDialog = document.getElementById('parents-dialog');
 function openParents() {
   if (phase !== 'floor' || !nearParents) return;
+  panelOpenedAt = performance.now();
   phase = 'reading'; input.clear(); ui.prompt.hidden = true;
   state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
   camera.detachControl();
@@ -1526,6 +1563,7 @@ function closeParents() {
  */
 function openMailbox() {
   if (phase !== 'floor' || !nearMailbox) return;
+  panelOpenedAt = performance.now();
   phase = 'writing'; input.clear(); ui.prompt.hidden = true;
   state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
   camera.detachControl();
