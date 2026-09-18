@@ -236,6 +236,7 @@ const ACTIONS = {
   pets:    { code: 'KeyE', glyph: 'PETS', label: 'Choose a pet' },
   dress:   { code: 'KeyE', glyph: 'DRESS', label: 'Customize gopher' },
   write:   { code: 'KeyE', glyph: 'WRITE', label: 'Write a letter' },
+  take:    { code: 'KeyE', glyph: 'TAKE', label: 'Take this game home' },
   run:     { code: 'ShiftLeft', glyph: '\u00bb',  label: 'Run' },
   descend: { code: 'ShiftLeft', glyph: '\u25bc',  label: 'Descend' },
   play:    { code: 'KeyE',      glyph: 'PLAY',     label: 'Play game' },

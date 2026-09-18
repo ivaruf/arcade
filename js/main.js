@@ -3,6 +3,7 @@ import { seatNear } from './seating.js';
 import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
 import { createMailbox, createLetterPanel } from './mailbox.js';
+import { createDispensers, createTakeawayPanel } from './dispenser.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
  *
@@ -291,6 +292,9 @@ let nearParents = false;
 let mailbox = null;
 let letter = null;
 let nearMailbox = false;
+let dispensers = null;
+let takeaway = null;
+let nearDispenser = null;
 let nearPets = false;
 let nearSeat = null;
 let seatReturn = null;
@@ -341,7 +345,9 @@ async function boot() {
   // a slower boot, and the flag going up a second after the gopher lands reads
   // as the post arriving rather than as a page still loading.
   letter.checkMail().then((waiting) => { if (waiting) mailbox.raiseFlag(); });
-  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...cabinets.flatMap((c) => c.blockers)];
+  dispensers = await createDispensers(scene, shadows);
+  takeaway = createTakeawayPanel({ onShut: closeTakeaway });
+  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
@@ -889,7 +895,7 @@ function findNear() {
 
 function updatePrompt(dt) {
   if (state.seated) {
-    near = null; nearParents = nearPets = nearCustomization = nearMailbox = false; nearSeat = null;
+    near = null; nearParents = nearPets = nearCustomization = nearMailbox = false; nearSeat = nearDispenser = null;
     gopher.setReach(0, dt);
     ui.prompt.hidden = false; ui.promptTitle.textContent = sitMotion ? 'Sitting down…' : standMotion ? 'Getting up…' : 'Taking a break';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>STAND</kbd> to get up' : '<kbd>E</kbd> stand up · move or jump to leave';
@@ -901,6 +907,7 @@ function updatePrompt(dt) {
   nearPets = state.mode === 'walk' && state.grounded && pets.inReach(gopher.pivot.position);
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
   nearMailbox = state.mode === 'walk' && state.grounded && mailbox.inReach(gopher.pivot.position);
+  nearDispenser = state.mode === 'walk' && state.grounded ? dispensers.near(gopher.pivot.position) : null;
   const previous = near;
   near = findNear();
   if (previous && previous !== near) setLit(previous, false);
@@ -948,6 +955,9 @@ function updatePrompt(dt) {
     ui.promptCue.innerHTML = input.IS_TOUCH
       ? `tap <kbd>WRITE</kbd>${mail ? ' to read it' : ''}`
       : `<kbd>E</kbd> ${mail ? 'read your answer' : 'write a letter'}`;
+  } else if (nearDispenser) {
+    ui.prompt.hidden = false; ui.promptTitle.textContent = `${nearDispenser.title} to take home`;
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>TAKE</kbd>' : '<kbd>E</kbd> keep it on your device';
   } else if (nearSeat) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';
@@ -958,7 +968,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearMailbox ? 'write' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearMailbox ? 'write' : nearDispenser ? 'take' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -973,7 +983,7 @@ scene.onPointerObservable.add((info) => {
 });
 
 function updateCamera(dt) {
-  if (phase === 'pets' || phase === 'reading' || phase === 'writing') return;
+  if (phase === 'pets' || phase === 'reading' || phase === 'writing' || phase === 'taking') return;
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'customizing') {
@@ -1069,6 +1079,7 @@ function render() {
       else if (phase === 'pets') pets.close();
       else if (phase === 'reading') closeParents();
       else if (phase === 'writing') closeMailbox();
+      else if (phase === 'taking') closeTakeaway();
     }
 
     if (phase === 'floor') {
@@ -1098,6 +1109,7 @@ function render() {
       else if (nearCustomization && coin) openCustomization();
       else if (nearParents && coin) openParents();
       else if (nearMailbox && coin) openMailbox();
+      else if (nearDispenser && coin) openTakeaway(nearDispenser);
       else if (nearSeat && coin) sitOnSeat(nearSeat);
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
@@ -1440,7 +1452,7 @@ for (const [id, direction] of [['outfit-left', -1], ['outfit-right', 1]]) {
     gopher.pivot.rotation.y = state.yaw;
   });
 }
-for (const panel of ['customize-dialog', 'pets-dialog', 'parents-dialog', 'mailbox-dialog']) {
+for (const panel of ['customize-dialog', 'pets-dialog', 'parents-dialog', 'mailbox-dialog', 'takeaway-dialog']) {
   guardOpeningTap($(panel));
 }
 
@@ -1569,6 +1581,24 @@ function openMailbox() {
   mailbox.openDoor();
   letter.open();
 }
+/** The machine beside a cabinet, which hands out a copy rather than a game. */
+function openTakeaway(spec) {
+  if (phase !== 'floor' || !nearDispenser) return;
+  panelOpenedAt = performance.now();
+  phase = 'taking'; input.clear(); ui.prompt.hidden = true;
+  state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
+  camera.detachControl();
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+  document.body.classList.add('taking-home');
+  takeaway.open(spec);
+}
+function closeTakeaway() {
+  if (phase !== 'taking') return;
+  takeaway.close(); input.clear(); phase = 'floor';
+  document.body.classList.remove('taking-home');
+  camera.attachControl(ui.canvas, false); ui.canvas.focus();
+}
+
 function closeMailbox() {
   if (phase !== 'writing') return;
   letter.close(); input.clear(); phase = 'floor';

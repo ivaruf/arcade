@@ -1062,3 +1062,33 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 #mailbox-dialog.keyboard-up .letter-write { grid-template-rows:minmax(0,1fr) auto; padding:8px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); gap:8px; }
 #mailbox-dialog.keyboard-up .letter-sheet textarea { min-height:0; }
 #mailbox-dialog.keyboard-up .letter-actions > button { min-height:40px; padding:8px 14px; }
+
+/* The take-home machine's card. A cabinet's marquee colours rather than the
+   mailbox's petrol and brass: this one belongs to the machine beside a game,
+   not to the post. */
+body.taking-home #touch, body.taking-home #hud { visibility:hidden; }
+#takeaway-dialog { box-sizing:border-box; padding:0; width:min(520px,94vw); max-width:none; border:1px solid rgba(18,217,184,.4); border-radius:20px; background:linear-gradient(160deg,#0e1122f2,#060910f7); color:var(--ink); }
+#takeaway-dialog::backdrop { background:#03060cc4; }
+.takeaway-card { padding:26px 26px max(22px,env(safe-area-inset-bottom)); display:grid; gap:14px; }
+.takeaway-eyebrow { margin:0; font-size:11px; letter-spacing:.18em; color:var(--mint); }
+.takeaway-card h2 { margin:0; font-size:27px; line-height:1.15; }
+.takeaway-card > p { margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
+.takeaway-steps { margin:0; padding-left:20px; display:grid; gap:7px; font-size:14px; line-height:1.5; color:var(--ink); }
+.takeaway-steps li::marker { color:var(--mint); font-weight:700; }
+.takeaway-note { margin:0; font-size:12px; line-height:1.5; color:var(--honey); }
+.takeaway-actions { display:flex; gap:10px; }
+.takeaway-actions > button { flex:1 1 0; margin:0; font-size:13px; letter-spacing:.08em; }
+#takeaway-dialog :focus-visible { outline:3px solid var(--mint); outline-offset:2px; }
+@media (max-height:500px) and (orientation:landscape) {
+  /* Sideways on a phone the card is a two-column grid over the same markup:
+     what it is on the left, what to do about it on the right. */
+  #takeaway-dialog { width:min(720px,96vw); }
+  .takeaway-card { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"head steps" "blurb steps" "note actions"; gap:8px 18px; padding:14px 18px max(10px,env(safe-area-inset-bottom)); }
+  .takeaway-eyebrow { display:none; }
+  .takeaway-card h2 { grid-area:head; font-size:21px; }
+  .takeaway-card > p#takeaway-blurb { grid-area:blurb; font-size:12px; }
+  .takeaway-steps { grid-area:steps; font-size:13px; gap:5px; }
+  .takeaway-note { grid-area:note; font-size:11px; }
+  .takeaway-actions { grid-area:actions; align-self:end; }
+  .takeaway-actions > button { padding:9px 12px; min-height:38px; }
+}
