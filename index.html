@@ -121,11 +121,37 @@
       <p>So there are no ads and no push notifications. Nothing here nags your child to come back: no daily streaks to keep up, no countdowns, no rewards for showing up. There are no accounts and nothing to sign up for, and every game is free to play for everyone.</p>
       <p>I hope it can be a place to share: discover a game together, cheer each other on, and let children find their own favourites and their own pace. There’s room to wander, be silly, or just sit in the clouds for a while.</p>
       <p>Some of the games play together over the internet, and they run in a browser on tablets, phones and computers alike, so a friend, a cousin or a grandparent can join from whatever they already have in their hands. One player shares a room code, the others enter it, and that is the whole setup: nothing to install, nobody to sign up.</p>
-      <p>I won’t sell your data. I don’t even want it. There is no analytics here, no tracking of any kind, and no server of mine for any of it to sit on. What the arcade remembers is small, and it stays on the device you are playing on: whether the sound is on, how sharp you like the sky. If accounts and saved progress arrive one day, that is where they will be saved too.</p>
+      <p>I won’t sell your data. I don’t even want it. There is no analytics here and no tracking of any kind, and nothing is quietly gathered up while your child plays. What the arcade remembers is small, and it stays on the device you are playing on: whether the sound is on, how sharp you like the sky. If accounts and saved progress arrive one day, that is where they will be saved too. And if something ever leaves the device, like a letter your child chooses to post in the arcade’s mailbox, it carries what they wrote and which game it was about, and nothing else. No name, no account, no email, not even a number that would let me tell two letters apart. There is nothing in it that could point back to a person, including for me — which is also why I answer in the arcade rather than by writing back.</p>
       <p>Everything in the arcade is free today. If it ever pays for itself, it will be through silly hats and cloud companions for anyone who feels like chipping in. Never a subscription, never a price on a game, and never anything that gives one player an advantage or locks part of a game away.</p>
       <p>The arcade is still in beta and growing. Games can differ in pace and challenge, so I invite you to explore alongside your child and choose what feels right for your family.</p>
     </article>
     <footer><button id="parents-close" type="button">Back to the clouds</button></footer>
+  </div>
+</dialog>
+
+<dialog id="mailbox-dialog" aria-labelledby="mailbox-title">
+  <div class="letter-panel">
+    <header class="letter-head">
+      <p class="letter-eyebrow">GOPHER CLOUD POST</p>
+      <h2 id="mailbox-title">Write to the arcade</h2>
+      <p>Something broken, something missing, or an idea for a machine? I read every letter that comes out of this box.</p>
+    </header>
+    <div class="letter-about">
+      <span id="letter-about-label">What is it about?</span>
+      <div id="letter-subjects" class="letter-subjects" role="group" aria-labelledby="letter-about-label"></div>
+    </div>
+    <div class="letter-sheet">
+      <textarea id="letter-text" aria-label="Your letter" rows="6" placeholder="Dear arcade…"></textarea>
+      <p id="letter-room" class="letter-room" aria-live="polite">room for 500 letters</p>
+    </div>
+    <p class="letter-care">Please leave out your name, your school and where you live. I do not need any of it, and I would rather not have it.</p>
+    <footer class="letter-foot">
+      <p id="letter-status" role="status"></p>
+      <div class="letter-actions">
+        <button id="letter-shut" class="ghost" type="button">Shut the door</button>
+        <button id="letter-post" class="neon" type="button">Post it</button>
+      </div>
+    </footer>
   </div>
 </dialog>
 

@@ -2,6 +2,7 @@ import { createParentsSign } from './parents.js';
 import { seatNear } from './seating.js';
 import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
+import { createMailbox, createLetterPanel } from './mailbox.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
  *
@@ -287,6 +288,9 @@ let nearCustomization = false;
 let pets = null;
 let parentsSign = null;
 let nearParents = false;
+let mailbox = null;
+let letter = null;
+let nearMailbox = false;
 let nearPets = false;
 let nearSeat = null;
 let seatReturn = null;
@@ -328,7 +332,15 @@ async function boot() {
   customizationStation = createCustomizationStation(scene, shadows);
   pets = createPets(scene);
   parentsSign = createParentsSign(scene);
-  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, ...cabinets.flatMap((c) => c.blockers)];
+  mailbox = await createMailbox(scene, shadows);
+  // What a letter can be about is whatever is actually on the floor, so a slug
+  // added to games.json turns up in the panel without anyone editing it.
+  letter = createLetterPanel({
+    subjects: cabinets.filter((c) => c.game).map((c) => ({ slug: c.game.slug, title: c.game.title })),
+    onShut: closeMailbox,
+    onPosted: () => mailbox.raiseFlag(),
+  });
+  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say('waking the gopher…');
@@ -876,7 +888,7 @@ function findNear() {
 
 function updatePrompt(dt) {
   if (state.seated) {
-    near = null; nearParents = nearPets = nearCustomization = false; nearSeat = null;
+    near = null; nearParents = nearPets = nearCustomization = nearMailbox = false; nearSeat = null;
     gopher.setReach(0, dt);
     ui.prompt.hidden = false; ui.promptTitle.textContent = sitMotion ? 'Sitting down…' : standMotion ? 'Getting up…' : 'Taking a break';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>STAND</kbd> to get up' : '<kbd>E</kbd> stand up · move or jump to leave';
@@ -887,6 +899,7 @@ function updatePrompt(dt) {
   nearSeat = state.mode === 'walk' && state.grounded ? seatNear(gopher.pivot.position) : null;
   nearPets = state.mode === 'walk' && state.grounded && pets.inReach(gopher.pivot.position);
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
+  nearMailbox = state.mode === 'walk' && state.grounded && mailbox.inReach(gopher.pivot.position);
   const previous = near;
   near = findNear();
   if (previous && previous !== near) setLit(previous, false);
@@ -925,6 +938,9 @@ function updatePrompt(dt) {
   } else if (nearParents) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = 'For parents and guardians';
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>READ</kbd>' : '<kbd>E</kbd> read';
+  } else if (nearMailbox) {
+    ui.prompt.hidden = false; ui.promptTitle.textContent = 'The mailbox';
+    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>WRITE</kbd>' : '<kbd>E</kbd> write a letter';
   } else if (nearSeat) {
     ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
     ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';
@@ -935,7 +951,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearMailbox ? 'write' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -950,7 +966,7 @@ scene.onPointerObservable.add((info) => {
 });
 
 function updateCamera(dt) {
-  if (phase === 'pets' || phase === 'reading') return;
+  if (phase === 'pets' || phase === 'reading' || phase === 'writing') return;
   // While a coin is in the machine the camera belongs to updateDive, and two
   // things writing alpha in one frame is a fight neither wins.
   if (phase === 'customizing') {
@@ -1045,6 +1061,7 @@ function render() {
       else if (phase === 'customizing') closeCustomization();
       else if (phase === 'pets') pets.close();
       else if (phase === 'reading') closeParents();
+      else if (phase === 'writing') closeMailbox();
     }
 
     if (phase === 'floor') {
@@ -1073,6 +1090,7 @@ function render() {
       else if (nearPets && coin) openPets();
       else if (nearCustomization && coin) openCustomization();
       else if (nearParents && coin) openParents();
+      else if (nearMailbox && coin) openMailbox();
       else if (nearSeat && coin) sitOnSeat(nearSeat);
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
@@ -1491,5 +1509,28 @@ function closeParents() {
   document.body.classList.remove('reading-parents');
   camera.attachControl(ui.canvas, false); ui.canvas.focus();
 }
+/**
+ * The door swings with the panel, so the box in the world agrees with the
+ * dialog in front of it — open while you are writing, shut when you step away.
+ * The flag is the letter panel's to raise, and only a posted letter raises it.
+ */
+function openMailbox() {
+  if (phase !== 'floor' || !nearMailbox) return;
+  phase = 'writing'; input.clear(); ui.prompt.hidden = true;
+  state.vx = state.vy = state.vz = state.speed01 = state.vertical01 = 0;
+  camera.detachControl();
+  camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0;
+  document.body.classList.add('writing-letter');
+  mailbox.openDoor();
+  letter.open();
+}
+function closeMailbox() {
+  if (phase !== 'writing') return;
+  letter.close(); input.clear(); phase = 'floor';
+  document.body.classList.remove('writing-letter');
+  mailbox.closeDoor();
+  camera.attachControl(ui.canvas, false); ui.canvas.focus();
+}
+
 document.getElementById('parents-close').addEventListener('click', closeParents);
 parentsDialog.addEventListener('cancel', event => { event.preventDefault(); closeParents(); });

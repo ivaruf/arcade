@@ -62,6 +62,7 @@ const SHELL_FILES = [
   './js/cabinets.js',
   './js/gopher.js',
   './js/customization.js',
+  './js/mailbox.js',
   './js/launcher.js',
   './js/registry.js',
   './js/controls.js',
