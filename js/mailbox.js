@@ -240,6 +240,14 @@ export function createLetterPanel({ subjects, onShut, onPosted }) {
     paint();
     say('Posting…');
     try {
+      // application/json is not a CORS-safelisted content type, so this is a
+      // preflighted request and the service has to answer an OPTIONS before it
+      // ever sees the letter. Every form backend worth using does; if one does
+      // not, the fix is x-www-form-urlencoded, which is a simple request and
+      // skips the preflight, rather than anything in this page.
+      //
+      // Three flat fields, which is what every form backend takes. A service
+      // wanting some envelope of its own gets adapted HERE and nowhere else.
       const answer = await fetch(POST_TO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -249,6 +257,13 @@ export function createLetterPanel({ subjects, onShut, onPosted }) {
           message,
         }),
       });
+      // The relay's own rate limit, which is the one that actually holds:
+      // nothing in this page can. It is not a fault, so it does not get the
+      // voice of one.
+      if (answer.status === 429) {
+        say('The post is busy just now. Give it a minute and send it again.');
+        return;
+      }
       if (!answer.ok) throw new Error(`post refused with ${answer.status}`);
       postedAt = Date.now();
       text.value = '';
