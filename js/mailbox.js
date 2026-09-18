@@ -379,9 +379,12 @@ export function createLetterPanel({ subjects, onShut, onRead }) {
 
   function paint() {
     const written = text.value.trim().length;
+    // Not "500 letters". Everything else on this panel calls a message a
+    // letter, so counting characters in the same word tells a child they may
+    // write five hundred of them.
     room.textContent = written
-      ? `room for ${ROOM - text.value.length} more`
-      : `room for ${ROOM} letters`;
+      ? `room for ${ROOM - text.value.length} more characters`
+      : `room for ${ROOM} characters`;
     post.disabled = sending || !written || !POST_TO;
   }
 
