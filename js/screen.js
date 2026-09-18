@@ -23,6 +23,11 @@
  * it behaved before this file existed.
  * ========================================================================== */
 
+// For the worker's script URL at the bottom of this file. Imported here rather
+// than relied on from somebody else's import: registerWorker must not depend on
+// main.js having already pulled in signs.js for the global to exist.
+import './version.js';
+
 /**
  * @param onResize called after every fullscreen change, on the next frame —
  *        the viewport is a different size and the engine has to be told.
@@ -128,12 +133,41 @@ export function setupScreen(onResize) {
  * Fire and forget. Service workers need a secure context, so plain-http LAN
  * testing skips this and everything else still works.
  */
+/**
+ * Register the worker, and make sure a release can actually reach it.
+ *
+ * Two things conspired to keep an installed arcade on an old build while the
+ * same site in a tab updated fine, and both are fixed here.
+ *
+ * `sw.js` is byte-identical from one release to the next: the version lives in
+ * js/version.js so the sign and the worker can share one source of truth, and
+ * the worker reads it with importScripts. But the default `updateViaCache` is
+ * 'imports', which fetches the MAIN script bypassing the HTTP cache and the
+ * IMPORTED ones through it — so the update check compared an unchanged sw.js
+ * against a version.js still sitting in GitHub Pages' cache, found nothing,
+ * and went back to sleep. `updateViaCache: 'none'` bypasses the cache for
+ * both, and the version in the script URL makes the comparison unambiguous on
+ * any engine rather than trusting each one to diff imported scripts.
+ *
+ * And a standalone window can run for days without a navigation, so it never
+ * reaches the `load` check at all. Coming back to the front is that window's
+ * version of arriving, so it asks then.
+ *
+ * What this still does NOT do is reload the page under a running session —
+ * deliberately, per the hub's rule that a deploy must never destroy a run in
+ * progress. A new build is fetched and installed; it is what you get the next
+ * time the arcade is opened.
+ */
 export function registerWorker() {
   if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('./sw.js', { scope: './' })
-      .then((reg) => reg.update().catch(() => {}))
+      .register(`./sw.js?v=${globalThis.GOPHER_CLOUD_VERSION}`, { scope: './', updateViaCache: 'none' })
+      .then((reg) => {
+        const check = () => reg.update().catch(() => {});
+        check();
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+      })
       .catch((err) => console.info('[cloudnine] offline support unavailable:', err.message));
   });
 }
