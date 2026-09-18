@@ -346,7 +346,12 @@ async function boot() {
   // a slower boot, and the flag going up a second after the gopher lands reads
   // as the post arriving rather than as a page still loading.
   letter.checkMail().then((waiting) => { if (waiting) mailbox.raiseFlag(); });
-  dispensers = await createDispensers(scene, shadows);
+  // The machines take the registry's own resolved URLs, so "open it on its own"
+  // points wherever the game actually loaded from rather than where it would be
+  // if the arcade sat one directory below it.
+  dispensers = await createDispensers(scene, shadows, new Map(
+    cabinets.filter((c) => c.game).map((c) => [c.game.slug, c.game]),
+  ));
   takeaway = createTakeawayPanel({ onShut: closeTakeaway });
   blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);

@@ -93,7 +93,7 @@ function inStandaloneArcade() {
  * the same reach, because a missing asset must cost the arcade a nice object
  * and never the platform it stands on.
  */
-export async function createDispensers(scene, shadows) {
+export async function createDispensers(scene, shadows, games = new Map()) {
   let held = null;
   try {
     held = await container('take-home-dispenser.glb', scene);
@@ -102,7 +102,19 @@ export async function createDispensers(scene, shadows) {
     console.warn('[cloudnine] take-home-dispenser.glb did not load; plain one instead', err);
   }
 
-  const built = MACHINES.map((spec) => {
+  const built = MACHINES.map((machine) => {
+    // The registry already worked out where this game really lives — siblings
+    // first, games.json's `origin` if there is no sibling there — which is the
+    // same resolution the iframe uses. Hardcoding `../neonfox/` was right only
+    // where the arcade happens to sit one directory below the games, so it
+    // 404s against a server rooted at the arcade itself and would have been a
+    // dead button for anyone who forked this.
+    const known = games.get(machine.slug);
+    const spec = {
+      ...machine,
+      title: known?.title || machine.title,
+      url: known?.url || `../${machine.slug}/`,
+    };
     const root = new BABYLON.TransformNode(`Take-home machine (${spec.slug})`, scene);
     root.position.set(spec.x, spec.y, spec.z);
     root.rotation.y = spec.yaw;
@@ -297,10 +309,9 @@ export function createTakeawayPanel({ onShut }) {
 
   go.addEventListener('click', () => {
     if (!game) return;
-    // The game's own front door, one level up out of /arcade/. A new tab
-    // rather than this one: the arcade is probably mid-session behind this
-    // card, and taking somebody out of it to read an instruction is rude.
-    window.open(`../${game.slug}/`, '_blank', 'noopener');
+    // A new tab rather than this one: the arcade is probably mid-session behind
+    // this card, and taking somebody out of it to read an instruction is rude.
+    window.open(game.url, '_blank', 'noopener');
   });
   shut.addEventListener('click', () => onShut());
   el.addEventListener('cancel', (event) => { event.preventDefault(); onShut(); });
