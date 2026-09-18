@@ -35,8 +35,20 @@
  * better-known alternative; and its public mode wants no API key, so this page
  * holds no secret it would only be pretending to keep. The rate limiting and
  * spam filtering are its own, which is the point — they are the controls
- * nothing running in a browser can enforce. Retention is set in its dashboard
- * rather than here, and is deliberately finite.
+ * nothing running in a browser can enforce.
+ *
+ * WHAT IT RECORDS BEYOND THE LETTER, read off its own reply to a real post
+ * rather than taken on trust: the sender's IP address, the user agent, the
+ * referring page, and a location derived from that IP down to city and
+ * coordinates. That is ordinary for a form backend and none of it is
+ * something this page sends or can prevent — it is the postmark rather than
+ * the letter — but it is more than "the message and an IP", and no setting
+ * documented anywhere turns it off. It is why the parents page says plainly
+ * that the service carrying a letter sees where it was posted from.
+ *
+ * Retention is a Pro-plan control; on the free tier there is none, so letters
+ * sit in that inbox until they are deleted by hand. Deleting them after
+ * reading is therefore a real habit with a real reason, not tidiness.
  * ========================================================================== */
 
 import { container } from './room.js';
@@ -244,7 +256,7 @@ export function createLetterPanel({ subjects, onShut, onPosted }) {
     // than a defence: anything running in the browser is the player's to edit.
     // Real limiting belongs at whatever POST_TO is, which is the one part of
     // this that can hold something the player cannot see.
-    if (Date.now() - postedAt < 20000) {
+    if (Date.now() - postedAt < 30000) {
       say('One letter at a time — give the post a minute to get going.');
       return;
     }
@@ -258,15 +270,21 @@ export function createLetterPanel({ subjects, onShut, onPosted }) {
       // not, the fix is x-www-form-urlencoded, which is a simple request and
       // skips the preflight, rather than anything in this page.
       //
-      // Three flat fields, which is what every form backend takes. A service
-      // wanting some envelope of its own gets adapted HERE and nowhere else.
+      // Still the same three fields; the wrapping is Forminit's. Flat JSON is
+      // refused outright (INVALID_JSON), and so is flat form-encoding, which
+      // wants fi-text-<name> instead — so there is no vendor-neutral shape to
+      // retreat to and no point pretending otherwise. The blocks become the
+      // form's schema on the first submission. This is the one place a change
+      // of service is felt.
       const answer = await fetch(POST_TO, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          game: subject,
-          version: globalThis.GOPHER_CLOUD_VERSION,
-          message,
+          blocks: [
+            { type: 'text', name: 'message', value: message },
+            { type: 'text', name: 'game', value: subject },
+            { type: 'text', name: 'version', value: globalThis.GOPHER_CLOUD_VERSION },
+          ],
         }),
       });
       // The relay's own rate limit, which is the one that actually holds:
