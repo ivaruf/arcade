@@ -148,13 +148,20 @@ function mint() {
  * before: somebody who walks up, reads the box and walks away is given no
  * identifier at all, because they have not asked for an answer.
  */
+let session = '';
 function deviceId(create = false) {
-  let id = load(DEVICE, '');
-  if (!id && create) {
-    id = mint();
-    save(DEVICE, id);
+  // Held for the session as well as written down. In a private window the
+  // write throws and every read comes back empty, so without this the same
+  // person would be given a new name for every letter in one conversation —
+  // a thread of strangers. Answers still cannot reach them after the tab
+  // closes, which is what private browsing means, but at least the
+  // conversation they are having right now is one conversation.
+  if (!session) session = load(DEVICE, '');
+  if (!session && create) {
+    session = mint();
+    save(DEVICE, session);
   }
-  return id;
+  return session;
 }
 
 /** Answers are hand-written JSON, so the time is an ISO string a person typed. */
