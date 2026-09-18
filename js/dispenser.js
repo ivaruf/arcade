@@ -12,10 +12,12 @@
  * copy to take home is the same offer in the arcade's own language, asked at
  * the moment somebody has just decided they like the game next to it.
  *
- * ONE MACHINE, ON PURPOSE. NeonFox has one and the other six do not. This is a
- * concept being tried rather than a feature being rolled out: if it reads well
- * beside one cabinet, MACHINES below grows; if it does not, this file is
- * deleted and nothing else has to be unpicked.
+ * ONE PER CABINET. It was tried beside NeonFox first and read well enough to
+ * keep, so MACHINES below now has all seven. A game added to games.json does
+ * NOT get one automatically: its machine is a position on a platform, and
+ * where a thing stands is a judgement about that platform rather than
+ * something a registry can work out. The placements were solved against every
+ * blocker in room.js rather than eyeballed; see MACHINES.
  *
  * WHY THE DEVICE SNIFFING IS DUPLICATED. install.js asks the same question
  * about the arcade and explains the iPad trap at length — read it there. It
@@ -26,20 +28,33 @@
  * ========================================================================== */
 
 import { container, blockerFor } from './room.js';
+import { accentFor } from './cabinets.js';
 
 /**
- * Where the machines stand, in world metres. `yaw` faces the way the cabinet
- * beside it faces — Babylon's 0 looks down +Z — and `y` is the platform's own
- * height, because a reach that ignores height is a reach through a cloud.
+ * One beside every cabinet, in world metres, each facing the way its cabinet
+ * faces — Babylon's 0 looks down +Z — with `y` the platform's own height,
+ * because a reach that ignores height is a reach through a cloud.
  *
- * The NeonFox cabinet is the double at (-22, -18) facing +X, and its own reach
- * is 1.75m from a stand 1.55m out. This sits far enough along the same wall
- * that the two never both answer to E: three metres between the two standing
- * places, against 2.8 of combined reach. Closer looks tidier and costs the
- * player a machine that sometimes plays the game instead.
+ * These were solved rather than eyeballed, against every blocker in room.js,
+ * and three rules decide them. **Beside**, within 40 degrees of square to the
+ * cabinet, so a machine is never in front of a screen nor round a back where
+ * nobody walks. **Reachable**, with its standing place more than 2.15m from
+ * the cabinet's — a cabinet answers E from 1.75m away and wins, so any closer
+ * and standing at the machine would sometimes start the game instead.
+ * **Clear**, with a quarter-metre of air around the box and nothing between it
+ * and where you stand at it.
+ *
+ * NeonFox's is where it was put by hand and liked; the other six came out of
+ * that solve at 2.1 to 2.4m.
  */
 const MACHINES = [
-  { slug: 'neonfox', title: 'NeonFox', x: -22, z: -21, y: 2, yaw: Math.PI / 2, accent: '#39daf2' },
+  { slug: 'neonfox', title: 'NeonFox', x: -22, z: -21, y: 2, yaw: Math.PI / 2 },
+  { slug: 'maxgear', title: 'MAXGEAR', x: -21.85, z: -0.4, y: 1.5, yaw: 1.4581 },
+  { slug: 'fishtank', title: 'Fishtank', x: 5.7, z: -19.3, y: -2.5, yaw: -0.1882 },
+  { slug: 'dam_break', title: 'DAM BREAK', x: 13.3, z: -21.53, y: 1, yaw: 0 },
+  { slug: 'supermine', title: 'SUPERMINE', x: 25.32, z: 1.63, y: -5.5, yaw: -Math.PI / 2 },
+  { slug: 'supermine_adventure', title: 'SUPERMINE ADVENTURE', x: 24.03, z: 21.04, y: -5.5, yaw: Math.PI },
+  { slug: 'swirls', title: 'swirls', x: -2.19, z: 19.29, y: 6, yaw: -Math.PI },
 ];
 
 /**
@@ -115,6 +130,9 @@ export async function createDispensers(scene, shadows, games = new Map()) {
       title: known?.title || machine.title,
       url: known?.url || `../${machine.slug}/`,
     };
+    // A dark cabinet still gets a machine, in the arcade's own mint rather than
+    // in a colour derived from a game nothing answered for.
+    const accent = known ? accentFor(known) : BABYLON.Color3.FromHexString('#12d9b8');
     const root = new BABYLON.TransformNode(`Take-home machine (${spec.slug})`, scene);
     root.position.set(spec.x, spec.y, spec.z);
     root.rotation.y = spec.yaw;
@@ -135,16 +153,17 @@ export async function createDispensers(scene, shadows, games = new Map()) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
         shadows?.addShadowCaster(mesh, false);
-        // Astra left one material named for this: the mint trim is the game's
-        // colour, so a second machine beside another cabinet is that game's.
-        // Cloned per machine, because instantiating shares materials and a
-        // shared one would repaint every dispenser at once.
+        // Astra left one material named for this. The colour is not chosen
+        // here: accentFor is what gives a cabinet its neon, so the machine
+        // beside it is lit by the same hue rather than by a hex somebody typed
+        // twice. Cloned per machine, because instantiating shares materials and
+        // a shared one would repaint every dispenser in the sky at once.
         if (/recolor per game/i.test(mesh.material?.name || '')) {
           if (!tint) {
             tint = mesh.material.clone(`${spec.slug} accent`);
-            tint.albedoColor = BABYLON.Color3.FromHexString(spec.accent).toLinearSpace();
+            tint.albedoColor = accent.scale(.85);
             if (tint.emissiveColor && !tint.emissiveColor.equals(BABYLON.Color3.Black())) {
-              tint.emissiveColor = BABYLON.Color3.FromHexString(spec.accent).toLinearSpace().scale(.55);
+              tint.emissiveColor = accent.scale(.55);
             }
           }
           mesh.material = tint;
