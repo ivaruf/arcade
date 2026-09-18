@@ -30,11 +30,16 @@ their device, and the inbox you delete them from.
 
 ## What this directory is not
 
-**Not private.** GitHub Pages will not list this directory, so nobody can
-browse it, but anyone holding an id can fetch that file. Write answers you
-would be content to have read out loud. Real privacy would mean encrypting
-each answer to a device key, and then answering mail would need a script and a
-keyring rather than a sentence.
+**Not private, and not even unlisted.** GitHub Pages will not list this
+directory over HTTP, but this repository is public: every id that has ever been
+answered is a filename in it, every answer is a line in it, and deleting a file
+does not remove either from the history. Anyone who clones the repo reads the
+whole correspondence.
+
+So: write answers you would be content to have read out loud, and treat a
+mailbox id as public knowledge rather than as anything that could gate
+something. Real privacy would mean encrypting each answer to a device key, and
+then answering mail would need a script and a keyring rather than a sentence.
 
 **Not cached.** `sw.js` passes `/mail/` straight through to the network, so an
 answer lands on the next visit rather than the one after it. Nothing here needs
