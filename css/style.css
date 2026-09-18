@@ -990,7 +990,11 @@ body.writing-letter #touch, body.writing-letter #hud { visibility:hidden; }
 .letter-empty { margin:auto 0; font-size:13px; line-height:1.5; color:#8fa6a1; }
 .note { max-width:90%; padding:9px 12px; border-radius:13px; font-size:14px; line-height:1.45; }
 .note .who { display:block; margin-bottom:3px; font-size:11px; opacity:.72; }
-.note p { margin:0; overflow-wrap:anywhere; }
+/* People write letters in paragraphs. The textarea keeps the line breaks and
+   the inbox shows them, so the thread has to as well — without pre-wrap a
+   letter with a greeting, a blank line and a signature comes back as one run
+   of prose, which is not what anybody typed. */
+.note p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 /* Your own letters are the paper you wrote them on; answers are the box. */
 .note.mine { align-self:flex-end; border:1px solid #9a835a; border-bottom-right-radius:4px; background:#f2e5c8; color:#1d2f36; }
 .note.theirs { align-self:flex-start; border:1px solid #4c7076; border-bottom-left-radius:4px; background:#1b3f47; color:#e7f2ec; }
