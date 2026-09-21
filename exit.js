@@ -269,6 +269,35 @@
   }
 
   /**
+   * SHOULD THERE BE A BUTTON AT ALL? Ask this before drawing one.
+   *
+   * `quit()` can do something sensible in all three cases, and for a long time
+   * that was taken as the answer: a plain tab got BACK TO ARCADE too, because
+   * a tab has nowhere to close to but the arcade is a URL and a navigation
+   * always works. It works, and it is still wrong.
+   *
+   * Somebody who typed the game's address, or followed a link a friend sent
+   * them, did not come from the arcade and may never have heard of it. Offering
+   * them a way "back" to somewhere they have not been is a door out of the
+   * thing they came for, pointing at a place they did not ask about — and the
+   * owner's requirement was always the narrower one: a way back to the arcade
+   * IF the arcade is where you came from.
+   *
+   * So the button exists in exactly two cases:
+   *
+   *   framed      a launcher is behind us; going back is a real direction.
+   *   installed   its own window, and closing it is a thing only we can offer.
+   *
+   * and NOT in an ordinary tab, where the browser's own back button already
+   * does whatever the player's actual history deserves. `quit()` and `verb()`
+   * are unchanged and still answer for the tab case — a game that wants the
+   * old behaviour just does not call this.
+   */
+  function offers() {
+    return framed() || standalone();
+  }
+
+  /**
    * Tell the launcher we are here, for the one question it cannot answer by
    * looking: whether the game it just framed has a way out of its own.
    *
@@ -288,5 +317,13 @@
     }
   }
 
-  window.ArcadeExit = { framed, inArcade, standalone, leave, quit, verb };
+  window.ArcadeExit = {
+    framed,
+    inArcade,
+    standalone,
+    leave,
+    quit,
+    verb,
+    offers,
+  };
 })();
