@@ -19,10 +19,10 @@ for o in meshes:
         # Widen the cheeks slightly beyond the deck's formerly coplanar edge.
         # Keep buttons clear of their inner faces and stay within the 2.4 m collider.
         if o.name.startswith(('Side lower','Side upper')):
-            o.location.x += .06 if o.location.x>0 else -.06
+            o.location.x = 1.10 if o.location.x>0 else -1.10
             # The stepped upper cheek overlaps the lower cheek vertically.
             # A recessed outer face prevents those two planes fighting too.
-            if o.name.startswith('Side upper'):o.scale.x *= .88
+            # The single cabinet source already recesses the upper cheek.
 bpy.context.view_layer.update()
 def bounds(o):
     points=[o.matrix_world@Vector(c) for c in o.bound_box]

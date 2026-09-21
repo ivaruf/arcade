@@ -1,7 +1,7 @@
 """Static arcade kit. Run with Blender --background --python build_arcade.py.
 Outputs beside source/. Blender Z up; GLB Y up; meters; cabinets face -Y.
 """
-import bpy, math, random, shutil
+import bpy, math, random, shutil, sys
 from pathlib import Path
 from mathutils import Vector
 OUT = Path(__file__).resolve().parent.parent
@@ -87,9 +87,11 @@ def make_machine(kind,accent):
     else:
         box('Lower cabinet',(0,.03,.56),(1.02,.84,.94),navy)
         # Side cheeks have a classic stepped arcade silhouette.
-        for x in [-.52,.52]:
+        # Offset the side faces from the deck; recess the upper step so
+        # overlapping cheek faces cannot fight for the same depth.
+        for x in [-.55,.55]:
             box('Side lower',(x,0,.62),(.09,.97,1.1),accent)
-            o=box('Side upper',(x,.13,1.49),(.09,.63,.95),accent);o.rotation_euler.x=math.radians(-8)
+            o=box('Side upper',(x,.13,1.49),(.0792,.63,.95),accent);o.rotation_euler.x=math.radians(-8)
         box('Screen housing',(0,.12,1.48),(1,.61,.88),navy)
         o=box('CRT bezel',(0,-.205,1.49),(.88,.09,.69),black);o.rotation_euler.x=math.radians(-8)
         o=box('Display',(0,-.26,1.50),(.73,.035,.52),screen,.06);o.rotation_euler.x=math.radians(-8)
@@ -118,8 +120,23 @@ def make_machine(kind,accent):
             cylinder('Joystick stem',(-.29,-.46,1.17),.026,.2,chrome);sphere('Joystick ball',(-.29,-.46,1.28),.073,accent)
             for x,y in [(.12,-.43),(.28,-.43),(.2,-.57),(.36,-.57)]:cylinder('Button',(x,y,1.12),.047,.04,[pink,gold][y<-.5])
     if kind=='claw':sphere('Control knob',(-.2,-.56,1.11),.06,pink)
+    if kind != 'claw':
+        bpy.context.view_layer.update()
+        def outer_x(o):
+            return max(abs((o.matrix_world @ Vector(c)).x) for c in o.bound_box)
+        deck = next(o for o in root.children if o.name.startswith('Control deck'))
+        cheeks = [o for o in root.children if o.name.startswith(('Side lower', 'Side upper'))]
+        for cheek in cheeks:
+            assert outer_x(deck) + .02 < outer_x(cheek) < .60, 'Side/deck clearance or footprint'
+        lower = next(o for o in cheeks if o.name.startswith('Side lower'))
+        upper = next(o for o in cheeks if o.name.startswith('Side upper'))
+        assert outer_x(lower) - outer_x(upper) > .005, 'Overlapping cheek faces'
     export('machine-'+kind,members(root))
     return root
+if '--classic-only' in sys.argv:
+    make_machine('classic',cyan)
+    print('CLASSIC_CABINET_COMPLETE')
+    sys.exit(0)
 machines=[make_machine('classic',cyan),make_machine('racer',gold),make_machine('dance',pink),make_machine('claw',blue)]
 # Prototypes move into the scene only after their standalone origin exports.
 placements=[(-5.9,3.6,0),(-3.6,3.6,0),(3.5,3.8,0),(5.9,3.8,0)]
