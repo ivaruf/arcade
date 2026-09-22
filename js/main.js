@@ -138,8 +138,15 @@ const ui = {
   promptCue: $('prompt-cue'),
   pause: $('pause'),
   resume: $('resume'),
-  sound: $('sound'),
-  music: $('music'),
+  menuBtn: $('menu-btn'),
+  muteBtn: $('mute-btn'),
+  soundBoard: $('sound-board'),
+  volMusic: $('vol-music'),
+  volMusicVal: $('vol-music-val'),
+  volSfx: $('vol-sfx'),
+  volSfxVal: $('vol-sfx-val'),
+  soundNote: $('sound-note'),
+  soundMuted: $('sound-muted'),
   quality: $('quality'),
   touch: $('touch'),
   cabinet: $('cabinet'),
@@ -424,6 +431,8 @@ function enterFloor(withSound = true) {
   phase = 'floor';
   ui.title.hidden = true;
   ui.pause.hidden = true;
+  // And the corner comes back with it — menu, mute, fullscreen. It was handed
+  // to the framed game rather than taken from the player; see updateDive.
   ui.hud.hidden = false;
   settleUntil = time + 1.4;
   easeCamera(CAMERA.beta, CAMERA.radius, 1.6);
@@ -576,6 +585,25 @@ function updateDive(dt) {
     sfx.boot();
     sfx.stopAmbience();
     sfx.duckMusic(true);
+    // THE CORNER CHANGES OWNER HERE, AND THAT IS NOT THE SAME AS GOING AWAY.
+    //
+    // The hub's rule is that menu, mute and fullscreen are in the top right of
+    // every cabinet, always, and this line hides all three — which reads like a
+    // violation and is the opposite of one. A game framed here brings its OWN
+    // corner cluster, drawn in its own colours, wired to its own audio and its
+    // own pause; leaving ours on top would put two menu plates and two mutes in
+    // one corner, and the top one would be the wrong one, silencing a room the
+    // player cannot currently hear while the game they ARE hearing plays on.
+    //
+    // From the player's side nothing goes anywhere: the corner is continuously
+    // present and always means the same thing, which is the entire point of the
+    // rule. What changes is which document owns it, and that changes exactly
+    // when the thing on screen changes. It is the same call the FLOOR pill
+    // makes one file over — launcher.js offers it only to a game that turns out
+    // to have no way out of its own, rather than stacking ours over theirs.
+    //
+    // enterFloor() is where the cluster comes back, and it comes back with the
+    // HUD because it is part of it.
     ui.hud.hidden = true;
     ui.touch.hidden = true;
     pushSlug(atMachine.game.slug);
@@ -1207,26 +1235,55 @@ ui.walkIn.addEventListener('click', () => {
 });
 
 ui.resume.addEventListener('click', unpause);
-ui.pauseBtn = $('pause-btn');
-ui.pauseBtn.addEventListener('click', () => (phase === 'paused' ? unpause() : pause()));
 
-/** Both switches read as a label plus a state, and say so to a screen reader. */
+// The menu plate, which was the pause button. It still pauses on its way in,
+// because the arcade IS yours to pause — nobody else is walking this floor —
+// but what it opens is a menu and it is named for that now.
+ui.menuBtn.addEventListener('click', () => (phase === 'paused' ? unpause() : pause()));
+
+/** Reads as a label plus a state, and says so to a screen reader. */
 const paintToggle = (el, label, on) => {
   el.textContent = `${label}: ${on ? 'on' : 'off'}`;
   el.setAttribute('aria-pressed', String(on));
 };
+
+/* The line under the two dials, kept so it can be put back after the board has
+   had to say something more urgent. Read once, from the markup, so the wording
+   lives in exactly one place. */
+const SOUND_NOTE = ui.soundNote.textContent;
+
+/** One dial: the thumb, the track's own fill, and the number beside the label. */
+const paintDial = (slider, out, level) => {
+  const pct = Math.round(level * 100);
+  slider.value = String(pct);
+  // The track paints itself from this: mint up to the thumb, dark after it. A
+  // bare range shows the value only by where the thumb is sitting.
+  slider.style.setProperty('--fill', `${pct}%`);
+  out.textContent = `${pct}%`;
+};
+
 const paintAudio = () => {
-  paintToggle(ui.sound, 'Room sound', sfx.isEnabled());
-  if (sfx.isMusicAvailable()) {
-    ui.music.disabled = false;
-    paintToggle(ui.music, 'Theme music', sfx.isMusicEnabled());
-  } else {
-    // The theme could not be fetched or decoded. Saying so beats a switch that
-    // claims to be on over silence.
-    ui.music.disabled = true;
-    ui.music.textContent = 'Theme music: unavailable';
-    ui.music.setAttribute('aria-pressed', 'false');
-  }
+  const muted = sfx.isMuted();
+  paintDial(ui.volMusic, ui.volMusicVal, sfx.musicLevel());
+  paintDial(ui.volSfx, ui.volSfxVal, sfx.sfxLevel());
+
+  // aria-pressed carries the mute and the CSS draws the slash off it, so the
+  // engraving and the announcement come from one write. The board dims and says
+  // why, because two faders that do nothing are otherwise a mystery.
+  ui.muteBtn.setAttribute('aria-pressed', String(muted));
+  ui.muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+  ui.muteBtn.title = muted ? 'Unmute' : 'Mute';
+  ui.soundBoard.classList.toggle('muted', muted);
+  ui.soundMuted.hidden = !muted;
+
+  // The theme could not be fetched or decoded. Saying so beats a fader that
+  // claims to be up over silence. A stale worker serving a build that asks for
+  // a file since renamed lands exactly here.
+  const haveTheme = sfx.isMusicAvailable();
+  ui.volMusic.disabled = !haveTheme;
+  ui.soundNote.textContent = haveTheme
+    ? SOUND_NOTE
+    : 'The theme could not be loaded, so there is no music to set. The room still makes its own noise.';
 };
 paintAudio();
 
@@ -1244,24 +1301,57 @@ ui.welcome.addEventListener('click', () => {
   sfx.click();
 });
 
-ui.sound.addEventListener('click', () => {
-  sfx.unlock();
-  sfx.setEnabled(!sfx.isEnabled());
+/**
+ * MUTE, AND IT IS A LIVE CONTROL. One press, wherever the player is: no panel
+ * opens, nothing pauses, the focus does not move and the gopher does not stop.
+ * Somebody silencing the room because a person walked in must not have to leave
+ * the floor to do it — that is the difference between this plate and the one
+ * next to it, and it is why the cutoff is a master gain rather than two levels
+ * set to zero: unmuting gives back the exact mix.
+ *
+ * No unlock() here. Where the welcome card was skipped the AudioContext is
+ * waiting on the player's first gesture anyway (see armSound), and this press
+ * is one; everywhere else the way onto the floor already went through a button.
+ * Asking a browser for audio in order to turn audio off would be a strange
+ * thing to do.
+ */
+ui.muteBtn.addEventListener('click', () => {
+  sfx.setMuted(!sfx.isMuted());
   paintAudio();
-  if (sfx.isEnabled()) {
-    sfx.startAmbience();
-    sfx.click();
-  } else {
-    sfx.stopAmbience();
-  }
+  if (!sfx.isMuted()) sfx.click(); // the room answering, so the press is felt
 });
 
-ui.music.addEventListener('click', () => {
-  sfx.unlock();
-  sfx.setMusicEnabled(!sfx.isMusicEnabled());
-  paintAudio();
-  sfx.startMusic().then(paintAudio);
-  sfx.click();
+/**
+ * A dial follows the thumb on `input` — every step, so the level is what you
+ * can hear while you are still dragging — and auditions on `change`, once, when
+ * the player lets go. A coin per pixel would be a rattle.
+ *
+ * Both write through js/audio.js, which lifts the mute for them: a fader
+ * silently cancelled by the plate in the corner is worse than no fader.
+ */
+const dial = (slider, apply) => {
+  slider.addEventListener('input', () => {
+    sfx.unlock();
+    apply(Number(slider.value) / 100);
+    paintAudio();
+  });
+};
+
+dial(ui.volMusic, (level) => {
+  sfx.setMusicLevel(level);
+  // The tune is its own audition, so it only has to be running. startMusic is
+  // a no-op once it is, and paints again when it turns out the file is missing.
+  if (level > 0) sfx.startMusic().then(paintAudio);
+});
+
+dial(ui.volSfx, (level) => sfx.setSfxLevel(level));
+
+// The effects row has nothing playing to judge it by, so it makes a noise of
+// its own. On 'change', and through the same click the menus use — a one-shot
+// straight into WebAudio with no simulation-clock throttle in front of it,
+// which is the trap that leaves other games' auditions firing once a session.
+ui.volSfx.addEventListener('change', () => {
+  if (sfx.sfxLevel() > 0) sfx.click();
 });
 
 /**

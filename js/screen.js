@@ -86,7 +86,16 @@ export function setupScreen(onResize) {
     button.setAttribute('aria-label', label);
     button.setAttribute('aria-pressed', String(active));
     button.title = label;
-    button.textContent = active ? '⤡' : '⤢';
+    // No glyph is written here. The plate carries BOTH drawings — four corners
+    // pushing out and the same four pulled in — and the CSS picks between them
+    // off the aria-pressed written on the line above, so the picture and what a
+    // screen reader is told come from one write and cannot drift. It used to be
+    // a text arrow swapped into textContent, which no reader announces and which
+    // never matched the drawn icons beside it.
+    //
+    // This runs from `fullscreenchange` as well as from the click, because
+    // Escape and the browser's own chrome leave fullscreen without ever
+    // touching the button.
 
     // Only after the state has actually changed: asking for the lock alongside
     // requestFullscreen races the transition and is refused.

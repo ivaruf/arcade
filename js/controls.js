@@ -88,12 +88,21 @@ export function moveAxes() {
 export function attachKeyboard(target = window) {
   target.addEventListener('keydown', (e) => {
     if (e.target.closest?.('dialog[open]')) return;
-    if (SCROLL_KEYS.has(e.code)) e.preventDefault();
-    if (e.repeat) return;
-    if (e.code === 'Escape') {
+    // Escape is read BEFORE the menu guard below, so it still closes the menu
+    // when the focus is sitting on one of the sliders inside it.
+    if (!e.repeat && e.code === 'Escape') {
       edges.pause = true;
       return;
     }
+    // A focused control inside the menu owns its own keys. The dialogs were
+    // already excepted and the menu needs the same exception now that it holds
+    // two <input type="range">s: ArrowLeft and ArrowRight are how a slider is
+    // set from the keyboard, and SCROLL_KEYS would preventDefault the very keys
+    // that move it — then walk the gopher with them. Space likewise: it is how
+    // a focused button is pressed, and it was being eaten as a hop.
+    if (e.target.closest?.('#pause')) return;
+    if (SCROLL_KEYS.has(e.code)) e.preventDefault();
+    if (e.repeat) return;
     press(e.code);
   });
   target.addEventListener('keyup', (e) => release(e.code));

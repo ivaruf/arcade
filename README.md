@@ -267,8 +267,20 @@ so an old launcher framing a new game is a real state during a rollout.
 | `Space` | Hop. Again in the air to take off | Hold to rise |
 | `Shift` | Sprint | Hold to sink |
 | `E` / `Enter` | Play the machine you are standing at | — |
-| `Escape` | Pause; or leave a running game | Pause |
+| `Escape` | Open the menu; or leave a running game | Open the menu |
 | Drag / wheel | Orbit / zoom | Same |
+
+The top right of the floor HUD carries the hub's three plates, reading left to
+right: **menu**, **mute**, **fullscreen**. The menu is where the two sound
+levels, the sky detail and the welcome-screen setting live — it pauses the floor
+on its way in, which `Escape` does too. Mute is its own press and changes
+nothing but the sound; it is a master cutoff over both levels, so unmuting gives
+back the mix you set. Fullscreen appears only where the browser has element
+fullscreen to give, and on a phone the same press pins landscape.
+
+All three go away while a game is running in the cabinet, because the game
+brings its own corner — see the comment in `js/main.js` where the HUD is
+hidden. From the player's side the corner never moves; it only changes owner.
 
 Flying is the only way between platforms, which is the point. Landing is the
 only way to play a machine, which is why walking still matters.
@@ -452,6 +464,7 @@ These are honest, not oversights.
 9. On a phone: drag anywhere to look around. No text selection, no magnifier.
    Held upright you get the rotate prompt; its button goes fullscreen and turns
    the sky in one tap.
-10. Sound: the theme, plus blips from machines near you. Both switches in the
-    pause menu do what they say and survive a reload.
+10. Sound: the theme, plus blips from machines near you. Both levels in the
+    menu do what they say and survive a reload, and the corner's mute silences
+    everything in one press without losing where they were set.
 11. `…/arcade/cloudnine/` still arrives here.

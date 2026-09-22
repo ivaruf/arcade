@@ -9,13 +9,38 @@
  * house rule.
  *
  * The exception is the theme, which is a real file the owner wrote. It gets its
- * own bus and its own switch, because "I want the room but not the tune" and
+ * own bus and its own fader, because "I want the room but not the tune" and
  * "I want the tune but not the beeping" are both reasonable, and one volume
  * control cannot say either.
  *
  *      one-shots ────> sfx ──┐
  *                           ├─> master ─> destination
  *      theme ─────────────> music ──┘
+ *
+ * Each of those three gains is a control the player has.
+ *
+ *   sfx and music are LEVELS, 0–1, and 1 is the mix as it was authored: the
+ *   trims below are where the calibration lives, so 100% means what the room
+ *   has always sounded like and the sliders only ever take away. They used to
+ *   be switches, which could not answer the question people actually have.
+ *
+ *   master is the MUTE, and it is a separate node for exactly one reason: one
+ *   press has to give the whole mix back untouched afterwards. A mute that
+ *   zeroed the two levels would be a mute that quietly ate what the player set.
+ *
+ * STORAGE, and the migration. The two level keys are the ones the switches used
+ * — arcade.cloudnine.sound.v1 and .music.v1 — kept rather than renamed, per hub
+ * CLAUDE.md §6: a new key silently discards what every existing visitor has
+ * already chosen. They held the words 'on' and 'off'; they hold a number now,
+ * and readLevel() reads the two old words once as a migration ('off' is 0, 'on'
+ * is the default, which is what 'on' sounded like). It is not a one-shot
+ * upgrade step run at boot — it is just how the value is parsed, so a browser
+ * that has not been here since the switches still arrives at the right level
+ * whenever it turns up. The trade going the other way is small and worth
+ * naming: an older build (a worker still serving a previous shell for one
+ * visit) reads a number back, finds it is not 'off', and plays. Loud rather
+ * than silent, and the player can still turn it down — the level written by
+ * this build survives, because that old switch writes only when pressed.
  *
  * The AudioContext is created on the first gesture and never before: browsers
  * refuse otherwise, and a page that asks for audio before you have touched it
@@ -24,41 +49,108 @@
 
 const KEY = 'arcade.cloudnine.sound.v1';
 const MUSIC_KEY = 'arcade.cloudnine.music.v1';
+/** New, and in the hub's shape. Absent means "not muted", which is the point. */
+const MUTED_KEY = 'arcade.cloudnine.muted.v1';
 
 /** Module-relative, so the path does not depend on where the page lives. */
 const THEME_URL = new URL('../audio/theme.m4a', import.meta.url).href;
 
-/** Loud enough to be the room's music, quiet enough to talk over. */
-const MUSIC_LEVEL = 0.34;
+/**
+ * The theme's ceiling: loud enough to be the room's music, quiet enough to talk
+ * over. The slider is a fraction OF this rather than a gain in its own right,
+ * so MUSIC at 100% is the level this file was mixed at and not three times it.
+ * The one-shots were authored against a bus at 1, so they need no trim.
+ */
+const MUSIC_TRIM = 0.34;
+
+/** What a level is when nothing has been stored, and what the old 'on' meant. */
+const DEFAULT_LEVEL = 1;
+
+/* Above the levels below, and it has to stay there: readLevel() calls this
+   while those very `let`s are being initialised, so a clamp01 declared further
+   down would still be in its dead zone — and readLevel's own try/catch would
+   swallow the ReferenceError and hand back the default, silently, for every
+   level anyone had ever set. */
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 let ctx = null;
 let master = null;
 let sfxBus = null; // one-shots and ambience
 let musicBus = null; // the theme, and only the theme
 let ambience = false; // is the room live enough to make its own noises?
-let enabled = read(KEY);
-let musicOn = read(MUSIC_KEY);
+let sfxVol = readLevel(KEY);
+let musicVol = readLevel(MUSIC_KEY);
+let muted = readMuted();
+/** Set while a game has the machine: the theme is held down, not turned down. */
+let ducked = false;
 let blipTimer = 0;
 let nextBlip = 3;
 
 /** Pentatonic on C, so random picks never sound wrong. */
 const BLIPS = [523.25, 587.33, 698.46, 783.99, 880, 1046.5];
 
-function read(key) {
+/**
+ * A level, with the switch era read as a special case. Anything unparseable
+ * lands on the default rather than on silence — a store shared by every game on
+ * this origin is a store anything at all may have written to.
+ */
+function readLevel(key) {
   try {
-    return localStorage.getItem(key) !== 'off';
+    const raw = localStorage.getItem(key);
+    if (raw === null) return DEFAULT_LEVEL;
+    if (raw === 'off') return 0; // the old switch, thrown
+    if (raw === 'on') return DEFAULT_LEVEL; // the old switch, as it sounded
+    // Number('') and Number(' ') are both 0, which would read an empty key as
+    // silence rather than as nothing stored. Ask first.
+    const level = raw.trim() === '' ? NaN : Number(raw);
+    return Number.isFinite(level) ? clamp01(level) : DEFAULT_LEVEL;
   } catch {
-    return true; // private mode: default to on, forget the preference
+    return DEFAULT_LEVEL; // private mode: play, and forget the preference
   }
 }
 
-function write(key, on) {
+function writeLevel(key, level) {
   try {
-    localStorage.setItem(key, on ? 'on' : 'off');
+    localStorage.setItem(key, String(Math.round(level * 100) / 100));
   } catch {
     /* nothing to do about it */
   }
 }
+
+function readMuted() {
+  try {
+    return localStorage.getItem(MUTED_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+function writeMuted(on) {
+  try {
+    localStorage.setItem(MUTED_KEY, on ? 'on' : 'off');
+  } catch {
+    /* nothing to do about it */
+  }
+}
+
+// --- the three gains, each painted from the state above --------------------
+// Ramped rather than set, because a gain that jumps clicks. Nothing here runs
+// before the first gesture; unlock() builds the nodes at their right values.
+
+function applyMaster() {
+  if (ctx) master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.04);
+}
+
+function applySfx() {
+  if (ctx) sfxBus.gain.setTargetAtTime(sfxVol, ctx.currentTime, 0.05);
+}
+
+function applyMusic(tau = 0.2) {
+  if (ctx) musicBus.gain.setTargetAtTime(ducked ? 0 : musicVol * MUSIC_TRIM, ctx.currentTime, tau);
+}
+
+/** Worth scheduling a one-shot at all. Silence costs nothing to skip. */
+const audible = () => !!ctx && !muted && sfxVol > 0;
 
 /** Called from a real gesture. Safe to call repeatedly. */
 export function unlock() {
@@ -67,27 +159,57 @@ export function unlock() {
     if (!Ctor) return null;
     ctx = new Ctor();
     master = ctx.createGain();
-    master.gain.value = 1;
+    master.gain.value = muted ? 0 : 1;
     master.connect(ctx.destination);
 
     sfxBus = ctx.createGain();
-    sfxBus.gain.value = enabled ? 1 : 0;
+    sfxBus.gain.value = sfxVol;
     sfxBus.connect(master);
 
     musicBus = ctx.createGain();
-    musicBus.gain.value = musicOn ? MUSIC_LEVEL : 0;
+    musicBus.gain.value = ducked ? 0 : musicVol * MUSIC_TRIM;
     musicBus.connect(master);
   }
   if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   return ctx;
 }
 
-export const isEnabled = () => enabled;
+// ---------------------------------------------------------------------------
+// Levels and the cutoff
+// ---------------------------------------------------------------------------
 
-export function setEnabled(on) {
-  enabled = on;
-  write(KEY, on);
-  if (sfxBus) sfxBus.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, 0.08);
+export const sfxLevel = () => sfxVol;
+export const musicLevel = () => musicVol;
+export const isMuted = () => muted;
+
+export function setSfxLevel(level) {
+  sfxVol = clamp01(level);
+  writeLevel(KEY, sfxVol);
+  applySfx();
+  liftMute(sfxVol);
+}
+
+export function setMusicLevel(level) {
+  musicVol = clamp01(level);
+  writeLevel(MUSIC_KEY, musicVol);
+  applyMusic();
+  liftMute(musicVol);
+}
+
+export function setMuted(on) {
+  muted = !!on;
+  writeMuted(muted);
+  applyMaster();
+}
+
+/**
+ * Reaching for a volume means wanting to hear something, so a level raised off
+ * zero takes the cutoff off with it. It lives in here rather than in the click
+ * handler so no caller can forget it: a slider silently cancelled by a mute set
+ * somewhere else is worse than a slider that does nothing at all.
+ */
+function liftMute(level) {
+  if (level > 0 && muted) setMuted(false);
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +225,7 @@ function envelope(node, when, attack, hold, release, peak) {
 }
 
 function tone({ freq, to, type = 'square', at = 0, attack = 0.004, hold = 0.02, release = 0.12, peak = 0.16, pan = 0 }) {
-  if (!ctx || !enabled) return;
+  if (!audible()) return;
   const when = ctx.currentTime + at;
   const osc = ctx.createOscillator();
   osc.type = type;
@@ -122,7 +244,7 @@ function tone({ freq, to, type = 'square', at = 0, attack = 0.004, hold = 0.02, 
 
 /** Filtered noise: footsteps, the poof of a landing, the whoosh of a takeoff. */
 function noise({ at = 0, duration = 0.14, peak = 0.1, from = 1400, to = 400, q = 1.2 }) {
-  if (!ctx || !enabled) return;
+  if (!audible()) return;
   const when = ctx.currentTime + at;
   const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
   const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
@@ -229,8 +351,6 @@ function firstSound(buffer, floor = 0.002) {
   return 0;
 }
 
-export const isMusicEnabled = () => musicOn;
-
 /** False once the theme has been tried and could not be had. */
 export const isMusicAvailable = () => !themeFailed;
 
@@ -261,18 +381,15 @@ export function stopMusic() {
   }
 }
 
-/** Silence the theme without losing its place. */
+/**
+ * Silence the theme without losing its place — a game has the machine, or the
+ * tab went away. Remembered rather than merely applied, so that a level set
+ * while the theme is held down does not quietly bring it back up: applyMusic()
+ * reads `ducked` every time and the two cannot argue.
+ */
 export function duckMusic(on) {
-  if (!musicBus) return;
-  const target = on || !musicOn ? 0 : MUSIC_LEVEL;
-  musicBus.gain.setTargetAtTime(target, ctx.currentTime, 0.25);
-}
-
-export function setMusicEnabled(on) {
-  musicOn = on;
-  write(MUSIC_KEY, on);
-  if (musicBus) musicBus.gain.setTargetAtTime(on ? MUSIC_LEVEL : 0, ctx.currentTime, 0.2);
-  if (on) startMusic();
+  ducked = !!on;
+  applyMusic(0.25);
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +422,7 @@ export function stopAmbience() {
  * decides for itself when the room is due another noise.
  */
 export function tickAmbience(dt) {
-  if (!ctx || !enabled || !ambience) return;
+  if (!audible() || !ambience) return;
   blipTimer += dt;
   if (blipTimer < nextBlip) return;
   blipTimer = 0;

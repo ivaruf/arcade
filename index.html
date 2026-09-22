@@ -98,9 +98,69 @@
     <span id="hud-room" class="hud-where">The welcome cloud</span>
     <span id="hud-count" class="hud-count"></span>
   </div>
+  <!-- ===================== THE CORNER =====================
+       Menu, mute, fullscreen, reading left to right, so fullscreen is the plate
+       in the actual corner. That order is arbitrary and is meant to be: it only
+       has to be the same in every cabinet, and the seven games in the arcade
+       already run it. The launcher that shows them was the odd one out.
+
+       Three kinds of thing, which is the whole shape of it: fullscreen changes
+       the window, mute changes the sound, and only the menu touches the arcade.
+       Mute in particular is a live press — no panel opens, nothing pauses, the
+       gopher does not stop — because silencing the room when somebody walks in
+       is a different question from setting a mix.
+
+       This was a text arrow and the two characters "II" until now. Both are
+       drawn here instead, to the hub's path data exactly (CLAUDE.md §2), because
+       a player crossing from a cabinet to the launcher should be looking at the
+       same object rather than at a family resemblance. Both toggles carry BOTH
+       their states in one <svg> and let CSS pick between them off aria-pressed,
+       which js/main.js and js/screen.js write in the same breath as the label —
+       so what is engraved and what a screen reader hears cannot drift. A glyph
+       swapped in through textContent fails that twice over.
+
+       The cluster goes with the HUD when a game is framed; js/main.js says why
+       where it hides it. -->
   <div class="hud-tools">
-    <button id="fullscreen" class="chip" type="button" aria-label="Go fullscreen" aria-pressed="false" title="Go fullscreen" hidden>&#10530;</button>
-    <button id="pause-btn" class="chip" type="button" aria-label="Pause">II</button>
+    <!-- THE MENU. It was the pause button, doing this same job under a name
+         that only described its side effect: what it opens is the menu, and the
+         menu is where everything that is not walking around lives. Three bars
+         and not a gear — a gear says settings, and this holds the way back to
+         the floor as well. -->
+    <button id="menu-btn" class="chip" type="button" title="Menu (Esc)" aria-label="Menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <!-- MUTE, and it is a toggle rather than a door. The two levels behind the
+         menu move independently of it: this is a master cutoff over both buses,
+         so muting and unmuting gives back the exact mix rather than zeroing what
+         the player set. -->
+    <button id="mute-btn" class="chip" type="button" aria-pressed="false"
+            title="Mute" aria-label="Mute">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M11 5 6 9H3v6h3l5 4Z" fill="none" stroke="currentColor"
+              stroke-width="1.9" stroke-linejoin="round"/>
+        <path class="ico-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"
+              fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+        <path class="ico-slash" d="m15.5 9.5 6 5m0-5-6 5" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <!-- HIDDEN until js/screen.js has confirmed this browser has element
+         fullscreen to give. iPhone Safari has none at all, and a plate that does
+         nothing when pressed is worse than no plate. screen.js also pins the
+         orientation off the same press, which a browser will only do for a
+         fullscreen page — so the two can only ever be offered together. -->
+    <button id="fullscreen" class="chip" type="button" aria-label="Go fullscreen" aria-pressed="false" title="Go fullscreen" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path class="ico-expand" d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" fill="none"
+              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+        <path class="ico-contract" d="M3 9h6V3M21 9h-6V3M3 15h6v6M21 15h-6v6" fill="none"
+              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -203,8 +263,46 @@
 <div id="pause" class="card pause" hidden>
   <p class="sign small">Paused</p>
   <button id="resume" class="neon" type="button">Back to the floor</button>
-  <button id="music" class="ghost" type="button" aria-pressed="true">Theme music: on</button>
-  <button id="sound" class="ghost" type="button" aria-pressed="true">Room sound: on</button>
+  <!-- ===================== THE SOUND BOARD =====================
+       Two levels where there were two switches. "Theme music: on" and "Room
+       sound: on" could each only answer half of what people actually want,
+       which is to keep the tune down and leave the coins alone — or the other
+       way round. js/audio.js was always two buses under a master and said so in
+       its header; it just had nothing but on and off to offer them.
+
+       MUSIC and EFFECTS, in those words, because that is the one piece of
+       vocabulary the hub fixes across every cabinet: somebody reaching for
+       a volume is looking for which of two sliders is theirs, not reading for
+       flavour. The arcade's own voice goes in the line underneath, where it can
+       say what each row covers without being the thing you have to decode.
+
+       The master cutoff is NOT here. It is the speaker plate in the corner, one
+       press away on every screen the HUD is on, and a second copy of it inside
+       the panel would be the same control drawn twice. What the board does
+       instead is say when it has been silenced from up there — a slider that
+       does nothing because of a switch somewhere else is worse than no slider.
+       Moving either one lifts the mute. -->
+  <div id="sound-board" class="board">
+    <div class="dial-row">
+      <div class="dial-head">
+        <label class="dial-label" for="vol-music">MUSIC</label>
+        <output class="dial-val" id="vol-music-val" for="vol-music">100%</output>
+      </div>
+      <input type="range" id="vol-music" min="0" max="100" step="5" value="100" aria-describedby="sound-note">
+    </div>
+    <div class="dial-row">
+      <div class="dial-head">
+        <label class="dial-label" for="vol-sfx">EFFECTS</label>
+        <output class="dial-val" id="vol-sfx-val" for="vol-sfx">100%</output>
+      </div>
+      <input type="range" id="vol-sfx" min="0" max="100" step="5" value="100" aria-describedby="sound-note">
+    </div>
+    <!-- js/main.js reads this line once at boot and puts it back after saying
+         the theme could not be loaded, so the two never have to be kept in
+         step by hand. -->
+    <p id="sound-note" class="board-note">MUSIC is the arcade’s own tune · EFFECTS is the room around you — coins, footsteps and other people’s machines</p>
+    <p id="sound-muted" class="board-muted" hidden>Silenced from the corner. Move a slider, or press the speaker again, to bring the room back.</p>
+  </div>
   <!-- Set once on an older tablet and then forgotten, which is exactly why it
        is behind the pause menu and not on the HUD. js/quality.js writes the
        label; a ?scale= probe takes the button over and says so. -->

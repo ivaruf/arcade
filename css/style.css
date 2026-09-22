@@ -249,6 +249,125 @@ kbd {
 
 .pause .neon { margin-top: 22px; }
 
+/* The menu is taller than it was now that two switches have become two dials,
+   and a phone on its side is 300–430px tall. A safety net, and only that: the
+   squeeze in the max-height block further down is the plan. touch-action has to
+   be said here because `body` sets `none` to stop the sky being dragged around,
+   and a panel that cannot be scrolled by a finger is not a safety net at all. */
+.pause {
+  max-height: calc(100dvh - 20px);
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+
+/* ---------- the sound board ----------
+   Two levels, MUSIC and EFFECTS, in the one panel behind the menu plate. A bare
+   OS range belongs to no game, so the track and the thumb are drawn: a mint
+   tube lit up to wherever the thumb is, which is the same neon the cabinets and
+   the back wall are wearing. The fill is a custom property js/main.js writes
+   with the value, because a range shows its level only by where the thumb sits
+   and a lit tube says it at a glance. */
+
+.board {
+  margin-top: 14px;
+  padding: 13px 15px 11px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  text-align: left;
+}
+
+.dial-row + .dial-row { margin-top: 11px; }
+
+.dial-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: .2em;
+}
+
+.dial-label { color: var(--ivory); font-weight: 600; }
+.dial-val { color: var(--mint); font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+
+/* The board dims when the corner plate has cut everything off, and says so in
+   the line underneath. Two faders that quietly do nothing are worse than none. */
+.board.muted .dial-row { opacity: .45; }
+
+.board-note {
+  margin: 11px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6f7b88;
+}
+
+.board-muted {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 125, 157, .9);
+}
+
+.board input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 7px 0 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  /* The drag belongs to the control. `body` is touch-action: none so the sky
+     can be swung around; a thumb dragged along this must not also be a camera. */
+  touch-action: none;
+}
+
+.board input[type="range"]:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+.board input[type="range"]:disabled { cursor: not-allowed; opacity: .45; }
+
+/* --fill is set by js/main.js from the value; 0% is a perfectly good default
+   for the moment before it runs. Two engines, one drawing — WebKit and Gecko
+   will not share a selector for either half. */
+.board input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(18, 217, 184, .85) var(--fill, 0%), rgba(255, 255, 255, .06) var(--fill, 0%));
+  box-shadow: inset 0 0 8px rgba(18, 217, 184, .25);
+}
+
+.board input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px; /* (6px track - 18px thumb) / 2: centres it on the tube */
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 32%, #ffffff, #12d9b8 68%, #0a7a68);
+  box-shadow: 0 0 12px rgba(18, 217, 184, .55);
+}
+
+.board input[type="range"]::-moz-range-track {
+  height: 6px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(18, 217, 184, .85) var(--fill, 0%), rgba(255, 255, 255, .06) var(--fill, 0%));
+}
+
+.board input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 32%, #ffffff, #12d9b8 68%, #0a7a68);
+  box-shadow: 0 0 12px rgba(18, 217, 184, .55);
+}
+
 /* ---------- keeping the arcade: an offer, never a nag ----------
    The title card asks the whole question in one row: "Walk in" above it is
    play-in-the-browser, this is install, and the × is a real answer rather than
@@ -401,7 +520,13 @@ kbd {
 
 .hud {
   position: fixed;
-  z-index: 20;
+  /* Above .card (30), because the corner has to stay live while the menu it
+     opens is up: mute is a press you must be able to make mid-panel, and
+     fullscreen is a window state that has nothing to do with what is on screen.
+     Below the install veil (45) and the rotate overlay (55), which are modal
+     and mean it. The bar is pointer-events: none, so raising it blocks nothing:
+     only the three plates themselves take a click. */
+  z-index: 35;
   top: max(12px, env(safe-area-inset-top));
   left: max(14px, env(safe-area-inset-left));
   right: max(14px, env(safe-area-inset-right));
@@ -435,8 +560,16 @@ kbd {
   color: rgba(142, 154, 168, .8);
 }
 
+/* ---------- the corner: menu, mute, fullscreen ----------
+   Three plates of one recipe, because they are one group and a player reads a
+   group by its edges. The drawings inside are the hub's, to the path data; the
+   smoked glass and the mint they light up in are the arcade's own. */
+
 .chip {
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 38px;
   height: 38px;
   border: 1px solid rgba(255, 255, 255, .14);
@@ -451,7 +584,17 @@ kbd {
   cursor: pointer;
 }
 
+.chip svg { display: block; width: 19px; height: 19px; }
+
 .chip:hover { border-color: rgba(18, 217, 184, .5); color: #d9fff7; }
+.chip:active { transform: translateY(1px); }
+
+/* §2's CSS trap, and it is written out rather than left to the blanket rule at
+   the top of this file: [hidden] is only a presentation hint and loses to any
+   rule that sets display — which .chip now does. Without this, the fullscreen
+   plate would appear on precisely the browser it is hidden from, iPhone Safari,
+   where pressing it does nothing at all. */
+.chip[hidden] { display: none !important; }
 
 .hud-tools {
   display: flex;
@@ -459,10 +602,23 @@ kbd {
   pointer-events: none;
 }
 
-#fullscreen {
-  font-size: 17px;
-  line-height: 1;
+/* Both toggles carry both their states in one <svg> and the state is chosen
+   here, off the aria-pressed the JS writes beside the label. Nothing swaps a
+   glyph in script, so the picture and the announcement cannot drift. */
+#mute-btn .ico-slash { display: none; }
+#mute-btn[aria-pressed="true"] .ico-waves { display: none; }
+#mute-btn[aria-pressed="true"] .ico-slash { display: block; }
+
+/* Muted is a state worth seeing from across the room, and coral is the room's
+   own "not running" colour (it is the cabinets' dead-screen red). */
+#mute-btn[aria-pressed="true"] {
+  color: #ff7d9d;
+  border-color: rgba(242, 30, 82, .45);
 }
+
+#fullscreen .ico-contract { display: none; }
+#fullscreen[aria-pressed="true"] .ico-expand { display: none; }
+#fullscreen[aria-pressed="true"] .ico-contract { display: block; }
 
 /* ---------- turn your device sideways ----------
    Shown by media query alone, so a phone held upright gets the instruction
@@ -735,6 +891,16 @@ kbd {
      bottom of the screen — the same reasoning that hides the key hints above. */
   .pause .neon { margin-top: 14px; padding: 12px 18px; }
   .pause .ghost { margin-top: 8px; padding: 11px 16px; }
+
+  /* The board is the one thing here that grew, so it gives the pixels back. The
+     note stays: it is what tells somebody which of the two rows is theirs, and
+     that is worth more sideways than the air around it. Nothing goes below a
+     finger's worth of height — this query fires on a phone. */
+  .board { margin-top: 10px; padding: 9px 12px 8px; }
+  .dial-row + .dial-row { margin-top: 8px; }
+  .board input[type="range"] { height: 20px; margin-top: 5px; }
+  .board-note { margin-top: 8px; font-size: 10.5px; line-height: 1.4; }
+  .board-muted { margin-top: 6px; font-size: 10.5px; line-height: 1.4; }
 
   /* Same squeeze on the install card. A phone on its side is about 390px tall
      and the guide is five blocks deep, so the drawings shrink and the type
