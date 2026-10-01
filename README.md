@@ -20,11 +20,24 @@ northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
 Their different heights make getting between them a short flight.
 
-Lobbots occupies **The proving ground**, a steel landing deck at `(-19, .5, 18)`
-with two parked artillery walkers. Its cabinet and take-home machine face
-across the open deck. `assets/3d/source/lobbots_island.py` generates the separate
-`lobbots-island.glb` and editable `.blend`; `js/room.js` keeps its landing
-rectangle, display blockers and sign mast in step. Rebuild with:
+Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
+game's own hill, floating. Its sides are the in-game strata and rust seam under
+the pale crust, a berm with a crater bitten out of it runs along the back, and
+the walls have a dud shell, a pipe, a crate and a fossil sticking out of them.
+On the deck: a test pad, scorch craters, footprints, a nuke on its cradle, a
+rack of the arsenal, ammo crates, a wreck that has just cooked off, a wind sock,
+and two walkers that are the game's own. Their hull plates are the polygons
+`lobbots/js/render/mech-draw.js` paints, extruded in the same sprite
+coordinates, and their legs use its IK. Ember and Cobalt, the first two seats.
+A dotted trail of Cobalt's last shot still hangs in the air. Its cabinet and
+take-home machine face across the open deck.
+`assets/3d/source/lobbots_island.py` generates the separate
+`lobbots-island.glb` and editable `.blend` (preview:
+`assets/3d/previews/lobbots-island.png`); `js/room.js` keeps its landing
+rectangle, prop blockers and sign mast in step, and `sw.js` preloads the
+island under the exact URL `room.js` asks for, which `tools/check-registry.mjs`
+checks. Bump that `?v=` on both sides whenever the model changes: the runtime
+cache keys on it. Rebuild with:
 
 ```sh
 /Applications/Blender.app/Contents/MacOS/Blender --background --python assets/3d/source/lobbots_island.py

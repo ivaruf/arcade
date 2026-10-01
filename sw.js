@@ -86,11 +86,40 @@ const SHELL_FILES = [
 /** Big binaries live in the unversioned cache. See the header. */
 const HEAVY = /\.(glb|mp3|m4a|ogg|wav)$/i;
 
+/**
+ * Heavy files fetched on install anyway, into the runtime cache. Exactly the
+ * URLs room.js asks for, query string and all, because the cache keys on it:
+ * `lobbots-island.glb?v=2` here and `?v=1` there is two different files and
+ * the precache would be dead weight. tools/check-registry.mjs holds the two
+ * in step. Best effort: a model that fails to arrive must not fail the
+ * install, it is simply fetched the first time it is wanted as before.
+ *
+ * Why the island and not the rest: it is the newest thing in the sky and
+ * the one an old visitor has never fetched, so it is the one a returning
+ * player would otherwise meet as an empty patch of air on their first
+ * visit — and miss entirely offline.
+ */
+const PRELOAD_HEAVY = [
+  './assets/3d/lobbots-island.glb?v=2',
+];
+
+/**
+ * `cache: 'reload'` on everything the install stores. Without it the
+ * precache reads through the browser's HTTP cache, and GitHub Pages lets that
+ * keep a file for ten minutes — so a worker installed straight after a deploy
+ * could file yesterday's room.js under today's version and serve it for the
+ * whole of that release. That is how a deployed island stayed invisible.
+ */
+const fresh = (url) => new Request(url, { cache: 'reload' });
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(SHELL)
-      .then((cache) => cache.addAll(SHELL_FILES))
+      .then((cache) => cache.addAll(SHELL_FILES.map(fresh)))
+      .then(() => caches.open(RUNTIME))
+      .then((cache) => Promise.all(PRELOAD_HEAVY.map((url) =>
+        cache.match(url).then((hit) => hit || cache.add(fresh(url))).catch(() => {}))))
       .then(() => self.skipWaiting()),
   );
 });
@@ -134,7 +163,14 @@ async function staleWhileRevalidate(event, req, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(req, { ignoreSearch: false });
 
-  const refresh = fetch(req)
+  // The background refresh revalidates with the server rather than reading
+  // the HTTP cache, for the same reason as the install: otherwise "refresh"
+  // can mean "copy the stale file into the cache again". A navigation
+  // request cannot be re-initialised, so that one is rebuilt from its URL.
+  const revalidate = req.mode === 'navigate'
+    ? fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
+    : fetch(req, { cache: 'no-cache' });
+  const refresh = revalidate
     .then((res) => {
       if (res && res.ok) cache.put(req, res.clone());
       return res;

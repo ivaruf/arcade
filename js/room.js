@@ -226,10 +226,19 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
-  // Display walkers at the rear leave the landing and cabinet lane open.
+  // The proving ground, in step with lobbots_island.py. Everything stands
+  // along the rear and the two west corners, so the east and north
+  // approaches, the landing pad and the cabinet lane stay open. The walkers
+  // face north with their guns on the east side, hence the +.1 in x.
   ...[-18.5, -15.5].map((x) =>
-    ({ x, z: 22, hx: 1.1, hz: 1.25, top: 3.8, base: .5 })),
-  { x: -24.5, z: 18, hx: .16, hz: .16, top: 5.7, base: .5 },
+    ({ x: x + .1, z: 21.6, hx: .9, hz: 1.5, top: 3.6, base: .5 })),
+  { x: -24.5, z: 18, hx: .16, hz: .16, top: 5.7, base: .5 },        // name-board mast
+  { x: -19, z: 23.5, hx: 6, hz: .48, top: 2.75, base: .5 },          // the berm
+  { x: -23.6, z: 21.75, hx: .75, hz: 1.32, top: 1.85, base: .5 },    // nuke on its cradle
+  { x: -24.25, z: 13.4, hx: .4, hz: 1.05, top: 1.7, base: .5 },      // shell rack
+  { x: -13.85, z: 21.38, hx: .45, hz: .75, top: 1.85, base: .5 },    // ammo crates
+  { x: -20.9, z: 21.9, hx: .85, hz: 1.5, top: 1.4, base: .5 },       // the cooked-off wreck
+  { x: -13.55, z: 12.55, hx: .1, hz: .1, top: 3.3, base: .5 },       // wind sock
   // Gyro-wedge landing display and its rear diagnostics console.
   { x: -18, z: 1.05, hx: 1.6, hz: 1.6, top: 3.05, base: 1.5 },
   { x: -20.15, z: 2.48, hx: .42, hz: .31, top: 2.85, base: 1.5 },
@@ -283,7 +292,7 @@ export async function buildWorld(scene) {
   // A separate model keeps the established islands untouched. Its coordinates
   // match PLATFORMS; a failed download still leaves a visible landing deck.
   try {
-    const lobbots = await container('lobbots-island.glb?v=1', scene);
+    const lobbots = await container('lobbots-island.glb?v=2', scene);
     lobbots.addAllToScene();
     for (const mesh of lobbots.meshes) {
       mesh.isPickable = false;

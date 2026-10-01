@@ -27,4 +27,13 @@ const [online] = await loadMachines();
 assert.equal(online.icon, offline.icon);
 assert.equal(online.url, offline.url);
 await readFile(new URL(`../${entry.icon}`, import.meta.url));
+// The worker preloads the island under exactly the URL room.js requests; the
+// runtime cache keys on the query string, so a version bumped on one side and
+// not the other silently turns the preload into dead weight.
+const room = await readFile(new URL('../js/room.js', import.meta.url), 'utf8');
+const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+const asked = room.match(/container\('(lobbots-island\.glb\?v=[^']+)'/);
+assert.ok(asked, 'room.js loads the Lobbots island');
+assert.ok(sw.includes(`'./assets/3d/${asked[1]}'`), `sw.js preloads ${asked[1]}`);
 console.log('Registry artwork and launch URLs pass with reachable and missing manifests.');
+console.log(`The worker preloads the island room.js asks for (${asked[1]}).`);
