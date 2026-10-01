@@ -137,7 +137,9 @@ function fallback(entry, base) {
     description: entry.description || '',
     theme: entry.theme || '',
     accent: entry.accent || '',
-    icon: '',
+    // The cabinet's bundled artwork remains usable when the game is offline
+    // or has not been deployed yet. Match describeAt's relative URL handling.
+    icon: entry.icon ? new URL(entry.icon, location.href).href : '',
   };
 }
 

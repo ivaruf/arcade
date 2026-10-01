@@ -15,36 +15,28 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 
 ## The sky
 
+The welcome cloud is surrounded by eight game islands: NeonFox to the
+northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
+Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
+Their different heights make getting between them a short flight.
+
+Lobbots occupies **The proving ground**, a steel landing deck at `(-19, .5, 18)`
+with two parked artillery walkers. Its cabinet and take-home machine face
+across the open deck. `assets/3d/source/lobbots_island.py` generates the separate
+`lobbots-island.glb` and editable `.blend`; `js/room.js` keeps its landing
+rectangle, display blockers and sign mast in step. Rebuild with:
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background --python assets/3d/source/lobbots_island.py
 ```
-                       THE AQUARIUM  -2.5 m
-                       fishtank, dam_break
-                       (glass tank, stools)          <- you arrive facing this
 
-  THE STEAMWORKS  +1.5 m   THE WELCOME CLOUD  0 m      THE OUTCROP  -5.5 m
-  maxgear                  benches, the ring           supermine ×2
-  (brass and steam)                                    (rock and a headframe)
-
-                       THE QUIET CLOUD  +6 m
-                       swirls
-                       (pergola, nothing in it)
-```
-
-One island per side, ringing the cloud you arrive on, 18 to 20 m out — three
-or four seconds of flight. That arrangement is the wayfinding: every game is
-in view from where you land and none of them is behind you. The aquarium takes
-the north side because the spawn faces that way, so the biggest thing here is
-what you are looking at before you have touched a key. The heights stay uneven
-on purpose, so getting anywhere is a flight rather than a walk in a straight
-line.
-
-**Every machine faces the hub.** `SLOTS` in `js/room.js` stores only where a
-cabinet stands; which way it looks is derived, because a yaw typed by hand goes
-stale the moment an island moves — and a machine showing the sky its back means
-flying across, landing, and then walking round it to find the screen.
+**Machines face their approach.** `SLOTS` in `js/room.js` stores each cabinet’s
+position and orientation. Most face the hub; where scenery defines a walking
+lane, the cabinet faces across that lane.
 
 ## What it does
 
-- **Six machines, six real games.** `games.json` is the registry. A slug added
+- **Eight machines, eight real games.** `games.json` is the registry. A slug added
   there gets a machine wearing that game's own name on the marquee, its own
   icon on the CRT, and a neon tint derived from it. Which cloud it lands on is
   one line in `PLACEMENT`; anything unnamed takes the first free standing.

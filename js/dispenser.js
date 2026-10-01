@@ -13,7 +13,7 @@
  * the moment somebody has just decided they like the game next to it.
  *
  * ONE PER CABINET. It was tried beside NeonFox first and read well enough to
- * keep, so MACHINES below now has all seven. A game added to games.json does
+ * keep, so MACHINES below now has all eight. A game added to games.json does
  * NOT get one automatically: its machine is a position on a platform, and
  * where a thing stands is a judgement about that platform rather than
  * something a registry can work out. The placements were solved against every
@@ -48,6 +48,7 @@ import { accentFor } from './cabinets.js';
  * that solve at 2.1 to 2.4m.
  */
 const MACHINES = [
+  { slug: 'lobbots', title: 'LOBBOTS', x: -22, z: 15.6, y: .5, yaw: Math.PI / 2 },
   { slug: 'neonfox', title: 'NeonFox', x: -22, z: -21, y: 2, yaw: Math.PI / 2 },
   { slug: 'maxgear', title: 'MAXGEAR', x: -21.85, z: -0.4, y: 1.5, yaw: 1.4581 },
   { slug: 'fishtank', title: 'Fishtank', x: 5.7, z: -19.3, y: -2.5, yaw: -0.1882 },

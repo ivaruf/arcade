@@ -12,6 +12,15 @@
       "name": "NeonFox",
       "accent": "#39daf2",
       "icon": "assets/games/neonfox-192.png"
+    },
+    {
+      "slug": "lobbots",
+      "name": "LOBBOTS",
+      "accent": "#f4b34d",
+      "icon": "assets/games/lobbots-192.png",
+      "tagline": "Big robots, bigger lobs.",
+      "description": "Turn-based mech artillery: aim, pick a power, watch the shell cross the hill, then spend your bolts on something unreasonable. Two to ten walkers, hot-seat or against seven kinds of bot.",
+      "theme": "#15181e"
     }
   ]
 }

@@ -49,6 +49,7 @@ const ASSETS = './assets/3d/';
  */
 export const PLATFORMS = [
   { id: 'neonfox', name: 'The neon arena', x: [-25, -13], z: [-24, -12], y: 2 },
+  { id: 'lobbots', name: 'The proving ground', x: [-25, -13], z: [12, 24], y: .5 },
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
   { id: 'water', name: 'The aquarium', x: [-6.5, 6.5], z: [-24, -14], y: -2.5 },
   { id: 'race', name: 'The gyro hangar', x: [-23.5, -14.5], z: [-4, 4], y: 1.5 },
@@ -72,6 +73,7 @@ export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
+  lobbots: { x: -24.5, y: .5, z: 18, top: 5.2 },
   neonfox: { x: -24.5, y: 2, z: -18, top: 5.4 },
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
   water: { x: 0, y: -2.5, z: -23.5, top: 5.4 },
@@ -88,6 +90,7 @@ export const BEACONS = {
  * bearings, and a machine on it would be the one everybody played.
  */
 export const PLACEMENT = {
+  lobbots: 'lobbots',
   neonfox: 'neonfox',
   maxgear: 'race',
   fishtank: 'water',
@@ -105,6 +108,7 @@ const facingHub = (x, z) => Math.atan2(-x, -z);
 const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
 
 export const SLOTS = {
+  lobbots: [{ x: -22, z: 18, yaw: Math.PI / 2 }],
   neonfox: [{ x: -22, z: -18, yaw: Math.PI / 2 }],
   // Enter from the southwest, pass the reservoir on the right, then play.
   dam: [{ x: 15, z: -20.3, yaw: 0 }],
@@ -222,6 +226,10 @@ export async function container(file, scene) {
  * aquarium is not in your way on the cloud ten metres above it.
  */
 const FURNITURE = [
+  // Display walkers at the rear leave the landing and cabinet lane open.
+  ...[-18.5, -15.5].map((x) =>
+    ({ x, z: 22, hx: 1.1, hz: 1.25, top: 3.8, base: .5 })),
+  { x: -24.5, z: 18, hx: .16, hz: .16, top: 5.7, base: .5 },
   // Gyro-wedge landing display and its rear diagnostics console.
   { x: -18, z: 1.05, hx: 1.6, hz: 1.6, top: 3.05, base: 1.5 },
   { x: -20.15, z: 2.48, hx: .42, hz: .31, top: 2.85, base: 1.5 },
@@ -271,6 +279,44 @@ export async function buildWorld(scene) {
   const dimmed = new Map();
   const held = await container('cloud-world.glb?v=centered-welcome-bench-3', scene);
   held.addAllToScene();
+
+  // A separate model keeps the established islands untouched. Its coordinates
+  // match PLATFORMS; a failed download still leaves a visible landing deck.
+  try {
+    const lobbots = await container('lobbots-island.glb?v=1', scene);
+    lobbots.addAllToScene();
+    for (const mesh of lobbots.meshes) {
+      mesh.isPickable = false;
+      mesh.receiveShadows = true;
+      mesh.freezeWorldMatrix();
+    }
+  } catch (error) {
+    console.warn('[arcade] assets/3d/lobbots-island.glb unavailable', error);
+    const deck = BABYLON.MeshBuilder.CreateBox('Lobbots fallback deck',
+      { width: 12, height: .5, depth: 12 }, scene);
+    deck.position.set(-19, .25, 18);
+    deck.isPickable = false;
+    const mat = new BABYLON.StandardMaterial('Lobbots fallback steel', scene);
+    mat.diffuseColor = BABYLON.Color3.FromHexString('#555b62');
+    deck.material = mat;
+    deck.freezeWorldMatrix();
+  }
+
+  // The base sky predates the southwest island. Clear decorative clouds by
+  // their full bounds, not their centres: Drifting cloud.007 reaches into the
+  // sign even though its centre sits outside the deck. Keep this at load time
+  // too so an older cached cloud-world.glb cannot obscure a newly added island.
+  const provingGround = PLATFORMS.find((p) => p.id === 'lobbots');
+  for (const mesh of held.meshes) {
+    if (!/^(Near cloud|Drifting cloud)/.test(mesh.name)) continue;
+    mesh.computeWorldMatrix(true);
+    const { minimumWorld: lo, maximumWorld: hi } = mesh.getBoundingInfo().boundingBox;
+    if (hi.x > provingGround.x[0] - 3 && lo.x < provingGround.x[1] + 3 &&
+        hi.z > provingGround.z[0] - 3 && lo.z < provingGround.z[1] + 3 &&
+        hi.y > provingGround.y - 2 && lo.y < provingGround.y + 9) {
+      mesh.setEnabled(false);
+    }
+  }
 
   const swimmers = createAquariumSwimmers(held);
   const gears = createGearAnimation(held);

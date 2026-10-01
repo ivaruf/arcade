@@ -77,6 +77,7 @@ const SHELL_FILES = [
   // screen is right before the game is published, and so a cabinet never
   // depends on a round trip to another origin to have a face.
   './assets/games/neonfox-192.png',
+  './assets/games/lobbots-192.png',
   './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
