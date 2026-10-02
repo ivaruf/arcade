@@ -59,6 +59,7 @@ const SHELL_FILES = [
   './js/gears.js',
   './js/swirls.js',
   './js/neonfox.js',
+  './js/foxrace.js',
   './js/cabinets.js',
   './js/gopher.js',
   './js/customization.js',
@@ -105,6 +106,7 @@ const PRELOAD_HEAVY = [
   './assets/3d/adventure-island.glb?v=1',
   './assets/3d/supermine-island.glb?v=1',
   './assets/3d/neonfox-island.glb?v=1',
+  './assets/3d/neonfox-rider.glb?v=1',
 ];
 
 /**

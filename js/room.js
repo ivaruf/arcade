@@ -2,6 +2,7 @@ import { createAquariumSwimmers } from './aquarium.js';
 import { createGearAnimation } from './gears.js';
 import { createIslandSwirls } from './swirls.js';
 import { createNeonFoxFloor } from './neonfox.js';
+import { createFoxRace } from './foxrace.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -431,12 +432,12 @@ export const ISLAND_MODELS = [
   },
   {
     // The neon arena's rim, corner pylons and scoreboard (neonfox_island_v2.py),
-    // and the "NF Rider" template that neonfox.js clones into three foxes
-    // riding the floor's lines. Nothing to replace: the old island was floor.
+    // and a low-poly "NF Rider", the fallback template foxrace.js clones when
+    // the game-derived rider below has not arrived. The old island was floor.
     id: 'neonfox',
     file: 'neonfox-island.glb?v=1',
     replaces: [],
-    dynamic: /^NF Rider/,
+    dynamic: /^NF (Game )?Rider/,
     blockers: [
       // Rim walls, leaving a 3 m gap on the north and east edges.
       { x: -22.725, z: -12.15, hx: 2.225, hz: .1, top: 2.225, base: 2 },
@@ -453,6 +454,16 @@ export const ISLAND_MODELS = [
         ({ x, z, hx: .15, hz: .15, top: 4.895, base: 2 })),
       { x: -24.0, z: -13.2, hx: .368, hz: .46, top: 4.885, base: 2 },
     ],
+  },
+  {
+    // The game's own fox, posed mid-stride and lightened 413k -> 12k
+    // triangles (neonfox_rider_from_game.py): the template for the four foxes
+    // racing on the glass roof (foxrace.js). Nothing in the world to block.
+    id: 'neonfox-rider',
+    file: 'neonfox-rider.glb?v=1',
+    replaces: [],
+    dynamic: /^NF (Game )?Rider/,
+    blockers: [],
   },
 ];
 
@@ -568,6 +579,7 @@ export async function buildWorld(scene) {
 
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
+  const foxrace = createFoxRace(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
   // Old props' blockers go with the old props; the new model's come in.
   const swapped = ISLAND_MODELS.filter((island) => loaded.has(island.id));
   const swappedIds = new Set(swapped.map((island) => island.id));
@@ -578,6 +590,6 @@ export async function buildWorld(scene) {
       // Live: the riders move these every frame (neonfox.js).
       ...neonfox.blockers,
     ],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); },
   };
 }

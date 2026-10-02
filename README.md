@@ -56,10 +56,15 @@ step. A file that fails to load leaves the old island and its old blockers.
 - **Supermine** (`supermine_island_v2.py`): the game's own rig with ten of its
   upgrades, an ore bank of its minerals in their sprite outlines, a skip per ore.
 - **NeonFox** (`neonfox_island_v2.py`): the game's arena rim with gaps on the
-  hub-facing sides, corner pylons, a scoreboard in the six player colours, and
-  a rider template that `js/neonfox.js` clones into three foxes on orbs riding
-  three of the floor's glowing lines (kept to the east of the cabinet), each
-  with a blocker that moves with it.
+  hub-facing sides, corner pylons and a scoreboard in the six player colours,
+  over the floor's six roaming lines. Above it, a glass roof where four foxes
+  play the game's rule out of everyone's way (`js/foxrace.js`): ride, leave a
+  wall of light, touch one and crash, last one riding wins and the round
+  resets. The foxes are the game's own model, posed mid-stride and lightened
+  from 413k to 12k triangles by `neonfox_rider_from_game.py`
+  (`neonfox-rider.glb`; side by side with the original in
+  `previews/neonfox-rider-vs-game.png`); the island's low-poly rider is only
+  the fallback if that file does not arrive.
 - **Supermine Adventure** (`adventure_island_v2.py`): six of its minerals on
   plinths, a strata face of deposits, the game's auger rig; the assay office
   and the miners' bridge are still cloud-world's.
