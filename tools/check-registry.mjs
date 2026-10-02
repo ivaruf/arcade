@@ -27,13 +27,14 @@ const [online] = await loadMachines();
 assert.equal(online.icon, offline.icon);
 assert.equal(online.url, offline.url);
 await readFile(new URL(`../${entry.icon}`, import.meta.url));
-// The worker preloads the island under exactly the URL room.js requests; the
+// The worker preloads every island model under exactly the URL room.js requests; the
 // runtime cache keys on the query string, so a version bumped on one side and
 // not the other silently turns the preload into dead weight.
 const room = await readFile(new URL('../js/room.js', import.meta.url), 'utf8');
 const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
-const asked = room.match(/container\('(lobbots-island\.glb\?v=[^']+)'/);
-assert.ok(asked, 'room.js loads the Lobbots island');
-assert.ok(sw.includes(`'./assets/3d/${asked[1]}'`), `sw.js preloads ${asked[1]}`);
+const block = room.slice(room.indexOf('export const ISLAND_MODELS'), room.indexOf('];', room.indexOf('export const ISLAND_MODELS')));
+const asked = [...block.matchAll(/file: '([^']+\.glb\?v=[^']+)'/g)].map((m) => m[1]);
+assert.ok(asked.some((f) => f.startsWith('lobbots-island.glb')), 'room.js loads the Lobbots island');
+for (const file of asked) assert.ok(sw.includes(`'./assets/3d/${file}'`), `sw.js preloads ${file}`);
 console.log('Registry artwork and launch URLs pass with reachable and missing manifests.');
-console.log(`The worker preloads the island room.js asks for (${asked[1]}).`);
+console.log(`The worker preloads every island room.js asks for (${asked.join(', ')}).`);

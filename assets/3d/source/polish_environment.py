@@ -324,6 +324,13 @@ for name,label,yy,size,mat in [
 
 exec(compile((OUT / 'source' / 'island_flooring.py').read_text(), str(OUT / 'source' / 'island_flooring.py'), 'exec'), globals())
 
+# dam_island.py, adventure_island.py's mineral specimens and supermine_island.py
+# are SUPERSEDED at runtime by dam-island.glb, adventure-island.glb and
+# supermine-island.glb (their *_v2.py scripts; js/room.js ISLAND_MODELS hides
+# and disposes these meshes by name). They stay in this build only so the
+# committed cloud-world.glb does not have to be re-downloaded by everyone; the
+# next time cloud-world is rebuilt anyway, drop the dam and supermine execs and
+# the specimen block of adventure_island.py, then empty those `replaces` lists.
 exec(compile((OUT / 'source' / 'dam_island.py').read_text(), str(OUT / 'source' / 'dam_island.py'), 'exec'), globals())
 
 exec(compile((OUT / 'source' / 'adventure_island.py').read_text(), str(OUT / 'source' / 'adventure_island.py'), 'exec'), globals())

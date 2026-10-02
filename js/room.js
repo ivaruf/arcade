@@ -316,13 +316,13 @@ const FURNITURE = [
   // Mining-company office, mineral beds and cargo; central route stays clear.
   { x: 17, z: 18.5, hx: 2.25, hz: 2.3, top: -1, base: -5.5 },
   ...[[24, 15.4], [24, 18.3], [16, 14]].map(([x, z]) =>
-    ({ x, z, hx: .85, hz: .85, top: -3.8, base: -5.5 })),
+    ({ x, z, hx: .85, hz: .85, top: -3.8, base: -5.5, island: 'adventure' })),
   { x: 16.5, z: 21.4, hx: 1, hz: .5, top: -4.7, base: -5.5 },
   // Continuous bridge rails protect the sides, with both ends open.
   ...[20.85, 23.15].map((x) =>
     ({ x, z: 9, hx: .105, hz: 3.1, top: -4.25, base: -5.5 })),
   // Miniature dam and reservoir, east of the western walking lane.
-  { x: 20, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1 },
+  { x: 20, z: -19.7, hx: 3.3, hz: 3.2, top: 3.45, base: 1, island: 'dam' },
   // Steamworks plant stays at the west/south perimeter, clear of cabinet fronts.
   { x: -22, z: 2, hx: 0.8, hz: 0.75, top: 4.91, base: 1.5 },
   { x: -21.75, z: .72, hx: .55, hz: .4, top: 3, base: 1.5 },
@@ -337,17 +337,92 @@ const FURNITURE = [
   { x: -3.6, z: -19, hx: 1.1, hz: 3.8, top: 1.3, base: -2.5 },
   ...[-21.7, -19.9, -18.1, -16.3].map((z) => ({ x: 1.4, z, hx: 0.3, hz: 0.3, top: -1.8, base: -2.5 })),
   // Rig parked along the north edge; central entrance-to-cabinet lane stays open.
-  { x: 18, z: -3.7, hx: 2.6, hz: 1.95, top: -2.7, base: -5.5 },
-  { x: 14.85, z: -3.7, hx: .75, hz: 1.95, top: -4.25, base: -5.5 },
-  { x: 13.85, z: -3.6, hx: .5, hz: 1.95, top: -4.3, base: -5.5 },
+  { x: 18, z: -3.7, hx: 2.6, hz: 1.95, top: -2.7, base: -5.5, island: 'supermine' },
+  { x: 14.85, z: -3.7, hx: .75, hz: 1.95, top: -4.25, base: -5.5, island: 'supermine' },
+  { x: 13.85, z: -3.6, hx: .5, hz: 1.95, top: -4.3, base: -5.5, island: 'supermine' },
   ...[[22, -4.5], [25.7, 3.6], [18, 4.65]].map(([x, z]) =>
-    ({ x, z, hx: 1.15, hz: 1, top: -3.7, base: -5.5 })),
-  { x: 14.2, z: 4.2, hx: .65, hz: .68, top: -4.4, base: -5.5 },
+    ({ x, z, hx: 1.15, hz: 1, top: -3.7, base: -5.5, island: 'supermine' })),
+  { x: 14.2, z: 4.2, hx: .65, hz: .68, top: -4.4, base: -5.5, island: 'supermine' },
   ...[[13.2, -.9], [20, -4.7]].map(([x, z]) =>
-    ({ x, z, hx: .25, hz: .25, top: -2.8, base: -5.5 })),
+    ({ x, z, hx: .25, hz: .25, top: -2.8, base: -5.5, island: 'supermine' })),
   // the quiet cloud: pergola posts and two benches
   ...[-3, 3].flatMap((x) => [15, 21].map((z) => ({ x, z, hx: 0.13, hz: 0.13, top: 9.1, base: 6 }))),
   ...[[-2.2, 20.2], [2.2, 20.2]].map(([x, z]) => ({ x, z, hx: 0.85, hz: 0.32, top: 6.4, base: 6 })),
+];
+
+/**
+ * Islands that ship as models of their own rather than inside cloud-world.
+ *
+ * WHY SEPARATE FILES. cloud-world.glb is 19 MB; rebuilding it to change one
+ * island makes every visitor download all of it again, and risks moving
+ * islands nobody asked to touch. An island here is its own small GLB with its
+ * own ?v= (the worker's runtime cache keys on it, and sw.js preloads every
+ * file listed here — tools/check-registry.mjs holds the two in step).
+ *
+ * `replaces` names the cloud-world meshes the new model stands in for, by
+ * prefix; they are switched off before mergeStatic, which skips anything
+ * disabled. `blockers` are the new model's solid props, and FURNITURE entries
+ * tagged with the same `island` are the old props' — swapped together, and
+ * ONLY when the new file actually arrived. A failed download keeps the old
+ * island and the old blockers: it costs a nicer look, never a platform.
+ * The old geometry is still inside cloud-world.glb until the next time that
+ * file is rebuilt anyway; polish_environment.py says which scripts to drop.
+ */
+export const ISLAND_MODELS = [
+  { id: 'lobbots', file: 'lobbots-island.glb?v=3', replaces: [], blockers: [] },
+  {
+    // A slice cut from a Dam Break level: banded terrain, the reservoir in the
+    // game's depth bands, a player-built crib dam about to fail, the house it
+    // is protecting. dam_island_v2.py. Prefixes checked against every node in
+    // cloud-world — a bare 'Dam ' would also take the floor and the mast.
+    id: 'dam',
+    file: 'dam-island.glb?v=1',
+    replaces: ['Dam wall segment', 'Dam crown ', 'Dam handrail post', 'Dam stepped buttress',
+      'Dam diorama foundation', 'Dam control hut', 'Control hut ', 'Reservoir ', 'Spillway gate',
+      'Gate ', 'Downstream ', 'Stilling block', 'Channel side'],
+    blockers: [
+      { x: 19.775, z: -19.875, hx: 2.5, hz: 3.375, top: 3.45, base: 1 },  // ridge, reservoir, dam
+      { x: 19.775, z: -15.325, hx: 2.5, hz: 1.175, top: 1.6, base: 1 },   // floodplain, stockpile
+      { x: 17.6, z: -16.72, hx: .06, hz: .24, top: 2.23, base: 1 },       // signpost
+      { x: 17.95, z: -15.88, hx: .31, hz: .31, top: 2.77, base: 1 },      // pine
+      { x: 21.45, z: -15.31, hx: .33, hz: .33, top: 2.27, base: 1 },      // round tree
+      { x: 19.55, z: -15.22, hx: .68, hz: .63, top: 2.35, base: 1 },      // house
+      { x: 21.4, z: -14.62, hx: .28, hz: .28, top: 2.57, base: 1 },       // pine
+      { x: 18.55, z: -14.5, hx: .31, hz: .31, top: 2.19, base: 1 },       // round tree
+      { x: 17.6, z: -14.92, hx: .25, hz: .25, top: 2.42, base: 1 },       // pine
+    ],
+  },
+  {
+    // The mining company's claim: six of the game's own minerals on plinths,
+    // a strata face studded with deposits, and the game's auger rig parked
+    // east of the lane. adventure_island_v2.py. The assay office, its crates
+    // and the miners' bridge stay in cloud-world and keep their blockers.
+    id: 'adventure',
+    file: 'adventure-island.glb?v=1',
+    replaces: ['Adventure specimen', 'Adventure mineral', 'Adventure AMETHYST', 'Adventure COPPER ORE',
+      'Adventure QUARTZ'],
+    blockers: [
+      { x: 14.5, z: 14.25, hx: .5, hz: 1.95, top: -3.95, base: -5.5 },   // strata face
+      { x: 17.47, z: 14.0, hx: 2.52, hz: .3, top: -4.0, base: -5.5 },    // specimen row
+      { x: 24.75, z: 14.53, hx: 1.02, hz: 2.13, top: -4.2, base: -5.5 }, // the rig
+    ],
+  },
+  {
+    // The outcrop: the game's own rig with ten of its upgrades fitted, an ore
+    // bank of the game's minerals in their baked sprite outlines, and a skip
+    // per ore. supermine_island_v2.py. 'Supermine ' (with the space) is every
+    // old prop and nothing else; floor, mast and bridge are all 'Mine …'.
+    id: 'supermine',
+    file: 'supermine-island.glb?v=1',
+    replaces: ['Supermine '],
+    blockers: [
+      { x: 17.03, z: -3.30, hx: 3.17, hz: 1.65, top: -3.45, base: -5.5 },  // rig hull, hopper, conveyor, drills
+      { x: 18.10, z: -3.30, hx: 1.25, hz: 2.72, top: -4.55, base: -5.5 },  // blade drum, side grinders
+      { x: 16.02, z: -3.30, hx: 0.58, hz: 2.65, top: -4.05, base: -5.5 },  // magnet arms
+      { x: 23.45, z: -3.85, hx: 3.15, hz: 2.10, top: -4.48, base: -5.5 },  // the ore bank
+      { x: 16.65, z: 4.75, hx: 3.77, hz: 0.44, top: -4.60, base: -5.5 },   // six ore skips
+    ],
+  },
 ];
 
 /**
@@ -357,23 +432,42 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
-  const lobbotsMeshes = [];
+  const islandMeshes = [];
   const held = await container('cloud-world.glb?v=centered-welcome-bench-3', scene);
   held.addAllToScene();
 
-  // A separate model keeps the established islands untouched. Its coordinates
-  // match PLATFORMS; a failed download still leaves a visible landing deck.
-  try {
-    const lobbots = await container('lobbots-island.glb?v=3', scene);
-    lobbots.addAllToScene();
-    lobbotsMeshes.push(...lobbots.meshes);
-    for (const mesh of lobbots.meshes) {
-      mesh.isPickable = false;
-      mesh.receiveShadows = true;
-      mesh.freezeWorldMatrix();
+  // The islands that are models of their own (ISLAND_MODELS), fetched side by
+  // side. Each one that arrives switches off what it replaces in cloud-world.
+  const loaded = new Set();
+  await Promise.all(ISLAND_MODELS.map(async (island) => {
+    try {
+      const model = await container(island.file, scene);
+      model.addAllToScene();
+      islandMeshes.push(...model.meshes);
+      for (const mesh of model.meshes) {
+        mesh.isPickable = false;
+        mesh.receiveShadows = true;
+        mesh.freezeWorldMatrix();
+      }
+      loaded.add(island.id);
+    } catch (error) {
+      console.warn(`[arcade] assets/3d/${island.file} unavailable; keeping what cloud-world has`, error);
     }
-  } catch (error) {
-    console.warn('[arcade] assets/3d/lobbots-island.glb unavailable', error);
+  }));
+  // Disposed rather than switched off: a disabled mesh still costs memory
+  // and still sits in the list the engine walks every frame, and three old
+  // islands are several hundred of them. Dropped from the container's list
+  // too, so nothing below ever touches a disposed mesh.
+  const replaced = ISLAND_MODELS.filter((island) => loaded.has(island.id) && island.replaces.length);
+  if (replaced.length) {
+    for (const mesh of held.meshes) {
+      if (replaced.some((island) => island.replaces.some((prefix) => mesh.name.startsWith(prefix)))) mesh.dispose();
+    }
+    held.meshes = held.meshes.filter((mesh) => !mesh.isDisposed());
+  }
+  // Lobbots has no old island underneath, so a failed download would leave
+  // nothing to stand on visibly: give it a plain deck instead.
+  if (!loaded.has('lobbots')) {
     const deck = BABYLON.MeshBuilder.CreateBox('Lobbots fallback deck',
       { width: 12, height: .5, depth: 12 }, scene);
     deck.position.set(-19, .25, 18);
@@ -431,13 +525,19 @@ export async function buildWorld(scene) {
   }
   const keep = (m) => swimmers.movingMeshes.has(m) || gears.movingMeshes.has(m) || animated.has(m) ||
     /^Welcome sideboard (Brand|Arcade|Guide)/.test(m.name);
-  const worldMeshes = [...held.meshes, ...lobbotsMeshes];
+  const worldMeshes = [...held.meshes, ...islandMeshes];
   for (const one of mergeStatic(worldMeshes, { keep, label: 'Sky' })) one.freezeWorldMatrix();
 
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
+  // Old props' blockers go with the old props; the new model's come in.
+  const swapped = ISLAND_MODELS.filter((island) => loaded.has(island.id));
+  const swappedIds = new Set(swapped.map((island) => island.id));
   return {
-    blockers: [...FURNITURE],
+    blockers: [
+      ...FURNITURE.filter((b) => !swappedIds.has(b.island)),
+      ...swapped.flatMap((island) => island.blockers),
+    ],
     animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); },
   };
 }

@@ -43,6 +43,25 @@ cache keys on it. Rebuild with:
 /Applications/Blender.app/Contents/MacOS/Blender --background --python assets/3d/source/lobbots_island.py
 ```
 
+**Islands as models of their own.** Lobbots, Dam Break, Supermine and
+Supermine Adventure each have a GLB of their own beside `cloud-world.glb`
+(`ISLAND_MODELS` in `js/room.js`), so changing one never makes everyone
+download the 19 MB world again. Each entry names the cloud-world meshes it
+replaces (disposed once the new file arrives), its blockers, and its `?v=`;
+`sw.js` preloads every one and `tools/check-registry.mjs` holds the two in
+step. A file that fails to load leaves the old island and its old blockers.
+- **Dam Break** (`dam_island_v2.py`): a slice cut from a level — banded
+  terrain, the reservoir in the game's depth bands, a player-built crib dam
+  of the game's materials about to fail, the house it protects.
+- **Supermine** (`supermine_island_v2.py`): the game's own rig with ten of its
+  upgrades, an ore bank of its minerals in their sprite outlines, a skip per ore.
+- **Supermine Adventure** (`adventure_island_v2.py`): six of its minerals on
+  plinths, a strata face of deposits, the game's auger rig; the assay office
+  and the miners' bridge are still cloud-world's.
+Previews are in `assets/3d/previews/`. Rebuild any of them with
+`Blender --background --python assets/3d/source/<name>.py`, then bump its `?v=`
+in both `room.js` and `sw.js`.
+
 **Machines face their approach.** `SLOTS` in `js/room.js` stores each cabinet’s
 position and orientation. Most face the hub; where scenery defines a walking
 lane, the cabinet faces across that lane.

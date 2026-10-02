@@ -101,6 +101,9 @@ const HEAVY = /\.(glb|mp3|m4a|ogg|wav)$/i;
  */
 const PRELOAD_HEAVY = [
   './assets/3d/lobbots-island.glb?v=3',
+  './assets/3d/dam-island.glb?v=1',
+  './assets/3d/adventure-island.glb?v=1',
+  './assets/3d/supermine-island.glb?v=1',
 ];
 
 /**
