@@ -89,7 +89,7 @@ const HEAVY = /\.(glb|mp3|m4a|ogg|wav)$/i;
 /**
  * Heavy files fetched on install anyway, into the runtime cache. Exactly the
  * URLs room.js asks for, query string and all, because the cache keys on it:
- * `lobbots-island.glb?v=2` here and `?v=1` there is two different files and
+ * `lobbots-island.glb?v=3` here and `?v=1` there is two different files and
  * the precache would be dead weight. tools/check-registry.mjs holds the two
  * in step. Best effort: a model that fails to arrive must not fail the
  * install, it is simply fetched the first time it is wanted as before.
@@ -100,7 +100,7 @@ const HEAVY = /\.(glb|mp3|m4a|ogg|wav)$/i;
  * visit — and miss entirely offline.
  */
 const PRELOAD_HEAVY = [
-  './assets/3d/lobbots-island.glb?v=2',
+  './assets/3d/lobbots-island.glb?v=3',
 ];
 
 /**

@@ -527,33 +527,54 @@ for (ax, az, bx, bz) in ((X0, Z0, X1, Z0), (X0, Z1, X1, Z1), (X0, Z0, X0, Z1), (
         px += 0.07 if px == X0 else -0.07 if px == X1 else 0
         pz += 0.07 if pz == Z0 else -0.07 if pz == Z1 else 0
         horizontal = az == bz
-        size = (length / count, 0.04, 0.12) if horizontal else (0.12, 0.04, length / count)
-        box('Hazard curb', (px, DECK + 0.02, pz), size, HAZARD if k % 2 == 0 else PLATE)
+        # The east and west runs stand 6 mm taller: where two runs meet at a
+        # corner their end pieces overlap, and at one height they z-fight.
+        h = 0.04 if horizontal else 0.046
+        size = (length / count, h, 0.12) if horizontal else (0.12, h, length / count)
+        box('Hazard curb', (px, DECK + h / 2, pz), size, HAZARD if k % 2 == 0 else PLATE)
+
+# Decals stack in layers, each at least 5 mm above the one it can overlap.
+# Two flat faces at one height z-fight — the arcade's camera resolves well
+# under a millimetre at this range, but nothing separates exact equals —
+# and the pad's hazard edge and the craters' scorch were both at .516 until
+# 2026-10-02, so the tape flickered through the holes as the camera moved.
+# The order is the order they should read in: crust, pad, paint, burn.
+L_PATCH = DECK + 0.005   # crust patches, on bare crust
+L_PAD = DECK + 0.012     # test pad top
+L_PAINT = DECK + 0.018   # pad seams, chevrons
+L_TAPE = DECK + 0.024    # pad hazard edge and footprints
+L_BURN = DECK + 0.030    # scorch, which may lie across the tape
+L_RIM = DECK + 0.036     # crater rim, over the edge of its own scorch
+
+
+def decal_box(name, x, z, top, size_xz, material, yaw=0.0, thick=0.003):
+    """A thin box whose TOP sits exactly on its layer."""
+    return box(name, (x, top - thick / 2, z), (size_xz[0], thick, size_xz[1]), material, yaw=yaw)
+
 
 # The steel test pad, in front of the walkers and clear of the cabinet lane.
-box('Test pad', (-16.6, DECK + 0.006, 16.4), (5.4, 0.012, 6.2), STEEL_PAD)
+decal_box('Test pad', -16.6, 16.4, L_PAD, (5.4, 6.2), STEEL_PAD, thick=L_PAD - DECK)
 for x in (-18.4, -16.6, -14.8):
-    box('Test pad seam', (x, DECK + 0.013, 16.4), (0.025, 0.004, 6.1), PLATE)
+    decal_box('Test pad seam', x, 16.4, L_PAINT, (0.025, 6.1), PLATE)
 for z in (14.33, 16.4, 18.47):
-    box('Test pad seam', (-16.6, DECK + 0.013, z), (5.3, 0.004, 0.025), PLATE)
+    decal_box('Test pad seam', -16.6, z, L_PAINT, (5.3, 0.025), PLATE)
 for k in range(12):
     x = -19.15 + k * 0.45
-    box('Test pad hazard edge', (x, DECK + 0.014, 13.42), (0.22, 0.004, 0.14), HAZARD if k % 2 == 0 else PLATE)
+    decal_box('Test pad hazard edge', x, 13.42, L_TAPE, (0.22, 0.14), HAZARD if k % 2 == 0 else PLATE)
 # Landing chevrons on the east approach, pointing in.
 for z in (15.2, 17.0, 18.8):
     for side in (-1, 1):
-        box('Landing chevron', (-13.75, DECK + 0.008, z + side * 0.22), (0.5, 0.004, 0.09), IVORY,
-            yaw=side * 0.6)
+        decal_box('Landing chevron', -13.75, z + side * 0.22, L_PAINT, (0.5, 0.09), IVORY, yaw=side * 0.6)
 
 # Scorch craters: a dark burn and a pale lifted rim, flat enough to walk on.
 CRATERS = [(-15.4, 13.9, 0.9), (-19.6, 13.4, 0.6), (-14.4, 19.4, 0.55), (-21.2, 22.3, 1.1)]
 for x, z, r in CRATERS:
-    disc('Scorch', (x, z), r, DECK + 0.016, SCORCH, sides=22)
-    disc('Crater rim', (x, z), r * 1.22, DECK + 0.02, CRUST_LINE, sides=22, inner=r * 0.98)
+    disc('Scorch', (x, z), r, L_BURN, SCORCH, sides=22)
+    disc('Crater rim', (x, z), r * 1.22, L_RIM, CRUST_LINE, sides=22, inner=r * 0.98)
     for i in range(5):
         a = rng.uniform(0, math.tau)
         d = r * rng.uniform(1.3, 1.9)
-        box('Shrapnel', (x + math.cos(a) * d, DECK + 0.02, z + math.sin(a) * d), (0.12, 0.03, 0.06), CHAR,
+        box('Shrapnel', (x + math.cos(a) * d, L_RIM + 0.015, z + math.sin(a) * d), (0.12, 0.03, 0.06), CHAR,
             yaw=rng.uniform(0, math.pi))
 
 # Footprints: the walkers walked here (a bought Move), three claws and a heel
@@ -564,16 +585,22 @@ for wx in (-18.5, -15.5):
         side = -1 if k % 2 else 1
         px = wx + side * 0.34
         for cw in (-0.12, 0.0, 0.12):
-            box('Claw print', (px + cw, DECK + 0.006, zc - 0.2), (0.05, 0.003, 0.2), CHAR, yaw=cw * 1.5)
-        box('Heel print', (px, DECK + 0.006, zc + 0.12), (0.12, 0.003, 0.12), CHAR)
+            decal_box('Claw print', px + cw, zc - 0.2, L_TAPE, (0.05, 0.2), CHAR, yaw=cw * 1.5)
+        decal_box('Heel print', px, zc + 0.12, L_TAPE, (0.12, 0.12), CHAR)
 
-# Crust patches, so the ground reads as ground and not as a floor.
+# Crust patches, so the ground reads as ground and not as a floor. They share
+# one layer, so they may not overlap each other (or a crater's burn).
+patches = [(x, z, r * 1.25) for x, z, r in CRATERS]
 for i in range(16):
     x = rng.uniform(X0 + 0.6, X1 - 0.6)
     z = rng.uniform(Z0 + 0.6, Z1 - 1.6)
-    if -19.3 < x < -13.9 and 13.3 < z < 19.5:
+    r = rng.uniform(0.25, 0.7)
+    if -19.3 - r < x < -13.9 + r and 13.3 - r < z < 19.5 + r:
         continue  # not on the test pad
-    disc('Crust patch', (x, z), rng.uniform(0.25, 0.7), DECK + 0.004, rng.choice([CRUST_LINE, mat('#7a7464', 0, 0.9)]),
+    if any(math.hypot(x - px, z - pz) < r + pr + 0.05 for px, pz, pr in patches):
+        continue
+    patches.append((x, z, r))
+    disc('Crust patch', (x, z), r, L_PATCH, rng.choice([CRUST_LINE, mat('#7a7464', 0, 0.9)]),
          sides=9)
 
 # The berm along the back: the in-game hill's silhouette, crust on the crest,

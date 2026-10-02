@@ -292,7 +292,7 @@ export async function buildWorld(scene) {
   // A separate model keeps the established islands untouched. Its coordinates
   // match PLATFORMS; a failed download still leaves a visible landing deck.
   try {
-    const lobbots = await container('lobbots-island.glb?v=2', scene);
+    const lobbots = await container('lobbots-island.glb?v=3', scene);
     lobbots.addAllToScene();
     for (const mesh of lobbots.meshes) {
       mesh.isPickable = false;
