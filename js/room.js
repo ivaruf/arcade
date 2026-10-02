@@ -286,6 +286,12 @@ export function mergeUnder(node, label) {
   return merged;
 }
 
+/** True if the node or any ancestor's name matches `pattern`. */
+function hasAncestorNamed(node, pattern) {
+  for (let n = node; n; n = n.parent) if (pattern.test(n.name)) return true;
+  return false;
+}
+
 /** Load one GLB as a container we can stamp out repeatedly. */
 export async function container(file, scene) {
   return BABYLON.SceneLoader.LoadAssetContainerAsync(ASSETS, file, scene);
@@ -423,6 +429,31 @@ export const ISLAND_MODELS = [
       { x: 16.65, z: 4.75, hx: 3.77, hz: 0.44, top: -4.60, base: -5.5 },   // six ore skips
     ],
   },
+  {
+    // The neon arena's rim, corner pylons and scoreboard (neonfox_island_v2.py),
+    // and the "NF Rider" template that neonfox.js clones into three foxes
+    // riding the floor's lines. Nothing to replace: the old island was floor.
+    id: 'neonfox',
+    file: 'neonfox-island.glb?v=1',
+    replaces: [],
+    dynamic: /^NF Rider/,
+    blockers: [
+      // Rim walls, leaving a 3 m gap on the north and east edges.
+      { x: -22.725, z: -12.15, hx: 2.225, hz: .1, top: 2.225, base: 2 },
+      { x: -15.275, z: -12.15, hx: 2.225, hz: .1, top: 2.225, base: 2 },
+      { x: -19.0, z: -23.85, hx: 5.95, hz: .1, top: 2.225, base: 2 },
+      { x: -24.85, z: -18.0, hx: .1, hz: 5.75, top: 2.225, base: 2 },
+      { x: -13.15, z: -21.625, hx: .1, hz: 2.125, top: 2.225, base: 2 },
+      { x: -13.15, z: -14.375, hx: .1, hz: 2.125, top: 2.225, base: 2 },
+      // Gate posts at the gaps' ends.
+      ...[[-20.62, -12.15], [-17.38, -12.15], [-13.15, -19.62], [-13.15, -16.38]].map(([x, z]) =>
+        ({ x, z, hx: .12, hz: .12, top: 2.35, base: 2 })),
+      // Corner pylons and the scoreboard.
+      ...[[-24.6, -23.6], [-13.4, -23.6], [-24.6, -12.4], [-13.4, -12.4]].map(([x, z]) =>
+        ({ x, z, hx: .15, hz: .15, top: 4.895, base: 2 })),
+      { x: -24.0, z: -13.2, hx: .368, hz: .46, top: 4.885, base: 2 },
+    ],
+  },
 ];
 
 /**
@@ -433,6 +464,7 @@ export const ISLAND_MODELS = [
 export async function buildWorld(scene) {
   const dimmed = new Map();
   const islandMeshes = [];
+  const dynamicMeshes = new Set();
   const held = await container('cloud-world.glb?v=centered-welcome-bench-3', scene);
   held.addAllToScene();
 
@@ -447,6 +479,9 @@ export async function buildWorld(scene) {
       for (const mesh of model.meshes) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
+        // `dynamic` names what the runtime moves (the NeonFox riders): not
+        // frozen in place, and kept out of mergeStatic below.
+        if (island.dynamic && hasAncestorNamed(mesh, island.dynamic)) { dynamicMeshes.add(mesh); continue; }
         mesh.freezeWorldMatrix();
       }
       loaded.add(island.id);
@@ -526,7 +561,7 @@ export async function buildWorld(scene) {
       if (target?.getChildMeshes) { animated.add(target); for (const c of target.getChildMeshes()) animated.add(c); }
     }
   }
-  const keep = (m) => swimmers.movingMeshes.has(m) || gears.movingMeshes.has(m) || animated.has(m) ||
+  const keep = (m) => dynamicMeshes.has(m) || swimmers.movingMeshes.has(m) || gears.movingMeshes.has(m) || animated.has(m) ||
     /^Welcome sideboard (Brand|Arcade|Guide)/.test(m.name);
   const worldMeshes = [...held.meshes, ...islandMeshes];
   for (const one of mergeStatic(worldMeshes, { keep, label: 'Sky' })) one.freezeWorldMatrix();
@@ -540,6 +575,8 @@ export async function buildWorld(scene) {
     blockers: [
       ...FURNITURE.filter((b) => !swappedIds.has(b.island)),
       ...swapped.flatMap((island) => island.blockers),
+      // Live: the riders move these every frame (neonfox.js).
+      ...neonfox.blockers,
     ],
     animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); },
   };
