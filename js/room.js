@@ -460,7 +460,10 @@ export async function buildWorld(scene) {
   // too, so nothing below ever touches a disposed mesh.
   const replaced = ISLAND_MODELS.filter((island) => loaded.has(island.id) && island.replaces.length);
   if (replaced.length) {
-    for (const mesh of held.meshes) {
+    // Over a COPY: disposing a mesh takes it out of held.meshes as well, so
+    // walking the live array skipped every second one — half of each old
+    // island survived, standing inside the new one (found 2026-10-02).
+    for (const mesh of [...held.meshes]) {
       if (replaced.some((island) => island.replaces.some((prefix) => mesh.name.startsWith(prefix)))) mesh.dispose();
     }
     held.meshes = held.meshes.filter((mesh) => !mesh.isDisposed());
