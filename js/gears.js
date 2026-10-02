@@ -1,4 +1,5 @@
 /** Slow decorative gear trains; angle derives from elapsed time, never frame count. */
+import { mergeUnder } from './room.js';
 const ROTORS = new Map([
   ['Main flywheel', { teeth: 16, direction: 1 }],
   ['Companion cog', { teeth: 12, direction: -1 }],
@@ -17,6 +18,9 @@ export function createGearAnimation(held) {
       if (child.unfreezeWorldMatrix) child.unfreezeWorldMatrix();
       movingMeshes.add(child);
     }
+    // A rotor is a hub and a ring of separate teeth, each its own draw call;
+    // fold them into one mesh per material that still turns with the rotor.
+    for (const m of mergeUnder(node, `Gear ${spec.teeth}`)) movingMeshes.add(m);
     return [{
       node, ...spec,
       rest: node.rotationQuaternion?.clone() || BABYLON.Quaternion.FromEulerVector(node.rotation),

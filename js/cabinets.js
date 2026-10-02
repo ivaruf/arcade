@@ -27,7 +27,7 @@
  * bezel the model already has.
  * ========================================================================== */
 
-import { container, footprintOf, blockerFor, PLACEMENT, SLOTS, PLATFORMS } from './room.js';
+import { container, footprintOf, blockerFor, mergeStatic, PLACEMENT, SLOTS, PLATFORMS } from './room.js';
 
 /**
  * One cabinet, in whatever colour the game is.
@@ -310,6 +310,14 @@ async function machine(scene, shadows, held, spec, game, slot) {
       mat.albedoColor = new BABYLON.Color3(0.01, 0.02, 0.03);
       mat.emissiveColor = BABYLON.Color3.Black();
     }
+  }
+
+  // Thirty-odd meshes a cabinet, eight cabinets. The materials are this
+  // cabinet's own clones and final by now, and nothing below looks a mesh up
+  // again — the screen and marquee are panels built after this — so fold the
+  // body into one mesh per material (room.js mergeStatic).
+  for (const m of mergeStatic(holder.getChildMeshes(), { cell: 1e6, label: `cabinet:${game ? game.slug : spec.kind}` })) {
+    m.freezeWorldMatrix();
   }
 
   // A blocker carries the floor it stands on, so a machine in the basement

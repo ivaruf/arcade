@@ -1,3 +1,5 @@
+import { mergeStatic } from './room.js';
+
 /** Session-only companions. Shared geometry for the machine, preview and follower. */
 export const PETS = [
   { id: 'nyan', name: 'Nyan Cat', description: 'A pastry cat with a flying rainbow.', color: '#a8aeba' },
@@ -145,6 +147,10 @@ function station(scene) {
   const displays=PETS.map((spec,i)=>{
     const pet=creature(scene,spec.id);pet.root.parent=root;pet.root.position.set((i-(PETS.length-1)/2)*.60,1.03,.05);pet.root.scaling.setAll(.57);return pet;
   });
+  // The cabinet is a hundred and fifty still parts around five pets that
+  // animate: fold the cabinet (room.js mergeStatic), leave the pets alone.
+  const alive=new Set(displays.flatMap((p)=>p.root.getChildMeshes(false)));
+  for(const m of mergeStatic(root.getChildMeshes(false),{keep:(m)=>alive.has(m),cell:1e6,label:'Pet machine'})) m.freezeWorldMatrix();
   return { displays, blocker:{x:4.9,z:2.3,hx:.7,hz:1.1,base:0,top:2.7},
     inReach(p){return Math.abs(p.y)<.3 && Math.hypot(p.x-3.3,p.z-2.3)<1.2;} };
 }

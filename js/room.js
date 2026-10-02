@@ -215,6 +215,77 @@ export const footprintOf = (kind) => FOOTPRINT[kind] || FOOTPRINT.classic;
 const BROAD_EMISSIVE = ['Tank water', 'Stool seat', 'Cart ore', 'Pavilion rim', 'Pergola rim'];
 const BROAD_FACTOR = 0.25;
 
+/**
+ * Merge static meshes that share a material, cell by cell.
+ *
+ * WHY. The sky was 3,400 meshes and 2,500 draw calls a frame, most of them
+ * cubes of a hundred-odd triangles — and the glow layer draws every one a
+ * second time. On an old tablet that is the whole frame spent in the CPU
+ * telling the GPU about cubes; fewer pixels (quality.js) cannot touch it.
+ * Measured 2026-10-02 in headless Chrome. One draw call per material per
+ * CELL-metre square instead keeps the count in the low hundreds while still
+ * letting the camera cull whole islands it is not looking at, which merging
+ * the entire sky per material would throw away.
+ *
+ * WHAT STAYS OUT. Anything a later line finds by name or by reference, or
+ * that moves: pass those in `keep`. Anything with children (disposing it would
+ * take them along), instances or instanced, skinned or morphing, disabled or
+ * invisible. A group whose meshes do not share the same vertex attributes is
+ * split by attributes, because MergeMeshes will not join a mesh with UVs to
+ * one without. If a merge fails anyway the originals are left exactly as they
+ * were — a slower sky, never a missing one.
+ *
+ * Returns the merged meshes, for the caller to set shadows and freeze.
+ */
+export function mergeStatic(meshes, { keep = () => false, cell = 12, label = 'Merged' } = {}) {
+  const groups = new Map();
+  for (const m of meshes) {
+    if (m.getClassName() !== 'Mesh' || m.isDisposed() || keep(m)) continue;
+    if (!m.isEnabled() || !m.isVisible || m.visibility !== 1 || !m.material) continue;
+    if (!m.getTotalVertices() || m.skeleton || m.morphTargetManager) continue;
+    if (m.getChildren().length || m.instances?.length || m.billboardMode) continue;
+    // A mesh a glow layer was told to skip (a sign face, a marquee) would
+    // lose that exclusion inside a merged mesh and bloom white.
+    if (m.getScene().effectLayers?.some((l) => l._excludedMeshes?.includes(m.uniqueId))) continue;
+    m.computeWorldMatrix(true);
+    const c = m.getBoundingInfo().boundingBox.centerWorld;
+    const kinds = m.getVerticesDataKinds().slice().sort().join(',');
+    const key = `${m.material.uniqueId}|${kinds}|${m.receiveShadows}|${m.renderingGroupId}|${m.layerMask}|` +
+      `${Math.floor(c.x / cell)},${Math.floor(c.z / cell)},${Math.floor(c.y / cell)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(m);
+  }
+  const merged = [];
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const { material, receiveShadows } = group[0];
+    try {
+      const one = BABYLON.Mesh.MergeMeshes(group, true, true);
+      if (!one) continue;
+      one.name = `${label}: ${material.name}`;
+      one.material = material;
+      one.isPickable = false;
+      one.receiveShadows = receiveShadows;
+      merged.push(one);
+    } catch (error) {
+      console.warn(`[arcade] could not merge ${group.length} × ${material.name}; left as they were`, error);
+    }
+  }
+  return merged;
+}
+
+/**
+ * The same, for a part that MOVES: everything under `node` folded into one
+ * mesh per material and put back under `node`, so the gear still turns and
+ * the flap still swings — as one draw call instead of a dozen teeth.
+ */
+export function mergeUnder(node, label) {
+  node.computeWorldMatrix(true);
+  const merged = mergeStatic(node.getChildMeshes(false), { cell: 1e6, label });
+  for (const m of merged) m.setParent(node);
+  return merged;
+}
+
 /** Load one GLB as a container we can stamp out repeatedly. */
 export async function container(file, scene) {
   return BABYLON.SceneLoader.LoadAssetContainerAsync(ASSETS, file, scene);
@@ -286,6 +357,7 @@ const FURNITURE = [
  */
 export async function buildWorld(scene) {
   const dimmed = new Map();
+  const lobbotsMeshes = [];
   const held = await container('cloud-world.glb?v=centered-welcome-bench-3', scene);
   held.addAllToScene();
 
@@ -294,6 +366,7 @@ export async function buildWorld(scene) {
   try {
     const lobbots = await container('lobbots-island.glb?v=3', scene);
     lobbots.addAllToScene();
+    lobbotsMeshes.push(...lobbots.meshes);
     for (const mesh of lobbots.meshes) {
       mesh.isPickable = false;
       mesh.receiveShadows = true;
@@ -344,6 +417,22 @@ export async function buildWorld(scene) {
     }
     if (!swimmers.movingMeshes.has(mesh) && !gears.movingMeshes.has(mesh)) mesh.freezeWorldMatrix();
   }
+
+  // Now that every material is final, fold the static sky into a few hundred
+  // meshes (see mergeStatic). The sideboard lettering stays loose because
+  // signs.js finds it by name and switches it off; the fish and gears because
+  // they move; anything an animation group drives for the same reason.
+  const animated = new Set();
+  for (const group of held.animationGroups) {
+    for (const t of group.targetedAnimations) {
+      const target = t.target;
+      if (target?.getChildMeshes) { animated.add(target); for (const c of target.getChildMeshes()) animated.add(c); }
+    }
+  }
+  const keep = (m) => swimmers.movingMeshes.has(m) || gears.movingMeshes.has(m) || animated.has(m) ||
+    /^Welcome sideboard (Brand|Arcade|Guide)/.test(m.name);
+  const worldMeshes = [...held.meshes, ...lobbotsMeshes];
+  for (const one of mergeStatic(worldMeshes, { keep, label: 'Sky' })) one.freezeWorldMatrix();
 
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));

@@ -1,3 +1,5 @@
+import { mergeStatic } from './room.js';
+
 /** One item per equipment slot; item meshes also supply the inventory photos. */
 export const ACCESSORIES = [
   { id:'topHat', label:'Top hat', slot:'head', slotLabel:'Head' },
@@ -188,6 +190,12 @@ export function createCustomizationStation(scene, shadows) {
   const bust=B.MeshBuilder.CreateSphere('Display mannequin',{diameter:1,segments:16},scene);
   bust.parent=head;bust.position.y=.20;bust.scaling.set(.53,.56,.48);bust.material=cream;bust.isPickable=false;
   makeAccessories(head,scene,shadows).set({topHat:true,sunglasses:true});
+  // A hundred-odd parts, all still except the mannequin and what it wears:
+  // one mesh per material for the rest (room.js mergeStatic), and those cast.
+  const worn=new Set(head.getChildMeshes(false));
+  for(const m of mergeStatic(station.getChildMeshes(false),{keep:(m)=>worn.has(m),cell:1e6,label:'Dresser'})) {
+    m.freezeWorldMatrix();shadows?.addShadowCaster(m,false);
+  }
   const stand=new B.Vector3(-3.35,0,2.3);
   return {
     stand,

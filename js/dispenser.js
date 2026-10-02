@@ -27,7 +27,7 @@
  * copies must agree; if the trap is ever refined, refine both.
  * ========================================================================== */
 
-import { container, blockerFor } from './room.js';
+import { container, blockerFor, mergeStatic, mergeUnder } from './room.js';
 import { accentFor } from './cabinets.js';
 
 /**
@@ -153,7 +153,6 @@ export async function createDispensers(scene, shadows, games = new Map()) {
       for (const mesh of root.getChildMeshes()) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
-        shadows?.addShadowCaster(mesh, false);
         // Astra left one material named for this. The colour is not chosen
         // here: accentFor is what gives a cabinet its neon, so the machine
         // beside it is lit by the same hue rather than by a hex somebody typed
@@ -170,6 +169,22 @@ export async function createDispensers(scene, shadows, games = new Map()) {
           mesh.material = tint;
         }
       }
+      // Ninety-eight meshes a machine, eight machines, and every one of them
+      // was a shadow caster: 784 extra draws into the shadow map each frame,
+      // under a comment in main.js saying only the gopher casts. Fold the
+      // still parts into one mesh per material and let only what is left
+      // cast — the button, flap and cartridge stay loose because work()
+      // moves them.
+      // The moving parts get the same treatment under their own pivots, so
+      // the cartridge's forty contacts and screws are one draw, not forty.
+      const moving = new Set();
+      for (const [name, part] of Object.entries(parts)) {
+        mergeUnder(part, `Take-home ${spec.slug} ${name}`);
+        for (const m of part.getChildMeshes?.() || []) moving.add(m);
+      }
+      mergeStatic(root.getChildMeshes(), { keep: (m) => moving.has(m), label: `Take-home ${spec.slug}` })
+        .forEach((m) => { m.freezeWorldMatrix(); shadows?.addShadowCaster(m, false); });
+      for (const m of moving) shadows?.addShadowCaster(m, false);
     } else {
       plainDispenser(root, scene, shadows);
     }

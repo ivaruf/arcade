@@ -1,10 +1,14 @@
 /* =============================================================================
  * quality.js — how hard the sky is allowed to push the GPU.
  *
- * One scene, two budgets. The geometry is almost never what costs: the world
- * is 924 draw calls of PBR with no textures in it at all, and what actually
- * burns a frame is the number of PIXELS those materials are shaded at, times
- * the number of lights reaching them, times the passes laid over the top.
+ * One scene, two budgets, and they turn down PIXELS: how many each material
+ * is shaded at, how many lights reach them, how wide the blur is. That is the
+ * GPU half of a frame. The CPU half — how many separate meshes the engine has
+ * to walk and draw — is not a tier, it is how the world is built: room.js
+ * mergeStatic folds static parts into one mesh per material, which took the
+ * title view from 2,541 draw calls and 10.7 ms of CPU to 797 and 4.9 ms
+ * (headless Chrome, 2026-10-02). This header used to say "924 draw calls";
+ * by then the real number was nearly three times that. Measure, then believe.
  *
  * So the lighter tier removes nothing you can point at. It shades fewer
  * pixels, lights them with two lamps instead of four, filters the shadow with

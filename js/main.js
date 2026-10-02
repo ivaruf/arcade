@@ -235,7 +235,9 @@ const lamps = [-3.4, 2.6].map((z) => {
   return lamp;
 });
 
-// Only the gopher casts (gopher.js), so the map itself is a cheap pass at any
+// Casters: the gopher (gopher.js), its accessories, and the take-home
+// machines' merged bodies (dispenser.js) — not every part of every machine,
+// which is what it quietly was until 2026-10-02. So the map itself is a cheap pass at any
 // size. What costs is the filter, which every receiving pixel in the sky runs.
 const shadows = new BABYLON.ShadowGenerator(input.IS_TOUCH ? 1024 : 2048, sun);
 shadows.filteringQuality = input.IS_TOUCH ? BABYLON.ShadowGenerator.QUALITY_LOW : BABYLON.ShadowGenerator.QUALITY_MEDIUM;
