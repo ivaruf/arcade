@@ -1,4 +1,4 @@
-import { makeAccessories, ACCESSORIES, selectAccessory } from './customization.js';
+import { makeAccessories, selectAccessory, loadOutfit, saveOutfit } from './wardrobe.js';
 /* =============================================================================
  * gopher.js — the player: two models, one pivot, and no animation clips.
  *
@@ -193,10 +193,12 @@ export async function createGopher(scene, shadows) {
     fallbackCloud = proceduralCloud(pivot, scene, shadows);
   }
 
-  // Each model gets its own head-mounted meshes; choices live only in memory.
-  const accessories = Object.fromEntries(ACCESSORIES.map(item => [item.id, false]));
+  // Each model gets its own head-mounted meshes. The choice is saved (wardrobe.js)
+  // because a game may read it: NeonFox dresses the player's fox the same way.
+  const accessories = loadOutfit();
   const outfits = [...new Set(Object.values(forms))].flatMap(form =>
     form.parts.Head ? [makeAccessories(form.parts.Head.node, scene, shadows)] : []);
+  for (const outfit of outfits) outfit.set(accessories);
 
   const anim = {
     phase: 0, run: 0, air: 0, squash: 0, reach: 0,
@@ -377,6 +379,7 @@ export async function createGopher(scene, shadows) {
       if (!Object.hasOwn(accessories, item)) return;
       selectAccessory(accessories, item, enabled);
       for (const outfit of outfits) outfit.set(accessories);
+      saveOutfit(accessories);
     },
     get form() {
       return active.name;
