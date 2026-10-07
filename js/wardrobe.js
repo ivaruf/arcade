@@ -364,15 +364,8 @@ export function makeAccessories(head, scene, shadows) {
   // tuned their fit against it (neonfox ITEM_FIT).
   const glowLime = paint(scene, 'Alien glow', '#c8ff8a', .3, .7);
   const gem = material('Earring gem', '#36cdb9', .15);
-  // Top hat: a rolled brim edge, a rim round the crown, a gold buckle on the
-  // band and a feather tucked in beside it.
-  ring('Top hat brim roll',hat,black,.56,.028,0,.485,.015);
-  ring('Top hat crown rim',hat,black,.40,.022,0,.82,.015);
-  const buckle = add(B.MeshBuilder.CreateTorus('Top hat buckle',{diameter:.10,thickness:.02,tessellation:4},scene),hat,gold,0,.515,.205);
-  buckle.rotation.set(Math.PI/2,Math.PI/4,0);
-  add(B.MeshBuilder.CreateTube('Top hat feather',{path:[[.15,.52,.13],[.22,.64,.11],[.27,.78,.06],[.26,.90,0]].map(p=>new B.Vector3(...p)),
-    radiusFunction:(i)=>[.012,.032,.026,.004][i],tessellation:10,cap:B.Mesh.CAP_ALL},scene),hat,pink,0,0,0);
-  tube('Top hat feather quill',hat,pearl,[[.15,.52,.13],[.22,.64,.115],[.27,.78,.065],[.262,.89,.008]],.006);
+  // The top hat stays exactly as it was: a feather on it read as a costume of
+  // something else entirely, and the plain hat was already the right one.
   // Alien antennae: a headband joining them, springs coiled up each stalk,
   // and glowing tips each wearing a little ring like a planet.
   tube('Antenna headband',items.antennae,green,Array.from({length:11},(_, i) => {
