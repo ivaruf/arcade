@@ -133,7 +133,9 @@ export function makeAccessories(head, scene, shadows) {
   mono.rotation.x = Math.PI/2; add(mono,items.monocle,gold,.127,.25,.353);
   tube('Monocle chain',items.monocle,gold,[[.23,.25,.35],[.265,.12,.33],[.24,-.02,.29],[.16,-.07,.27]],.006);
   for (const side of [-1,1]) {
-    tube('Curled mustache',items.mustache,black,[[0,.125,.404],[side*.055,.15,.416],[side*.13,.09,.417],[side*.19,.105,.40],[side*.21,.145,.39]],.025);
+    // Thick at the lip and waxed to a point that curls back on itself.
+    const curl=[[0,.125,.404],[side*.055,.15,.416],[side*.13,.09,.417],[side*.19,.105,.40],[side*.21,.145,.39],[side*.195,.172,.388],[side*.172,.163,.392],[side*.178,.143,.396]];
+    add(B.MeshBuilder.CreateTube('Curled mustache',{path:curl.map(p=>new B.Vector3(...p)),radiusFunction:(i)=>.03*(1-i/8.5)+.003,tessellation:10,cap:B.Mesh.CAP_ALL},scene),items.mustache,black,0,0,0);
     const tie=B.MeshBuilder.CreateCylinder('Bow tie wing',{diameterTop:.13,diameterBottom:.025,height:.13,tessellation:3},scene);
     tie.rotation.z=side*Math.PI/2;add(tie,items.bowTie,pink,side*.072,-.055,.27);
     const hoop=B.MeshBuilder.CreateTorus('Golden earring',{diameter:.115,thickness:.018,tessellation:24},scene);
@@ -356,6 +358,62 @@ export function makeAccessories(head, scene, shadows) {
   }
   tube('Microphone boom',items.headphones,black,[[-.36,.26,.10],[-.33,.17,.25],[-.24,.11,.36],[-.14,.10,.40]],.011);
   ball('Microphone',items.headphones,black,.045,-.13,.10,.405);
+
+  // The first rack, brought up to the second (2026-10-07). Only detail is
+  // added here: every base shape above stays where it was, because wearers
+  // tuned their fit against it (neonfox ITEM_FIT).
+  const glowLime = paint(scene, 'Alien glow', '#c8ff8a', .3, .7);
+  const gem = material('Earring gem', '#36cdb9', .15);
+  // Top hat: a rolled brim edge, a rim round the crown, a gold buckle on the
+  // band and a feather tucked in beside it.
+  ring('Top hat brim roll',hat,black,.56,.028,0,.485,.015);
+  ring('Top hat crown rim',hat,black,.40,.022,0,.82,.015);
+  const buckle = add(B.MeshBuilder.CreateTorus('Top hat buckle',{diameter:.10,thickness:.02,tessellation:4},scene),hat,gold,0,.515,.205);
+  buckle.rotation.set(Math.PI/2,Math.PI/4,0);
+  add(B.MeshBuilder.CreateTube('Top hat feather',{path:[[.15,.52,.13],[.22,.64,.11],[.27,.78,.06],[.26,.90,0]].map(p=>new B.Vector3(...p)),
+    radiusFunction:(i)=>[.012,.032,.026,.004][i],tessellation:10,cap:B.Mesh.CAP_ALL},scene),hat,pink,0,0,0);
+  tube('Top hat feather quill',hat,pearl,[[.15,.52,.13],[.22,.64,.115],[.27,.78,.065],[.262,.89,.008]],.006);
+  // Alien antennae: a headband joining them, springs coiled up each stalk,
+  // and glowing tips each wearing a little ring like a planet.
+  tube('Antenna headband',items.antennae,green,Array.from({length:11},(_, i) => {
+    const t = i/10*Math.PI; return [Math.cos(t)*.265,.30+Math.sin(t)*.19,0];
+  }),.018);
+  for (const side of [-1,1]) {
+    for (const t of [.25,.45,.65]) collar('Antenna coil',items.antennae,green,.045,.01,[side*(.26+t*.11),.39+t*.36,.01*t],side*.08,.25);
+    ball('Antenna glow',items.antennae,glowLime,.055,side*.32,.87,.075).scaling.z = .3;
+    const orbit = ring('Antenna tip ring',items.antennae,amber,.15,.012,side*.32,.87,.015);
+    orbit.rotation.set(.35,0,side*.35);
+  }
+  // Silly sunglasses: rhinestones along the top of each frame, a glint on each
+  // lens, and gold studs at the hinges.
+  for (const side of [-1,1]) {
+    for (let i = 0; i < 5; i++) {
+      const a = (.15+i*.175)*Math.PI;
+      ball('Sunglass rhinestone',glasses,pearl,.024,side*.127+Math.cos(a)*.107,.25+Math.sin(a)*.107,.322);
+    }
+    ball('Sunglass glint',glasses,shine,.045,side*.127-.035,.285,.316).scaling.set(1.2,.5,.3);
+    ball('Sunglass hinge',glasses,gold,.03,side*.235,.25,.31);
+  }
+  // Monocle: a glint across the glass, a loop where the chain meets the rim,
+  // the chain itself picked out in beads, and a fob on the end.
+  ball('Monocle glint',items.monocle,shine,.04,.10,.29,.358).scaling.set(1.2,.45,.3);
+  ring('Monocle chain loop',items.monocle,gold,.03,.008,.233,.25,.352).rotation.z = Math.PI/2;
+  for (const [x,y,z] of [[.252,.18,.34],[.262,.09,.325],[.255,.02,.305],[.215,-.045,.285]]) ball('Monocle chain bead',items.monocle,gold,.016,x,y,z);
+  ball('Monocle fob',items.monocle,gold,.04,.16,-.075,.27);
+  // Clown nose: a glint and a second, smaller one, so it reads as shiny rubber.
+  ball('Clown nose glint',items.clownNose,shine,.035,-.025,.205,.475).scaling.z = .4;
+  ball('Clown nose glint',items.clownNose,shine,.014,.01,.215,.48);
+  // Bow tie: polka dots on each wing and a band wrapped round the knot.
+  for (const side of [-1,1]) for (const [x, y] of [[.06,-.03],[.10,-.07],[.11,-.025],[.065,-.08]])
+    ball('Bow tie polka dot',items.bowTie,pearl,.02,side*x,y,.30).scaling.z = .4;
+  ring('Bow tie knot band',items.bowTie,pink,.06,.02,0,-.055,.28).rotation.z = Math.PI/2;
+  // Golden hoops: a stud at the lobe, three beads round the bottom of the hoop
+  // and a teardrop gem hanging from it.
+  for (const side of [-1,1]) {
+    ball('Earring stud',items.earrings,gold,.03,side*.285,.355,.055);
+    for (const a of [-.5,0,.5]) ball('Earring bead',items.earrings,pearl,.018,side*.285+Math.sin(a)*.057,.30-Math.cos(a)*.057,.055);
+    const drop = ball('Earring gem',items.earrings,gem,.04,side*.285,.215,.055); drop.scaling.y = 1.4;
+  }
   for (const item of Object.values(items)) item.setEnabled(false);
   return { nodes: items, set(selection) {
     for (const [id, node] of Object.entries(items)) node.setEnabled(!!selection[id]);
