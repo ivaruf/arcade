@@ -57,6 +57,8 @@ const SHELL_FILES = [
   './js/room.js',
   './js/minimaze.js',
   './assets/games/minimaze.svg',
+  './js/zoodoku.js',
+  './assets/games/zoodoku.svg',
   './js/aquarium.js',
   './js/gears.js',
   './js/swirls.js',

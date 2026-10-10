@@ -27,11 +27,24 @@ const [online] = await loadMachines();
 assert.equal(online.icon, offline.icon);
 assert.equal(online.url, offline.url);
 await readFile(new URL(`../${entry.icon}`, import.meta.url));
+// Every bundled cabinet face is committed, not only Lobbots': a game that is
+// registered before it is deployed (MiniMaze, Zoodoku) has nothing else to show.
+for (const game of config.games) {
+  if (typeof game === 'object' && game.icon && !/^https?:/.test(game.icon)) {
+    await readFile(new URL(`../${game.icon}`, import.meta.url));
+  }
+}
 // The worker preloads every island model under exactly the URL room.js requests; the
 // runtime cache keys on the query string, so a version bumped on one side and
 // not the other silently turns the preload into dead weight.
 const room = await readFile(new URL('../js/room.js', import.meta.url), 'utf8');
 const sw = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+for (const game of config.games) {
+  if (typeof game === 'object' && game.icon && !/^https?:/.test(game.icon)) {
+    assert.ok(sw.includes(`'./${game.icon}'`), `sw.js precaches ${game.slug}'s cabinet art`);
+  }
+}
+assert.ok(sw.includes("'./js/zoodoku.js'"), 'sw.js precaches the Zoodoku island module');
 const block = room.slice(room.indexOf('export const ISLAND_MODELS'), room.indexOf('];', room.indexOf('export const ISLAND_MODELS')));
 const asked = [...block.matchAll(/file: '([^']+\.glb\?v=[^']+)'/g)].map((m) => m[1]);
 assert.ok(asked.some((f) => f.startsWith('lobbots-island.glb')), 'room.js loads the Lobbots island');

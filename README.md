@@ -18,8 +18,9 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 The welcome cloud is surrounded by nine game islands: NeonFox to the
 northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
-MiniMaze floats above Lobbots in the southwest. Their different heights make getting
-between them a short flight.
+MiniMaze floats above Lobbots in the southwest, and Zoodoku above Supermine
+Adventure in the southeast. Their different heights make getting between them a
+short flight.
 
 MiniMaze occupies **The marble garden** at `(-19, 12, 18)`: a floating wooden
 board in matte dark walnut, with brass trim and a miniature of its first maze, Roll.
@@ -30,6 +31,28 @@ its prop geometry supplies its collision boxes. The cabinet stands in the
 clear eastern lane. Its registry artwork and island module are cached with
 the arcade shell. MiniMaze has no install manifest yet, so it has no take-home
 machine.
+
+Zoodoku occupies **The puzzle meadow** at `(20, 6.5, 18)`, twelve metres above
+the mining company as MiniMaze is above Lobbots: the island is the game board.
+Its deck is exactly nine 1.2 m cells square, cream with the game's teal ink —
+thin cell lines, thick box lines — on a slab of its meadow teal with a sunflower
+reveal, and the nine animal colours studded in order along the two faces the
+welcome cloud looks at. The game starts children on a 4×4 of animals and climbs
+to the 9×9 of digits, so both are here: a starter tray on the hub-facing corner
+where the first four animals (fox, frog, whale, lion) stand on their tokens in
+a real, valid 4×4 with gaps left, and the 9×9's givens as chunky rounded tiles,
+each digit in its animal's colour. A giant pencil lies along the back row.
+Nine number blocks circle the board; every few seconds the one best placed
+drifts in, settles into an empty cell where its digit belongs in the board's
+solution, and lifts off again. Landing cells are held to the western half so no
+flight crosses the cabinet, the mast or the animals. `js/zoodoku.js` builds it
+all in code, hands its static meshes back for `mergeStatic` (about two hundred
+become twenty-odd) and its props' collision boxes to `room.js`; the digits are
+one canvas atlas in system fonts. Land on the open northwest corner and cross
+to the cabinet, which faces back the way you came. Its cabinet art is
+`assets/games/zoodoku.svg`, cached with the shell like MiniMaze's, so the
+machine has a face before the game is deployed. It has no take-home machine
+yet; the board keeps `(22.6, 18.0)` beside the cabinet clear for one.
 
 Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
 game's own hill, floating. Its sides are the in-game strata and rust seam under

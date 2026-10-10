@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Zoodoku cabinet art: a fox on a cream board tile, a hint of the grid behind it. -->
+  <rect width="192" height="192" rx="34" fill="#1f5f5b"/>
+  <rect x="14" y="14" width="164" height="164" rx="26" fill="#fff6e3" stroke="#ffc94a" stroke-width="6"/>
+  <path d="M55 20v152M137 20v152M20 55h152M20 137h152" stroke="#2e4a48" stroke-opacity=".22" stroke-width="3"/>
+  <path d="M96 20v152M20 96h152" stroke="#2e4a48" stroke-opacity=".35" stroke-width="6"/>
+  <path d="M50 40 80 66Q96 60 112 66L142 40 147 100Q140 132 96 152 52 132 45 100Z"
+    fill="#f28c38" stroke="#2e4a48" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M58 54 76 68 59 80ZM134 54 116 68 133 80Z" fill="#c96a22"/>
+  <path d="M54 104Q78 102 96 122 114 102 138 104 130 134 96 150 62 134 54 104Z" fill="#fff6e3"/>
+  <circle cx="76" cy="94" r="7.5" fill="#2e4a48"/>
+  <circle cx="116" cy="94" r="7.5" fill="#2e4a48"/>
+  <ellipse cx="96" cy="136" rx="10" ry="7.5" fill="#2e4a48"/>
+</svg>

@@ -30,6 +30,15 @@
       "tagline": "Tilt. Roll. Find your way.",
       "description": "Tilt a wooden maze and roll the steel marble past the holes into the brass cup. Play with device tilt, drag, arrow keys, WASD, or a gamepad.",
       "theme": "#30251b"
+    },
+    {
+      "slug": "zoodoku",
+      "name": "Zoodoku",
+      "accent": "#ffc94a",
+      "icon": "assets/games/zoodoku.svg",
+      "tagline": "Sudoku, starting with a fox.",
+      "description": "Sudoku for young puzzlers: drag little animals into a 4×4 board, then climb through 6×6 to the classic 9×9 with numbers. One of each in every row, column and box.",
+      "theme": "#1f5f5b"
     }
   ]
 }
