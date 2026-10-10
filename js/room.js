@@ -3,6 +3,7 @@ import { createGearAnimation } from './gears.js';
 import { createIslandSwirls } from './swirls.js';
 import { createNeonFoxFloor } from './neonfox.js';
 import { createFoxRace } from './foxrace.js';
+import { createMiniMazeIsland } from './minimaze.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -49,6 +50,7 @@ const ASSETS = './assets/3d/';
  * finding a game is never the puzzle. The fun is the flying, not the hunting.
  */
 export const PLATFORMS = [
+  { id: 'minimaze', name: 'The marble garden', x: [-25, -13], z: [13, 23], y: 12 },
   { id: 'neonfox', name: 'The neon arena', x: [-25, -13], z: [-24, -12], y: 2 },
   { id: 'lobbots', name: 'The proving ground', x: [-25, -13], z: [12, 24], y: .5 },
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
@@ -67,13 +69,14 @@ export const PLATFORMS = [
  * that "down" is somewhere you come back from rather than somewhere you fall
  * out of.
  */
-export const SKY = { x: [-36, 36], z: [-34, 34], y: [-20, 28] };
+export const SKY = { x: [-36, 36], z: [-34, 45], y: [-20, 28] };
 
 /** Where the gopher arrives, and where the world puts it back if it must. */
 export const SPAWN = { x: 0, y: 0, z: 2.6, yaw: Math.PI };
 
 /** Masts carrying each platform's name board; matches build_clouds.py. */
 export const BEACONS = {
+  minimaze: { x: -19, y: 12, z: 22.3, top: 5.2 },
   lobbots: { x: -24.5, y: .5, z: 18, top: 5.2 },
   neonfox: { x: -24.5, y: 2, z: -18, top: 5.4 },
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
@@ -91,6 +94,7 @@ export const BEACONS = {
  * bearings, and a machine on it would be the one everybody played.
  */
 export const PLACEMENT = {
+  minimaze: 'minimaze',
   lobbots: 'lobbots',
   neonfox: 'neonfox',
   maxgear: 'race',
@@ -109,6 +113,7 @@ const facingHub = (x, z) => Math.atan2(-x, -z);
 const stand = (x, z) => ({ x, z, yaw: facingHub(x, z) });
 
 export const SLOTS = {
+  minimaze: [{ x: -16, z: 20.5, yaw: Math.PI }],
   lobbots: [{ x: -22, z: 18, yaw: Math.PI / 2 }],
   neonfox: [{ x: -22, z: -18, yaw: Math.PI / 2 }],
   // Enter from the southwest, pass the reservoir on the right, then play.
@@ -163,11 +168,13 @@ export function groundAt(x, z, y) {
 }
 
 /** Whichever platform the gopher is over, for the HUD. */
-export function platformNear(x, z) {
+export function platformNear(x, z, y) {
+  let nearest = null;
   for (const p of PLATFORMS) {
-    if (inRect(p, x, z)) return p;
+    if (!inRect(p, x, z)) continue;
+    if (!nearest || Math.abs(p.y - y) < Math.abs(nearest.y - y)) nearest = p;
   }
-  return null;
+  return nearest;
 }
 
 /**
@@ -531,14 +538,14 @@ export async function buildWorld(scene) {
   // their full bounds, not their centres: Drifting cloud.007 reaches into the
   // sign even though its centre sits outside the deck. Keep this at load time
   // too so an older cached cloud-world.glb cannot obscure a newly added island.
-  const provingGround = PLATFORMS.find((p) => p.id === 'lobbots');
+  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze'].includes(p.id));
   for (const mesh of held.meshes) {
     if (!/^(Near cloud|Drifting cloud)/.test(mesh.name)) continue;
     mesh.computeWorldMatrix(true);
     const { minimumWorld: lo, maximumWorld: hi } = mesh.getBoundingInfo().boundingBox;
-    if (hi.x > provingGround.x[0] - 3 && lo.x < provingGround.x[1] + 3 &&
-        hi.z > provingGround.z[0] - 3 && lo.z < provingGround.z[1] + 3 &&
-        hi.y > provingGround.y - 2 && lo.y < provingGround.y + 9) {
+    if (newIslands.some((p) => hi.x > p.x[0] - 3 && lo.x < p.x[1] + 3 &&
+        hi.z > p.z[0] - 3 && lo.z < p.z[1] + 3 &&
+        hi.y > p.y - 2 && lo.y < p.y + 9)) {
       mesh.setEnabled(false);
     }
   }
@@ -577,6 +584,7 @@ export async function buildWorld(scene) {
   const worldMeshes = [...held.meshes, ...islandMeshes];
   for (const one of mergeStatic(worldMeshes, { keep, label: 'Sky' })) one.freezeWorldMatrix();
 
+  const minimaze = createMiniMazeIsland(scene, PLATFORMS.find((p) => p.id === 'minimaze'));
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
   const foxrace = createFoxRace(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
@@ -589,7 +597,8 @@ export async function buildWorld(scene) {
       ...swapped.flatMap((island) => island.blockers),
       // Live: the riders move these every frame (neonfox.js).
       ...neonfox.blockers,
+      ...minimaze.blockers,
     ],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); },
   };
 }

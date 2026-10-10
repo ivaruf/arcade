@@ -369,7 +369,7 @@ async function boot() {
   gopher = await createGopher(scene, shadows);
   gopher.pivot.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
   gopher.pivot.rotation.y = state.yaw;
-  platform = platformNear(SPAWN.x, SPAWN.z);
+  platform = platformNear(SPAWN.x, SPAWN.z, SPAWN.y);
   ui.hudRoom.textContent = platform?.name || '';
 
   // No environment map ships with this page, and a PBR material that is mostly
@@ -489,7 +489,7 @@ function unpause() {
 /** Put the gopher on a cabinet's mark, facing it, at a standstill. */
 function standAt(cabinet) {
   gopher.pivot.position.set(cabinet.stand.x, cabinet.floor, cabinet.stand.z);
-  platform = platformNear(cabinet.stand.x, cabinet.stand.z) || platform;
+  platform = platformNear(cabinet.stand.x, cabinet.stand.z, cabinet.floor) || platform;
   state.yaw = cabinet.faceYaw;
   gopher.pivot.rotation.y = state.yaw;
   state.vx = state.vy = state.vz = 0;
@@ -1072,7 +1072,7 @@ function updateCamera(dt) {
  * of what deleting the walls bought.
  */
 function updatePlatform() {
-  const found = platformNear(gopher.pivot.position.x, gopher.pivot.position.z);
+  const found = platformNear(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y);
   const name = found ? found.name : 'The open sky';
   if (found !== platform || ui.hudRoom.textContent !== name) {
     platform = found;

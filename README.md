@@ -15,10 +15,21 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 
 ## The sky
 
-The welcome cloud is surrounded by eight game islands: NeonFox to the
+The welcome cloud is surrounded by nine game islands: NeonFox to the
 northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
-Their different heights make getting between them a short flight.
+MiniMaze floats above Lobbots in the southwest. Their different heights make getting
+between them a short flight.
+
+MiniMaze occupies **The marble garden** at `(-19, 12, 18)`: a floating wooden
+board in matte dark walnut, with brass trim and a miniature of its first maze, Roll.
+A felt-lined spare-marble tray, tilt wheels, screw heads, underside runners,
+and a brass route inlay finish the workshop. A steel marble
+traces the route to the brass cup. `js/minimaze.js` builds the island locally;
+its prop geometry supplies its collision boxes. The cabinet stands in the
+clear eastern lane. Its registry artwork and island module are cached with
+the arcade shell. MiniMaze has no install manifest yet, so it has no take-home
+machine.
 
 Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
 game's own hill, floating. Its sides are the in-game strata and rust seam under

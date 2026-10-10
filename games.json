@@ -21,6 +21,15 @@
       "tagline": "Big robots, bigger lobs.",
       "description": "Turn-based mech artillery: aim, pick a power, watch the shell cross the hill, then spend your bolts on something unreasonable. Two to ten walkers, hot-seat or against seven kinds of bot.",
       "theme": "#15181e"
+    },
+    {
+      "slug": "minimaze",
+      "name": "MiniMaze",
+      "accent": "#d5ad63",
+      "icon": "assets/games/minimaze.svg",
+      "tagline": "Tilt. Roll. Find your way.",
+      "description": "Tilt a wooden maze and roll the steel marble past the holes into the brass cup. Play with device tilt, drag, arrow keys, WASD, or a gamepad.",
+      "theme": "#30251b"
     }
   ]
 }
