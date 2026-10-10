@@ -29,8 +29,9 @@ and a brass route inlay finish the workshop. A steel marble
 traces the route to the brass cup. `js/minimaze.js` builds the island locally;
 its prop geometry supplies its collision boxes. The cabinet stands in the
 clear eastern lane. Its registry artwork and island module are cached with
-the arcade shell. MiniMaze has no install manifest yet, so it has no take-home
-machine.
+the arcade shell. Its take-home machine stands 2.4 m west of the cabinet,
+square to it and facing the same way, between the cabinet and the maze
+plinth.
 
 Zoodoku occupies **The puzzle meadow** at `(20, 6.5, 18)`, twelve metres above
 the mining company as MiniMaze is above Lobbots: the island is the game board.

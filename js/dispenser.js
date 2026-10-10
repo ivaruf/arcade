@@ -13,7 +13,7 @@
  * the moment somebody has just decided they like the game next to it.
  *
  * ONE PER CABINET. It was tried beside NeonFox first and read well enough to
- * keep, so MACHINES below now has all eight. A game added to games.json does
+ * keep, so MACHINES below has one for every cabinet that can be installed. A game added to games.json does
  * NOT get one automatically: its machine is a position on a platform, and
  * where a thing stands is a judgement about that platform rather than
  * something a registry can work out. The placements were solved against every
@@ -45,7 +45,10 @@ import { accentFor } from './cabinets.js';
  * and where you stand at it.
  *
  * NeonFox's is where it was put by hand and liked; the other six came out of
- * that solve at 2.1 to 2.4m.
+ * that solve at 2.1 to 2.4m. MiniMaze's joined them once the game had a
+ * manifest to install from: 2.4m west of its cabinet and square to it, as
+ * Lobbots' is, which puts its standing place 2.41m from the cabinet's and
+ * leaves 0.36m of air to the maze plinth and the brass lane open.
  */
 const MACHINES = [
   { slug: 'lobbots', title: 'LOBBOTS', x: -22, z: 15.6, y: .5, yaw: Math.PI / 2 },
@@ -56,6 +59,7 @@ const MACHINES = [
   { slug: 'supermine', title: 'SUPERMINE', x: 25.32, z: 1.63, y: -5.5, yaw: -Math.PI / 2 },
   { slug: 'supermine_adventure', title: 'SUPERMINE ADVENTURE', x: 24.03, z: 21.04, y: -5.5, yaw: Math.PI },
   { slug: 'swirls', title: 'swirls', x: -2.19, z: 19.29, y: 6, yaw: -Math.PI },
+  { slug: 'minimaze', title: 'MiniMaze', x: -18.4, z: 20.5, y: 12, yaw: Math.PI },
 ];
 
 /**
