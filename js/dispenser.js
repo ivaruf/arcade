@@ -27,8 +27,8 @@
  * copies must agree; if the trap is ever refined, refine both.
  * ========================================================================== */
 
-import { container, blockerFor, mergeStatic, mergeUnder } from './room.js';
-import { accentFor } from './cabinets.js';
+import { container, blockerFor, mergeUnder } from './room.js';
+import { accentFor, realizeInstances, stillParts, foldBody, shareBody } from './cabinets.js';
 
 /**
  * One beside every cabinet, in world metres, each facing the way its cabinet
@@ -122,6 +122,11 @@ export async function createDispensers(scene, shadows, games = new Map()) {
     console.warn('[cloudnine] take-home-dispenser.glb did not load; plain one instead', err);
   }
 
+  // The first machine's still body, kept as the source the other eight draw
+  // as instances (cabinets.js foldBody and shareBody).
+  let body = null;
+  let firstTint = null;
+
   const built = MACHINES.map((machine) => {
     // The registry already worked out where this game really lives — siblings
     // first, games.json's `origin` if there is no sibling there — which is the
@@ -146,6 +151,7 @@ export async function createDispensers(scene, shadows, games = new Map()) {
     if (held) {
       const copy = held.instantiateModelsToScene((name) => `${spec.slug}:${name}`, false);
       for (const node of copy.rootNodes) node.parent = root;
+      realizeInstances(root);
       // Nothing is auto-played here — there is nothing to play — but a future
       // clip would be, so this stays as the mailbox's does.
       for (const group of copy.animationGroups) group.stop();
@@ -186,9 +192,34 @@ export async function createDispensers(scene, shadows, games = new Map()) {
         mergeUnder(part, `Take-home ${spec.slug} ${name}`);
         for (const m of part.getChildMeshes?.() || []) moving.add(m);
       }
-      mergeStatic(root.getChildMeshes(), { keep: (m) => moving.has(m), label: `Take-home ${spec.slug}` })
-        .forEach((m) => { m.freezeWorldMatrix(); shadows?.addShadowCaster(m, false); });
-      for (const m of moving) shadows?.addShadowCaster(m, false);
+      // ONE BODY, NINE MACHINES (2026-10-11). The still parts of all nine are
+      // the same model in the same place on each, ~33k triangles of it, and
+      // each machine used to fold its own copy: nine sets of identical vertex
+      // buffers and nine draw calls per material wherever two machines are in
+      // view. Now the first machine folds its body and the rest draw that one
+      // as instances — one draw per material for every machine on screen,
+      // each still culled on its own. The accent is the one exception: it is
+      // this machine's colour, so it borrows the geometry and keeps its own
+      // tint, one draw each.
+      // (cabinets.js stillParts/foldBody/shareBody, which the cabinets use
+      // the same way.)
+      const still = stillParts(root, (m) => moving.has(m));
+      const label = `Take-home ${spec.slug}`;
+      let shell;
+      if (!body) {
+        shell = body = foldBody(root, still, label);
+        firstTint = tint;
+      } else {
+        for (const m of still) m.dispose(false, false);
+        shell = body.map((source) => shareBody(source, root, tint && source.material === firstTint ? tint : null, label));
+      }
+      for (const m of shell) shadows?.addShadowCaster(m, false);
+      // The shell and anything left loose beside it never move.
+      for (const m of root.getChildMeshes()) if (!moving.has(m)) m.freezeWorldMatrix();
+      // The button, flap and cartridge stand still until somebody presses
+      // the button: frozen until then, and again once they have settled.
+      for (const m of moving) { m.freezeWorldMatrix(); shadows?.addShadowCaster(m, false); }
+      movingOf.set(parts, [...moving]);
     } else {
       plainDispenser(root, scene, shadows);
     }
@@ -224,13 +255,36 @@ export async function createDispensers(scene, shadows, games = new Map()) {
   };
 }
 
+/**
+ * Each machine's moving meshes, frozen at rest, and how many of its motions
+ * are in flight. The first motion to start thaws them; the last to finish
+ * freezes them where they stopped. Counted off Babylon's own end callbacks
+ * rather than a timer, because the animation clock follows frames: on a
+ * device dropping frames the cartridge is still sliding long after its 460 ms,
+ * and a timer would freeze it halfway.
+ */
+const movingOf = new WeakMap();
+const inFlight = new WeakMap();
+function hold(parts) {
+  const n = inFlight.get(parts) || 0;
+  if (!n) for (const m of movingOf.get(parts) || []) m.unfreezeWorldMatrix();
+  inFlight.set(parts, n + 1);
+}
+function release(parts) {
+  const n = Math.max(0, (inFlight.get(parts) || 1) - 1);
+  inFlight.set(parts, n);
+  if (!n) for (const m of movingOf.get(parts) || []) if (!m.isDisposed()) m.freezeWorldMatrix();
+}
+
 /** One animation, started and forgotten: Babylon holds the last frame. */
-function move(node, property, from, to, ms) {
-  BABYLON.Animation.CreateAndStartAnimation(
+function move(parts, node, property, from, to, ms) {
+  hold(parts);
+  const running = BABYLON.Animation.CreateAndStartAnimation(
     `${node.name}:${property}`, node, property, 60, Math.max(1, Math.round(ms * 0.06)),
     from, to, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-    new BABYLON.CubicEase(),
+    new BABYLON.CubicEase(), () => release(parts),
   );
+  if (!running) release(parts);
 }
 
 /**
@@ -248,8 +302,12 @@ function work(parts, out) {
     const rest = restOf(button).position;
     // In is -Z, and it comes straight back: a button that stays pressed is a
     // broken button.
-    move(button, 'position', rest.clone(), rest.add(new BABYLON.Vector3(0, 0, out ? -.014 : 0)), 110);
-    if (out) setTimeout(() => move(button, 'position', button.position.clone(), rest.clone(), 130), 130);
+    move(parts, button, 'position', rest.clone(), rest.add(new BABYLON.Vector3(0, 0, out ? -.014 : 0)), 110);
+    if (out) {
+      // Held across the gap, so nothing freezes between press and return.
+      hold(parts);
+      setTimeout(() => { move(parts, button, 'position', button.position.clone(), rest.clone(), 130); release(parts); }, 130);
+    }
   }
   if (flap) {
     // glTF gives these quaternions, and animating `rotation` on a node that has
@@ -259,11 +317,11 @@ function work(parts, out) {
       flap.rotationQuaternion = null;
     }
     const rest = restOf(flap).rotation;
-    move(flap, 'rotation.x', flap.rotation.x, out ? rest.x + .55 : rest.x, 320);
+    move(parts, flap, 'rotation.x', flap.rotation.x, out ? rest.x + .55 : rest.x, 320);
   }
   if (cartridge) {
     const rest = restOf(cartridge).position;
-    move(cartridge, 'position', cartridge.position.clone(), out ? rest.add(new BABYLON.Vector3(0, 0, .11)) : rest.clone(), 460);
+    move(parts, cartridge, 'position', cartridge.position.clone(), out ? rest.add(new BABYLON.Vector3(0, 0, .11)) : rest.clone(), 460);
   }
 }
 

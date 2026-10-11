@@ -1,4 +1,5 @@
 import './parents-scroll.js';
+import { mergeStatic } from './room.js';
 /** Only the title appears in-world; the full philosophy lives in the HTML dialog. */
 export function createParentsSign(scene) {
   const B=BABYLON,root=new B.TransformNode('Parents and guardians sign',scene);
@@ -24,6 +25,11 @@ export function createParentsSign(scene) {
     face.parent=root;face.position.set(0,1.65,side*.076);face.rotation.y=side===1?Math.PI:0;face.material=ink;face.isPickable=false;
     for(const layer of scene.effectLayers||[])layer.addExcludedMesh?.(face);
   }
+  // Seven still parts in four materials: the brass and the enamel fold to one
+  // mesh each (room.js mergeStatic; the two printed faces stay as they are,
+  // being kept out of the glow), and nothing on a sign ever moves.
+  const merged=mergeStatic(root.getChildMeshes(false),{cell:1e6,label:'Parents sign'});
+  for(const m of [...merged,...root.getChildMeshes(false)])m.freezeWorldMatrix();
   return {blocker:{x:-4.9,z:-3.3,hx:.22,hz:.92,base:0,top:2.10},
     inReach(p){return Math.abs(p.y)<.3&&Math.hypot(p.x+3.85,p.z+3.3)<1.05;}};
 }

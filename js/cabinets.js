@@ -247,6 +247,109 @@ function fit(ctx, text, maxWidth) {
 // Building one machine
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// One body, many machines
+// ---------------------------------------------------------------------------
+
+/**
+ * Turn the loader's instances under `root` into plain meshes that share their
+ * source's geometry. The glTF loader makes a mesh used twice an instance of
+ * its first use — the double cabinet's player-two buttons and stick are
+ * instances of player one's — and neither an instance nor a mesh that has
+ * instances can be folded, so a dozen parts per cabinet stayed loose. A clone
+ * folds like anything else. Call it before touching materials: an instance
+ * has no material of its own to set.
+ */
+export function realizeInstances(root) {
+  for (const inst of root.getChildMeshes()) {
+    if (inst.getClassName() !== 'InstancedMesh' || inst.getChildren().length) continue;
+    const copy = inst.sourceMesh.clone(inst.name, inst.parent, true);
+    copy.position.copyFrom(inst.position);
+    copy.rotation.copyFrom(inst.rotation);
+    copy.rotationQuaternion = inst.rotationQuaternion?.clone() || null;
+    copy.scaling.copyFrom(inst.scaling);
+    copy.setEnabled(inst.isEnabled(false));
+    copy.isVisible = inst.isVisible;
+    inst.dispose();
+  }
+}
+
+/**
+ * The meshes under `root` that mergeStatic itself would fold: never one with
+ * children (a pivot may hang from it, and disposing it would take the part
+ * along), nor one hidden, empty like the loader's __root__, or kept out of the
+ * glow (a merged mesh would lose that exclusion and bloom white). Nor one with
+ * instances: the glTF loader makes a reused mesh an instance of its first use
+ * — the double cabinet's player-two buttons and stick are instances of player
+ * one's — and disposing the source takes every instance with it.
+ */
+export function stillParts(root, keep = () => false) {
+  const layers = root.getScene().effectLayers || [];
+  return root.getChildMeshes().filter((m) => !keep(m) && m.getClassName() === 'Mesh' &&
+    !m.getChildren().length && !m.instances?.length && m.getTotalVertices() > 0 && m.isEnabled() && m.isVisible &&
+    m.visibility === 1 && m.material && !m.skeleton && !m.morphTargetManager &&
+    !layers.some((l) => l._excludedMeshes?.includes(m.uniqueId)));
+}
+
+/**
+ * Fold one machine's still parts into one mesh per material — every one of
+ * them, a material only one mesh uses baked too, so later machines have a
+ * source to instance for it — and hang them back under `root`, so each sits
+ * in machine-local metres the others can copy. A machine root turns but never
+ * scales, which keeps that local transform exact.
+ *
+ * WHY. Ten cabinets of two kinds and nine identical take-home machines each
+ * baked their own copy of the very same body: identical vertex buffers over
+ * and over, and one draw call per material per machine wherever several stand
+ * in view. Folded once and instanced (shareBody), every machine of a kind on
+ * screen costs one draw per shared material, each still culled on its own.
+ */
+export function foldBody(root, still, label) {
+  // Top-down, so every part bakes where it stands under the root now and not
+  // where the loader last computed it, before it was hung there.
+  for (const n of [root, ...root.getDescendants(false)]) n.computeWorldMatrix(true);
+  const merged = mergeStatic(still, { cell: 1e6, label });
+  for (const m of still) {
+    if (m.isDisposed()) continue;
+    const { material } = m;
+    const one = BABYLON.Mesh.MergeMeshes([m], true, true);
+    if (!one) continue;
+    one.material = material;
+    one.name = `${label}: ${material.name}`;
+    one.isPickable = false;
+    one.receiveShadows = m.receiveShadows;
+    merged.push(one);
+  }
+  for (const mesh of merged) {
+    mesh.receiveShadows = true;
+    mesh.setParent(root);
+  }
+  return merged;
+}
+
+/**
+ * One of a first machine's body parts on another machine of the same kind:
+ * an instance, or — when this machine paints that part in its own `material`,
+ * the per-game neon — a clone that shares the geometry and is one draw of its
+ * own.
+ */
+export function shareBody(source, root, material, label) {
+  const name = `${label}: ${source.material?.name || source.name}`;
+  const copy = material ? source.clone(name, null, true) : source.createInstance(name);
+  if (material) copy.material = material;
+  copy.parent = root;
+  copy.position.copyFrom(source.position);
+  copy.rotation.copyFrom(source.rotation);
+  copy.rotationQuaternion = source.rotationQuaternion?.clone() || null;
+  copy.scaling.copyFrom(source.scaling);
+  copy.isPickable = false;
+  copy.receiveShadows = true;
+  return copy;
+}
+
+/** The folded body of the first cabinet stamped from each container. */
+const bodies = new WeakMap();
+
 function panel(name, { width, height }, scene) {
   const mesh = BABYLON.MeshBuilder.CreatePlane(name, { width, height }, scene);
   // Babylon planes look down -Z; a cabinet's front is +Z, so every one of these
@@ -280,10 +383,17 @@ async function machine(scene, shadows, held, spec, game, slot) {
   holder.position.set(slot.x, floor, slot.z);
   holder.rotation.y = slot.yaw;
 
-  const stamped = held.instantiateModelsToScene((name) => name, true);
+  // A game's cabinet shares its kind's materials and clones only the neon,
+  // which is the one thing that differs: every game darkens its screen glass
+  // the same way, and nothing else is touched. Ten cabinets used to bring
+  // eight materials each. Decor clones the lot, because it dims every
+  // emissive it has, and that must not dim the machines that matter.
+  const stamped = held.instantiateModelsToScene((name) => name, !game);
   for (const root of stamped.rootNodes) root.parent = holder;
+  if (game) realizeInstances(holder);
 
   const accent = game ? BABYLON.Color3.FromHSV(slot.hue ?? hueFor(game), 0.72, 1) : null;
+  let neon = null;
   for (const node of holder.getChildMeshes()) {
     node.isPickable = false;
     node.receiveShadows = true;
@@ -298,11 +408,15 @@ async function machine(scene, shadows, held, spec, game, slot) {
     const mat = node.material;
     if (!mat) continue;
     if (accent && mat.name.startsWith(spec.accentMaterial)) {
-      mat.albedoColor = accent.scale(0.85);
-      // Side cheeks and the marquee box are a lot of surface for a tube this
-      // bright: at full value the glow layer blooms a whole cabinet into one
-      // white slab. This much is still unmistakably neon.
-      mat.emissiveColor = accent.scale(0.42);
+      if (!neon) {
+        neon = mat.clone(`${mat.name} ${game.slug}`);
+        neon.albedoColor = accent.scale(0.85);
+        // Side cheeks and the marquee box are a lot of surface for a tube this
+        // bright: at full value the glow layer blooms a whole cabinet into one
+        // white slab. This much is still unmistakably neon.
+        neon.emissiveColor = accent.scale(0.42);
+      }
+      node.material = neon;
     }
     // The model's own screen glass sits behind our plane; darken it so the two
     // do not both glow through each other at a grazing angle.
@@ -316,8 +430,22 @@ async function machine(scene, shadows, held, spec, game, slot) {
   // cabinet's own clones and final by now, and nothing below looks a mesh up
   // again — the screen and marquee are panels built after this — so fold the
   // body into one mesh per material (room.js mergeStatic).
-  for (const m of mergeStatic(holder.getChildMeshes(), { cell: 1e6, label: `cabinet:${game ? game.slug : spec.kind}` })) {
-    m.freezeWorldMatrix();
+  const label = `cabinet:${game ? game.slug : spec.kind}`;
+  if (game) {
+    // The first game cabinet of a kind folds its body; the rest instance it.
+    const still = stillParts(holder);
+    const body = bodies.get(held);
+    if (!body) bodies.set(held, foldBody(holder, still, label));
+    else {
+      for (const m of still) m.dispose(false, false);
+      for (const source of body) {
+        const own = source.material?.name.startsWith(spec.accentMaterial) ? neon : null;
+        shareBody(source, holder, own, label);
+      }
+    }
+    for (const m of holder.getChildMeshes()) m.freezeWorldMatrix();
+  } else {
+    for (const m of mergeStatic(holder.getChildMeshes(), { cell: 1e6, label })) m.freezeWorldMatrix();
   }
 
   // A blocker carries the floor it stands on, so a machine in the basement

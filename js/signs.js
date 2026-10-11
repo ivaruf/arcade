@@ -119,6 +119,8 @@ export function raiseSigns(scene, cabinets) {
     sign.position.set(mast.x, mast.y + mast.top + 0.9, mast.z);
     // Face the welcome cloud, which is where anyone reading it is standing.
     sign.rotation.y = Math.atan2(-mast.x, -mast.z) + Math.PI;
+    // Placed once and never moved again: no world matrix to recompute.
+    for (const mesh of sign.getChildMeshes()) mesh.freezeWorldMatrix();
   }
 }
 

@@ -1,4 +1,8 @@
 import { mergeStatic } from './room.js';
+// wardrobe.js imports nothing, which is what makes its fold safe to borrow:
+// it bakes normals the way the shader lights a squashed sphere, and a pet is
+// almost nothing but squashed spheres. See foldByMaterial there.
+import { foldByMaterial } from './wardrobe.js';
 
 /** Session-only companions. Shared geometry for the machine, preview and follower. */
 export const PETS = [
@@ -6,14 +10,49 @@ export const PETS = [
   { id: 'pip', name: 'Pip', description: 'A leaf-eared woodland rabbit with cotton tail.', color: '#6ed9b4' },
   { id: 'noodle', name: 'Noodle', description: 'A frilly-gilled axolotl with a swishing fin tail.', color: '#b699ee' },
 ];
+/**
+ * One material per name per scene. The machine's Pip and the Pip that follows
+ * you are the same colours, and used to be twelve materials where six do.
+ */
+const paints = new WeakMap();
 function material(scene, name, color, metal = 0) {
+  if (!paints.has(scene)) paints.set(scene, new Map());
+  const cache = paints.get(scene);
+  if (cache.has(name)) return cache.get(name);
   const m = new BABYLON.PBRMaterial(name, scene);
   m.albedoColor = BABYLON.Color3.FromHexString(color).toLinearSpace();
   m.roughness = .65; m.metallic = metal;
+  cache.set(name, m);
   return m;
 }
-function creature(scene, id) {
-  if (id === 'nyan') return nyanCreature(scene);
+
+/**
+ * Sphere segments for a part `size` across (its largest scaled dimension, in
+ * pet units), in the sky. At 16 segments every ball was ~1,300 triangles, the
+ * same for a pet's whole body as for a 2.8 cm eye glint, and the three pets on
+ * the machine came to 208k triangles — the heaviest object in the sky. A part
+ * a tenth of a pet across, on a machine you stand a metre and a half from at
+ * 0.57 scale, is a handful of pixels: 8 segments draws it identically. The
+ * picker's close-up preview keeps 16 throughout (`lite` false), because there
+ * a pet fills the window.
+ */
+const segmentsFor = (lite, size, full) => !lite ? full : size >= .3 ? full : size >= .12 ? Math.round(full * .7) : 8;
+
+/**
+ * A pet. `lite` for the two that live in the sky (on the machine and at your
+ * heels): fewer segments on the small parts, and folded to one mesh per
+ * colour per moving part, so a pet is a dozen-odd draws rather than fifty to
+ * ninety. The preview's pet is neither, and is thrown away with its window.
+ */
+function creature(scene, id, lite = false) {
+  const pet = id === 'nyan' ? nyanCreature(scene, lite) : softCreature(scene, id, lite);
+  // Whatever animate() moves by itself stays loose (pet.loose); everything
+  // else folds into the node it hangs from — body, ear, foot, gill, tail — and
+  // still moves with it.
+  if (lite) foldByMaterial(pet.root, (m) => pet.loose.has(m));
+  return pet;
+}
+function softCreature(scene, id, lite) {
   const B=BABYLON,root=new B.TransformNode(`Pet ${id}`,scene);
   const body=new B.TransformNode(`${id} body`,scene);body.parent=root;
   const fur=material(scene,`${id} skin`,id==='pip'?'#6ed9b4':'#b699ee');
@@ -21,7 +60,7 @@ function creature(scene, id) {
   const pink=material(scene,`${id} accents`,id==='pip'?'#f3b1bd':'#ed8cc5');
   const white=material(scene,`${id} cloud`,'#f3faff'),leaf=material(scene,`${id} leaf veins`,'#379f83');
   function ball(name,parent,mat,pos,scale) {
-    const m=B.MeshBuilder.CreateSphere(`${id} ${name}`,{diameter:1,segments:16},scene);
+    const m=B.MeshBuilder.CreateSphere(`${id} ${name}`,{diameter:1,segments:segmentsFor(lite,Math.max(...scale),16)},scene);
     m.parent=parent;m.material=mat;m.position.set(...pos);m.scaling.set(...scale);m.isPickable=false;return m;
   }
   function smile(width,y,z) {
@@ -50,7 +89,7 @@ function creature(scene, id) {
       ball('eye',body,dark,[side*.124,.686,.213],[.083,.12,.04]);
       ball('eye glint',body,white,[side*.124-.014,.709,.234],[.028,.032,.012]);
       ball('cheek',body,pink,[side*.204,.604,.165],[.072,.042,.032]);
-      roundedPetBox(scene,'Pip tooth',body,white,[side*.025,.508,.235],[.041,.056,.025],.8);
+      roundedPetBox(scene,'Pip tooth',body,white,[side*.025,.508,.235],[.041,.056,.025],.8,segmentsFor(lite,.056,20));
     }
     ball('nose',body,pink,[0,.595,.267],[.057,.04,.034]);
     smile(.19,.546,.263);
@@ -88,7 +127,9 @@ function creature(scene, id) {
   cloud.setEnabled(false);
   const footRest=feet.map(foot=>({y:foot.position.y,z:foot.position.z}));
   let tuck=0,lastPoseTime=null;
-  return {root,cloud,animate(t,moving,flying){
+  // Pip's paws and tail are single balls that animate() turns themselves.
+  const loose=new Set([...feet,tail].filter(n=>n instanceof B.Mesh));
+  return {root,cloud,loose,animate(t,moving,flying){
     const dt=lastPoseTime===null?1/60:Math.max(0,Math.min(.1,t-lastPoseTime));
     lastPoseTime=t;
     tuck+=((flying?1:0)-tuck)*(1-Math.exp(-12*dt));
@@ -106,8 +147,8 @@ function creature(scene, id) {
 }
 
 /** Soft cuboid silhouette, with rounded corners instead of hard box edges. */
-function roundedPetBox(scene,name,parent,mat,pos,size,exponent=.35) {
-  const B=BABYLON,m=B.MeshBuilder.CreateSphere(name,{diameter:2,segments:20},scene);
+function roundedPetBox(scene,name,parent,mat,pos,size,exponent=.35,segments=20) {
+  const B=BABYLON,m=B.MeshBuilder.CreateSphere(name,{diameter:2,segments},scene);
   const positions=m.getVerticesData(B.VertexBuffer.PositionKind);
   for(let i=0;i<positions.length;i++)positions[i]=Math.sign(positions[i])*Math.pow(Math.abs(positions[i]),exponent)*size[i%3]/2;
   const normals=[];B.VertexData.ComputeNormals(positions,m.getIndices(),normals);
@@ -145,13 +186,17 @@ function station(scene) {
   face.parent=root;face.position.set(0,2.45,.66);face.rotation.y=Math.PI;face.material=ink;face.isPickable=false;
   for(const layer of scene.effectLayers || []) layer.addExcludedMesh?.(face);
   const displays=PETS.map((spec,i)=>{
-    const pet=creature(scene,spec.id);pet.root.parent=root;pet.root.position.set((i-(PETS.length-1)/2)*.60,1.03,.05);pet.root.scaling.setAll(.57);return pet;
+    const pet=creature(scene,spec.id,true);pet.root.parent=root;pet.root.position.set((i-(PETS.length-1)/2)*.60,1.03,.05);pet.root.scaling.setAll(.57);return pet;
   });
-  // The cabinet is a hundred and fifty still parts around five pets that
-  // animate: fold the cabinet (room.js mergeStatic), leave the pets alone.
+  // The cabinet is a few dozen still parts around three pets that animate:
+  // fold the cabinet (room.js mergeStatic), leave the pets to their own fold.
   const alive=new Set(displays.flatMap((p)=>p.root.getChildMeshes(false)));
-  for(const m of mergeStatic(root.getChildMeshes(false),{keep:(m)=>alive.has(m),cell:1e6,label:'Pet machine'})) m.freezeWorldMatrix();
-  return { displays, blocker:{x:4.9,z:2.3,hx:.7,hz:1.1,base:0,top:2.7},
+  const cabinet=mergeStatic(root.getChildMeshes(false),{keep:(m)=>alive.has(m),cell:1e6,label:'Pet machine'});
+  // The cabinet never moves, and neither do the pets until someone is close
+  // enough to see them breathe (see createPets' animate): freeze the lot.
+  // (mergeStatic hands its meshes back unparented, hence the two lists.)
+  for(const m of [...cabinet,...root.getChildMeshes(false)]) m.freezeWorldMatrix();
+  return { displays, alive:[...alive], cabinet, blocker:{x:4.9,z:2.3,hx:.7,hz:1.1,base:0,top:2.7},
     inReach(p){return Math.abs(p.y)<.3 && Math.hypot(p.x-3.3,p.z-2.3)<1.2;} };
 }
 
@@ -168,16 +213,40 @@ export function avoidPetObstacles(p, blockers) {
   }
 }
 
+/**
+ * How near the camera has to be for the machine's pets to move at all. Their
+ * biggest motion is Pip's 1.3 cm hop at 0.57 scale, which past about fifteen
+ * metres is less than a pixel on any screen this runs on: animating it from
+ * further is world-matrix work for nothing. Out of the frustum counts as far.
+ */
+const DISPLAY_RANGE = 15;
+
 export function createPets(scene) {
   const machine=station(scene);
-  const followers=Object.fromEntries(PETS.map(spec=>[spec.id,creature(scene,spec.id)]));
-  Object.values(followers).forEach(p=>p.root.setEnabled(false));
+  // Built the first time somebody chooses one, not three at boot to sit
+  // disabled in the scene graph for every visitor who never visits the machine.
+  const followers={};
+  const followerFor=(id)=>{
+    if(!followers[id]){followers[id]=creature(scene,id,true);followers[id].root.setEnabled(false);}
+    return followers[id];
+  };
+  const centre=new BABYLON.Vector3(4.9,1.3,2.3);
+  let displaysLive=false;
+  /** Wake the machine's pets when the camera can see them, and freeze them
+   *  when it cannot: a frozen mesh skips its world matrix every frame. */
+  function displaysInView() {
+    const camera=scene.activeCamera;
+    if(!camera || BABYLON.Vector3.Distance(camera.globalPosition,centre)>DISPLAY_RANGE) return false;
+    const planes=scene.frustumPlanes;
+    return !planes || !machine.cabinet.length || machine.cabinet.some(m=>m.isInFrustum(planes));
+  }
   let selected=null, spawned=false, preview=null, closeHandler=null;
   const dialog=document.getElementById('pets-dialog'), status=document.getElementById('pet-status');
   const choices=[...dialog.querySelectorAll('[data-pet]')];
   function choose(id) {
-    if(id && !followers[id]) return;
+    if(id && !PETS.some(p=>p.id===id)) return;
     selected=id;spawned=false;
+    if(id) followerFor(id);
     Object.entries(followers).forEach(([key,pet])=>pet.root.setEnabled(key===id));
     choices.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.pet=== (id || ''))));
     status.textContent=id ? `${PETS.find(p=>p.id===id).name} is your companion.` : 'Travelling without a pet.';
@@ -199,7 +268,12 @@ export function createPets(scene) {
       choices.find(b=>b.dataset.pet===(selected || '')).focus();
     },
     animate(dt,t,player,state,groundAt,blockers){
-      machine.displays.forEach(p=>p.animate(t,.2,false));
+      const live=displaysInView();
+      if(live!==displaysLive){
+        displaysLive=live;
+        for(const m of machine.alive) live ? m.unfreezeWorldMatrix() : m.freezeWorldMatrix();
+      }
+      if(live) machine.displays.forEach(p=>p.animate(t,.2,false));
       if(!selected || !player)return;
       const pet=followers[selected],p=pet.root.position;
       const tx=player.x-Math.sin(state.yaw)*1.25+Math.cos(state.yaw)*.65;
@@ -245,14 +319,14 @@ function createPreview(canvas) {
 }
 
 /** Rounded pastry cat based on the reference, with no cloud geometry. */
-function nyanCreature(scene) {
+function nyanCreature(scene, lite = false) {
   const B=BABYLON,root=new B.TransformNode('Pet nyan',scene);
   const body=new B.TransformNode('Nyan cat body',scene);body.parent=root;
   const grey=material(scene,'Nyan grey','#90959f'), crust=material(scene,'Nyan pastry crust','#fff0ab');
   const icing=material(scene,'Nyan pink icing','#ffb1eb'), sprinkles=material(scene,'Nyan sprinkles','#ec30cd');
   const black=material(scene,'Nyan eyes','#172331'),white=material(scene,'Nyan glints','#ffffff');
   function box(name,pos,size,mat) {
-    return roundedPetBox(scene,name,body,mat,pos,size,name.includes('pixel')?.18:.35);
+    return roundedPetBox(scene,name,body,mat,pos,size,name.includes('pixel')?.18:.35,segmentsFor(lite,Math.max(...size),20));
   }
   box('Nyan pastry',[0,.38,-.10],[.58,.51,.78],crust);
   for(const x of [-.30,.30]) {
@@ -288,7 +362,8 @@ function nyanCreature(scene) {
   // Empty interface node: callers can toggle flight support without a cloud.
   const cloud=new B.TransformNode('Nyan flight support (empty)',scene);cloud.parent=root;
   let rainbow=null;
-  return {root,cloud,animate(t,moving,flying){
+  // The paws are boxes that animate() swings themselves.
+  return {root,cloud,loose:new Set(feet),animate(t,moving,flying){
     body.position.y=Math.sin(t*(flying?7:12))*.025*(flying?1:moving);
     feet.forEach((p,i)=>p.rotation.x=Math.sin(t*13+i*Math.PI)*.35*(flying?1:moving));
     tail.rotation.y=Math.sin(t*9)*.4;

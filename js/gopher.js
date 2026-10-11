@@ -88,10 +88,12 @@ function makeForm(name, pivot, root, meshes, groups, scene, shadows) {
   root.parent = holder;
 
   for (const g of groups || []) g.stop(); // procedural only
-  for (const m of meshes) {
-    m.isPickable = false;
-    if (shadows && m.getTotalVertices?.() > 0) shadows.addShadowCaster(m, false);
-  }
+  for (const m of meshes) m.isPickable = false;
+  // Not cast yet: use() puts a form's meshes in the caster list when it
+  // becomes the active one and takes them out when it stops. Both forms used
+  // to cast from boot, the hidden one included, and a disabled mesh in the
+  // caster list is still walked every frame by the shadow pass.
+  const casters = meshes.filter((m) => m.getTotalVertices?.() > 0);
 
   const parts = captureRest(root, name);
 
@@ -114,7 +116,7 @@ function makeForm(name, pivot, root, meshes, groups, scene, shadows) {
     mesh.setVerticesData(BABYLON.VertexBuffer.PositionKind, part.cloth.positions, true);
     mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, part.cloth.normals, true);
   }
-  return { name, holder, parts, lift: 0 };
+  return { name, holder, parts, casters, lift: 0 };
 }
 
 /** A brown capsule wearing the contract's names. Last resort, never blank. */
@@ -161,7 +163,8 @@ function proceduralCloud(pivot, scene, shadows) {
   base.position.y = 0.15;
   base.material = mat;
   base.parent = cloud;
-  if (shadows) shadows.addShadowCaster(base, false);
+  // Cast only while it is showing; use() adds and removes it with the form.
+  cloud.casters = [base];
   return cloud;
 }
 
@@ -195,10 +198,31 @@ export async function createGopher(scene, shadows) {
 
   // Each model gets its own head-mounted meshes. The choice is saved (wardrobe.js)
   // because a game may read it: NeonFox dresses the player's fox the same way.
+  //
+  // Items are built on first wear and folded into one mesh per material
+  // (wardrobe.js), and the two forms share one set of materials — the arcade's
+  // own heads may, where a game's riders may not. Each form's outfit casts
+  // only while that form is the one showing; see use().
   const accessories = loadOutfit();
-  const outfits = [...new Set(Object.values(forms))].flatMap(form =>
-    form.parts.Head ? [makeAccessories(form.parts.Head.node, scene, shadows)] : []);
+  const paints = new Map();
+  const outfitOf = new Map();
+  for (const form of new Set(Object.values(forms))) {
+    if (form.parts.Head) outfitOf.set(form, makeAccessories(form.parts.Head.node, scene, shadows, { fold: true, materials: paints }));
+  }
+  const outfits = [...outfitOf.values()];
   for (const outfit of outfits) outfit.set(accessories);
+
+  // The one place the gopher touches the shadow caster list; room.js's caster
+  // helper, when it has one, belongs here. Tracked per list so a form switch
+  // never adds a mesh twice or removes one it never added.
+  const casting = new Set();
+  const shade = (list, on) => {
+    if (!shadows || !list || casting.has(list) === on) return;
+    for (const m of list) {
+      if (on) shadows.addShadowCaster(m, false); else shadows.removeShadowCaster(m, false);
+    }
+    if (on) casting.add(list); else casting.delete(list);
+  };
 
   const anim = {
     phase: 0, run: 0, air: 0, squash: 0, reach: 0,
@@ -208,11 +232,19 @@ export async function createGopher(scene, shadows) {
   };
 
   let active = null;
+  let twinPending = false;
 
   function use(which) {
     const next = forms[which];
-    for (const form of new Set([forms.walk, forms.fly])) form.holder.setEnabled(form === next);
-    if (fallbackCloud) fallbackCloud.setEnabled(which === 'fly');
+    for (const form of new Set([forms.walk, forms.fly])) {
+      form.holder.setEnabled(form === next);
+      shade(form.casters, form === next);
+      outfitOf.get(form)?.cast(form === next);
+    }
+    if (fallbackCloud) {
+      fallbackCloud.setEnabled(which === 'fly');
+      shade(fallbackCloud.casters, which === 'fly');
+    }
     next.lift = which === 'fly' && fallbackCloud ? 0.28 : 0;
     next.holder.rotation.set(0, 0, 0);
     next.holder.position.set(0, next.lift, 0);
@@ -378,7 +410,18 @@ export async function createGopher(scene, shadows) {
     setAccessory(item, enabled) {
       if (!Object.hasOwn(accessories, item)) return;
       selectAccessory(accessories, item, enabled);
-      for (const outfit of outfits) outfit.set(accessories);
+      // An item is built the first time it is worn, once per form, and the
+      // viking helmet is ~70 meshes to make and fold. The outfit on show is
+      // dressed now; the hidden form's after the next frame has drawn, so a
+      // first wear costs two small hitches rather than one twice the size.
+      outfitOf.get(active)?.set(accessories);
+      if (outfits.length > 1 && !twinPending) {
+        twinPending = true;
+        scene.onAfterRenderObservable.addOnce(() => {
+          twinPending = false;
+          for (const outfit of outfits) outfit.set(accessories);
+        });
+      }
       saveOutfit(accessories);
     },
     get form() {

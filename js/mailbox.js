@@ -75,7 +75,7 @@
  * reading is therefore a real habit with a real reason, not tidiness.
  * ========================================================================== */
 
-import { container } from './room.js';
+import { container, mergeStatic } from './room.js';
 import { IS_TOUCH } from './controls.js';
 
 /**
@@ -203,6 +203,13 @@ export async function createMailbox(scene, shadows) {
   let doorClip = null;
   let flagClip = null;
   let flagUp = false;
+  /** The door's and the flag's meshes, frozen whenever neither clip runs. */
+  const movers = [];
+  const running = new Set();
+  const settle = (clip) => {
+    running.delete(clip);
+    if (!running.size) for (const m of movers) m.freezeWorldMatrix();
+  };
 
   try {
     const held = await container('mailbox.glb', scene);
@@ -221,13 +228,40 @@ export async function createMailbox(scene, shadows) {
     }
     doorClip = held.animationGroups.find((c) => c.name === 'MailboxDoorOpen') || null;
     flagClip = held.animationGroups.find((c) => c.name === 'MailFlagRaise') || null;
+    for (const clip of [doorClip, flagClip]) clip?.onAnimationGroupEndObservable.add(() => settle(clip));
 
     for (const node of held.rootNodes) node.parent = root;
     for (const mesh of held.meshes) {
       mesh.isPickable = false;
       mesh.receiveShadows = true;
-      shadows?.addShadowCaster(mesh, false);
     }
+    // Forty-three meshes in seven materials, every one a shadow caster and
+    // none of them moving except through two pivots. Fold each pivot's parts
+    // into one mesh per material under it (room.js mergeUnder — the clips
+    // turn the pivot, never a mesh, as the GLB's channels show), then the
+    // rest of the box into one per material: about a dozen draws and casters
+    // instead of forty-three. Anything a clip does target is left alone.
+    const targeted = new Set(held.animationGroups.flatMap((c) => c.targetedAnimations.map((a) => a.target)));
+    const pivots = held.transformNodes.filter((n) => /^(MailboxDoorPivot|MailFlagPivot)$/.test(n.name));
+    const swinging = new Set();
+    // Top-down, so every part bakes where it really stands under the root and
+    // not where the loader last saw it, before it was hung there.
+    for (const n of [root, ...root.getDescendants(false)]) n.computeWorldMatrix(true);
+    for (const pivot of pivots) {
+      const parts = pivot.getChildMeshes(false).filter((m) => !targeted.has(m));
+      for (const m of mergeStatic(parts, { cell: 1e6, label: `Mailbox ${pivot.name}` })) m.setParent(pivot);
+      for (const m of pivot.getChildMeshes(false)) swinging.add(m);
+    }
+    // mergeStatic hands its meshes back unparented, already in world metres.
+    const shell = mergeStatic(root.getChildMeshes(false), { keep: (m) => swinging.has(m) || targeted.has(m), cell: 1e6, label: 'Mailbox' });
+    for (const mesh of [...shell, ...root.getChildMeshes(false)]) {
+      if (!mesh.getTotalVertices()) continue;
+      shadows?.addShadowCaster(mesh, false);
+      // The box itself never moves. The door and flag do, but only for the
+      // second a clip runs, and swing() thaws them for exactly that long.
+      mesh.freezeWorldMatrix();
+    }
+    for (const m of swinging) if (!m.isDisposed()) movers.push(m);
   } catch (err) {
     // A missing model costs the arcade a nice object, never the island. Name
     // the file that did not arrive, because the next person to see this will
@@ -240,6 +274,10 @@ export async function createMailbox(scene, shadows) {
   const swing = (clip, forward) => {
     if (!clip) return;
     clip.stop();
+    // Thaw for the length of the swing; freeze again where it came to rest.
+    // A frozen mesh under a turning pivot would stay where it was.
+    running.add(clip);
+    for (const m of movers) m.unfreezeWorldMatrix();
     clip.start(false, 1, forward ? clip.from : clip.to, forward ? clip.to : clip.from);
   };
 

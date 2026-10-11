@@ -87,13 +87,20 @@ export function createCustomizationStation(scene, shadows) {
   const head=new B.TransformNode('Display mannequin head',scene);head.parent=station;head.position.set(0,1.12,-.04);head.scaling.setAll(.78);
   const bust=B.MeshBuilder.CreateSphere('Display mannequin',{diameter:1,segments:16},scene);
   bust.parent=head;bust.position.y=.20;bust.scaling.set(.53,.56,.48);bust.material=cream;bust.isPickable=false;
-  makeAccessories(head,scene,shadows).set({topHat:true,sunglasses:true});
-  // A hundred-odd parts, all still except the mannequin and what it wears:
-  // one mesh per material for the rest (room.js mergeStatic), and those cast.
-  const worn=new Set(head.getChildMeshes(false));
-  for(const m of mergeStatic(station.getChildMeshes(false),{keep:(m)=>worn.has(m),cell:1e6,label:'Dresser'})) {
-    m.freezeWorldMatrix();shadows?.addShadowCaster(m,false);
-  }
+  // The mannequin only ever wears these two, so only these two are built
+  // (wardrobe.js builds on first wear), each already folded to one mesh per
+  // colour; the other sixteen items and their ~200 hidden meshes no longer
+  // ride along in every frame's active-mesh and shadow passes.
+  makeAccessories(head,scene,shadows,{fold:true}).set({topHat:true,sunglasses:true});
+  // A hundred-odd parts and nothing on this machine moves, the mannequin and
+  // its hat included: one mesh per material (room.js mergeStatic), and those
+  // cast. The bust alone stays as it is — a squashed sphere, which
+  // mergeStatic's baked normals would light a shade differently.
+  // Merged or not, every part is where it will always be. (mergeStatic hands
+  // its meshes back unparented, in world metres, hence the two lists.)
+  const merged=mergeStatic(station.getChildMeshes(false),{keep:(m)=>m===bust,cell:1e6,label:'Dresser'});
+  for(const m of merged) shadows?.addShadowCaster(m,false);
+  for(const m of [...merged,...station.getChildMeshes(false)]) m.freezeWorldMatrix();
   const stand=new B.Vector3(-3.35,0,2.3);
   return {
     stand,
