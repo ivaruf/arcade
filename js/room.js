@@ -252,6 +252,15 @@ const BROAD_FACTOR = 0.25;
  * one without. If a merge fails anyway the originals are left exactly as they
  * were — a slower sky, never a missing one.
  *
+ * NORMALS. MergeMeshes bakes each mesh's world matrix into its vertices, and
+ * it turns the normals with that same matrix. That is only right while the
+ * scale is uniform; a box squashed to a plank, or a cylinder stretched to a
+ * rail, has its sloped normals tilted toward the long axis and relights a
+ * shade off (lane C found it, 2026-10-11). The correct matrix for a normal is
+ * the inverse transpose, so a mesh whose scale is not uniform has its normals
+ * pre-turned by W⁻ᵀ·W⁻¹ first, and MergeMeshes' W then lands them exactly on
+ * W⁻ᵀ. Uniformly scaled meshes — nearly all of them — are not touched.
+ *
  * Returns the merged meshes, for the caller to set shadows and freeze.
  */
 export function mergeStatic(meshes, { keep = () => false, cell = 12, label = 'Merged' } = {}) {
@@ -277,6 +286,7 @@ export function mergeStatic(meshes, { keep = () => false, cell = 12, label = 'Me
     if (group.length < 2) continue;
     const { material, receiveShadows } = group[0];
     try {
+      for (const m of group) preturnNormals(m);
       const one = BABYLON.Mesh.MergeMeshes(group, true, true);
       if (!one) continue;
       one.name = `${label}: ${material.name}`;
@@ -289,6 +299,33 @@ export function mergeStatic(meshes, { keep = () => false, cell = 12, label = 'Me
     }
   }
   return merged;
+}
+
+/** See NORMALS above. Allocates, but only once per mesh at load. */
+function preturnNormals(mesh) {
+  const normals = mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+  if (!normals) return;
+  // The linear part only: left in, the translation would leak into the 3×3
+  // through the transpose and turn every normal of a mesh that is merely
+  // moved, not scaled.
+  const inv = mesh.getWorldMatrix().clone().setTranslationFromFloats(0, 0, 0).invert();
+  const turn = inv.transpose().multiply(inv);
+  // Uniform scale (with any rotation) gives a multiple of the identity:
+  // nothing to correct, and the common case.
+  const r = turn.m;
+  const s = r[0];
+  const near = (a, b) => Math.abs(a - b) <= 1e-4 * Math.abs(s);
+  if (near(r[5], s) && near(r[10], s) && near(r[1], 0) && near(r[2], 0) && near(r[4], 0) &&
+      near(r[6], 0) && near(r[8], 0) && near(r[9], 0)) return;
+  const v = new BABYLON.Vector3();
+  const out = new Float32Array(normals.length);
+  for (let i = 0; i < normals.length; i += 3) {
+    BABYLON.Vector3.TransformNormalFromFloatsToRef(normals[i], normals[i + 1], normals[i + 2], turn, v);
+    out[i] = v.x; out[i + 1] = v.y; out[i + 2] = v.z;
+  }
+  // Shared geometry would carry the change to every other mesh using it.
+  if ((mesh.geometry?.meshes.length ?? 1) > 1) mesh.makeGeometryUnique();
+  mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, out, false);
 }
 
 /**
@@ -591,9 +628,26 @@ export async function buildWorld(scene) {
   const keep = (m) => dynamicMeshes.has(m) || swimmers.movingMeshes.has(m) || gears.movingMeshes.has(m) || animated.has(m) ||
     /^Welcome sideboard (Brand|Arcade|Guide)/.test(m.name);
   const worldMeshes = [...held.meshes, ...islandMeshes];
-  for (const one of mergeStatic(worldMeshes, { keep, label: 'Sky' })) one.freezeWorldMatrix();
+  const skyMerged = mergeStatic(worldMeshes, { keep, label: 'Sky' });
+  for (const one of skyMerged) one.freezeWorldMatrix();
+
+  // Every material the sky itself paints with, for main.js to freeze once the
+  // last boot-time edit has been made to them (the metal clamp). A frozen
+  // material skips its per-frame readiness check and uniform upload — about
+  // half a millisecond of CPU a frame over the sky's few hundred. Nothing in
+  // the world changes a material after boot; the riders are the exception
+  // that proves it — foxrace.js tints their copies — so `dynamic` meshes'
+  // materials stay out. Tier changes unfreeze and refreeze (quality.js).
+  const materials = new Set();
+  for (const m of [...worldMeshes, ...skyMerged]) {
+    if (m.material && !m.isDisposed() && !dynamicMeshes.has(m)) materials.add(m.material);
+  }
 
   const minimaze = createMiniMazeIsland(scene, PLATFORMS.find((p) => p.id === 'minimaze'));
+  // The board's walls, planks and screws: seventy-odd static boxes folded the
+  // same way as Zoodoku's below. `?? []` so an older minimaze.js that does not
+  // hand its statics over yet still builds — just in more draw calls.
+  for (const one of mergeStatic(minimaze.statics ?? [], { label: 'MiniMaze', cell: 1e6 })) one.freezeWorldMatrix();
   // Built in code like MiniMaze, but some two hundred small static meshes, so
   // they are folded by material the same way as the rest of the sky.
   const zoodoku = createZoodokuIsland(scene, PLATFORMS.find((p) => p.id === 'zoodoku'),
@@ -606,6 +660,7 @@ export async function buildWorld(scene) {
   const swapped = ISLAND_MODELS.filter((island) => loaded.has(island.id));
   const swappedIds = new Set(swapped.map((island) => island.id));
   return {
+    materials,
     blockers: [
       ...FURNITURE.filter((b) => !swappedIds.has(b.island)),
       ...swapped.flatMap((island) => island.blockers),

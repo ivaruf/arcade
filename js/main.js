@@ -217,7 +217,6 @@ hemi.diffuse = new BABYLON.Color3(0.62, 0.72, 0.95);
 hemi.groundColor = new BABYLON.Color3(0.1, 0.14, 0.2);
 
 const sun = new BABYLON.DirectionalLight('sun', new BABYLON.Vector3(-0.35, -1, 0.28).normalize(), scene);
-sun.position = new BABYLON.Vector3(4, 12, -4);
 sun.intensity = 0.9;
 sun.diffuse = new BABYLON.Color3(0.86, 0.92, 1);
 sun.autoCalcShadowZBounds = true;
@@ -238,11 +237,100 @@ const lamps = [-3.4, 2.6].map((z) => {
 // Casters: the gopher (gopher.js), its accessories, and the take-home
 // machines' merged bodies (dispenser.js) — not every part of every machine,
 // which is what it quietly was until 2026-10-02. So the map itself is a cheap pass at any
-// size. What costs is the filter, which every receiving pixel in the sky runs.
+// size. What costs is the filter, which every receiving pixel in the sky runs;
+// quality.js picks it per tier.
 const shadows = new BABYLON.ShadowGenerator(input.IS_TOUCH ? 1024 : 2048, sun);
-shadows.filteringQuality = input.IS_TOUCH ? BABYLON.ShadowGenerator.QUALITY_LOW : BABYLON.ShadowGenerator.QUALITY_MEDIUM;
 shadows.bias = 0.004;
 shadows.normalBias = 0.03;
+
+/*
+ * THE SHADOW FOLLOWS THE GOPHER.
+ *
+ * Left to itself a directional light stretches its one shadow map over every
+ * caster it has, and the take-home machines stand on islands all round the
+ * sky: the map covered 62 m, so a texel was 3 cm on a desktop and 6 cm on a
+ * tablet, and with no filter on the lighter tier the gopher's shadow came out
+ * in visible stairs. A player put it better — the "minecraft" shadow
+ * (PERFORMANCE.md, "No blocky shadows on any tier"). More texels is the
+ * expensive answer. Spending them where somebody is looking is the free one.
+ *
+ * So the map is a fixed SHADOW.span square that rides with the gopher, led a
+ * little toward where the camera is looking: 20 m at 1024 is 2 cm a texel,
+ * three times finer than before, at 2048 one. Two details keep it honest:
+ *
+ *  - The square moves in whole texels. A shadow map that slides by fractions
+ *    of a texel re-rasterises every edge differently each frame, and a
+ *    walking gopher's shadow would crawl. Snapping the light's position to the
+ *    texel grid (in the light's own x/y, the axes Babylon's LookAtLH builds
+ *    from the sun's direction) holds every edge still while it moves.
+ *  - Depth is fixed rather than fitted: the light sits SHADOW.back metres up
+ *    the beam from the focus and sees SHADOW.depth of it, which covers any
+ *    caster within reach of the gopher, flying or not. Fitting it to the
+ *    caster list (autoCalcShadowZBounds) walked every caster every frame.
+ *
+ * WHAT IT COSTS: a static caster more than ~10 m from the gopher — a take-home
+ * machine on another island, the mailbox seen from across the sky — casts
+ * nothing until the gopher comes near, and fades in at the square's edge
+ * (frustumEdgeFalloff) rather than switching on. At that distance the old
+ * shadow was a few blurred texels; nobody misses it.
+ */
+const SHADOW = { span: 20, lead: 3, back: 30, depth: 60, falloff: 0.25 };
+sun.autoUpdateExtends = false;
+sun.autoCalcShadowZBounds = false;
+sun.shadowFrustumSize = SHADOW.span;
+sun.shadowMinZ = 0;
+sun.shadowMaxZ = SHADOW.depth;
+shadows.frustumEdgeFalloff = SHADOW.falloff;
+const shadowAxes = (() => {
+  const z = sun.direction.normalizeToNew();
+  const x = BABYLON.Vector3.Cross(BABYLON.Vector3.Up(), z).normalize();
+  return { x, y: BABYLON.Vector3.Cross(z, x), z };
+})();
+const shadowTexel = SHADOW.span / shadows.getShadowMap().getSize().width;
+
+/** Put the shadow map over `focus` (x, y, z), on whole texels. No allocation. */
+function followShadow(x, y, z) {
+  const { x: ax, y: ay, z: az } = shadowAxes;
+  const u = Math.round((x * ax.x + y * ax.y + z * ax.z) / shadowTexel) * shadowTexel;
+  const v = Math.round((x * ay.x + y * ay.y + z * ay.z) / shadowTexel) * shadowTexel;
+  const w = x * az.x + y * az.y + z * az.z - SHADOW.back;
+  sun.position.set(
+    ax.x * u + ay.x * v + az.x * w,
+    ax.y * u + ay.y * v + az.y * w,
+    ax.z * u + ay.z * v + az.z * w,
+  );
+}
+followShadow(SPAWN.x, SPAWN.y, SPAWN.z);
+
+/*
+ * Only casters inside that square are drawn into it. A render target draws its
+ * whole render list every frame with no frustum test of its own, so the
+ * take-home machines, the mailbox and the dresser all over the sky each cost
+ * a shadow draw call every frame while landing nowhere on the map. The test
+ * is the square itself, in the light's own axes, padded by each caster's
+ * bounding radius; one reused array, no allocation.
+ */
+const shadowList = [];
+shadows.getShadowMap().getCustomRenderList = (layer, list, count) => {
+  shadowList.length = 0;
+  const { x: ax, y: ay, z: az } = shadowAxes;
+  const p = sun.position;
+  const half = SHADOW.span / 2;
+  for (let i = 0; i < count; i++) {
+    const mesh = list[i];
+    if (!mesh) continue;
+    const sphere = mesh.getBoundingInfo().boundingSphere;
+    const c = sphere.centerWorld;
+    const r = sphere.radiusWorld;
+    const dx = c.x - p.x, dy = c.y - p.y, dz = c.z - p.z;
+    if (Math.abs(dx * ax.x + dy * ax.y + dz * ax.z) > half + r) continue;
+    if (Math.abs(dx * ay.x + dy * ay.y + dz * ay.z) > half + r) continue;
+    const w = dx * az.x + dy * az.y + dz * az.z;
+    if (w < -r || w > SHADOW.depth + r) continue;
+    shadowList.push(mesh);
+  }
+  return shadowList;
+};
 
 // The neon in this kit is emissive material, not lights. A glow layer is what
 // turns that into the bloom the Blender renders have, and it costs one blur
@@ -253,6 +341,19 @@ glow.intensity = 0.5;
 /** Everything quality.js is allowed to turn down, in one place. */
 const knobs = { engine, shadows, lamps, glow };
 quality.apply(knobs);
+// The lighter tier's resolution follows the frame rate from here on, and
+// ?perf=1 shows it doing so; both are quality.js's, explained in its header.
+quality.govern(knobs);
+quality.startOverlay({ engine, scene });
+
+// Nothing in the arcade asks what is under the pointer: the gopher's world is
+// our own arithmetic (blockers, platforms), the camera reads raw pointer
+// deltas, and the one onPointerObservable below reads only down/up. Left on,
+// Babylon would ray-cast the scene on every pointer MOVE — a drag to look
+// around is a hundred of those a second — to fill in a pick nobody reads.
+scene.skipPointerMovePicking = true;
+scene.skipPointerDownPicking = true;
+scene.skipPointerUpPicking = true;
 
 // ---------------------------------------------------------------------------
 // Player state, shared with the animation code
@@ -382,6 +483,9 @@ async function boot() {
     }
   }
 
+  // Every material now exists: give the lighter tier its leaner PBR (quality.js).
+  quality.shade(scene);
+
   ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines in the sky`;
   ui.boot.hidden = true;
 
@@ -392,6 +496,10 @@ async function boot() {
   scene.blockMaterialDirtyMechanism = true;
 
   dressTheSky();
+  // The sky's own materials are final now (room.js says which, and why).
+  // Frozen, Babylon stops re-checking and re-uploading each of them every
+  // frame; quality.setTier thaws everything frozen around a tier change.
+  for (const mat of world.materials ?? []) mat.freeze();
   engine.runRenderLoop(render);
   window.addEventListener('resize', () => engine.resize());
   // Fullscreen changes the viewport without firing resize on every browser,
@@ -523,6 +631,9 @@ function startDive(cabinet, silent = false) {
   camera.lowerBetaLimit = 0.01;
   camera.upperBetaLimit = Math.PI - 0.01;
 
+  // A dive sweeps the camera across half the sky in under a second; frames
+  // spent on that are not a verdict on the GPU (quality.js, the governor).
+  quality.hold(silent ? 1 : 2);
   dive = {
     t: 0,
     duration: silent ? 0.01 : 0.95,
@@ -547,6 +658,7 @@ function startRise() {
   if (!atMachine) return;
   phase = 'rising';
   const cabinet = atMachine;
+  quality.hold(2);
   dive = {
     t: 0,
     duration: 0.8,
@@ -1163,6 +1275,13 @@ function render() {
     animateCabinets(cabinets, near, time);
     animateWorld(dt);
     if (phase === 'floor') pets?.animate(dt, time, gopher?.pivot.position, state, groundAt, blockers);
+    // Inside a game the sky is not drawn at all; anywhere else, the shadow
+    // map goes where the gopher is, nudged toward what the camera faces.
+    // (cameraForward() inlined: it returns a fresh object, and this is every frame.)
+    if (gopher && phase !== 'playing') {
+      const p = gopher.pivot.position;
+      followShadow(p.x - Math.cos(camera.alpha) * SHADOW.lead, p.y, p.z - Math.sin(camera.alpha) * SHADOW.lead);
+    }
   }
   scene.render();
 }
