@@ -53,6 +53,9 @@ Measured with the committed bench (below), lighter tier unless stated:
 - On a real old device (the owner's iPad, `?perf=1`): steady 60 fps on the
   welcome cloud and while flying, with the adaptive resolution governor never
   dropping below 1.0× on that device. The owner judges this one.
+- **No blocky shadows on any tier.** A player's own words, 2026-10-11: he
+  does not like the "minecraft" shadow. The lighter tier gets its savings
+  from texel density and cheap filtering, never from stair-stepped edges.
 - **Looks the same.** Before/after screenshots of each view must match to the
   eye. A saving that changes the look is a design decision, and is asked.
 
