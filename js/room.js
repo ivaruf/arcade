@@ -392,14 +392,14 @@ const FURNITURE = [
  * file is rebuilt anyway; polish_environment.py says which scripts to drop.
  */
 export const ISLAND_MODELS = [
-  { id: 'lobbots', file: 'lobbots-island.glb?v=3', replaces: [], blockers: [] },
+  { id: 'lobbots', file: 'lobbots-island.glb?v=4', replaces: [], blockers: [] },
   {
     // A slice cut from a Dam Break level: banded terrain, the reservoir in the
     // game's depth bands, a player-built crib dam about to fail, the house it
     // is protecting. dam_island_v2.py. Prefixes checked against every node in
     // cloud-world — a bare 'Dam ' would also take the floor and the mast.
     id: 'dam',
-    file: 'dam-island.glb?v=1',
+    file: 'dam-island.glb?v=2',
     replaces: ['Dam wall segment', 'Dam crown ', 'Dam handrail post', 'Dam stepped buttress',
       'Dam diorama foundation', 'Dam control hut', 'Control hut ', 'Reservoir ', 'Spillway gate',
       'Gate ', 'Downstream ', 'Stilling block', 'Channel side'],
@@ -421,7 +421,7 @@ export const ISLAND_MODELS = [
     // east of the lane. adventure_island_v2.py. The assay office, its crates
     // and the miners' bridge stay in cloud-world and keep their blockers.
     id: 'adventure',
-    file: 'adventure-island.glb?v=1',
+    file: 'adventure-island.glb?v=2',
     replaces: ['Adventure specimen', 'Adventure mineral', 'Adventure AMETHYST', 'Adventure COPPER ORE',
       'Adventure QUARTZ'],
     blockers: [
@@ -436,7 +436,7 @@ export const ISLAND_MODELS = [
     // per ore. supermine_island_v2.py. 'Supermine ' (with the space) is every
     // old prop and nothing else; floor, mast and bridge are all 'Mine …'.
     id: 'supermine',
-    file: 'supermine-island.glb?v=1',
+    file: 'supermine-island.glb?v=2',
     replaces: ['Supermine '],
     blockers: [
       { x: 17.03, z: -3.30, hx: 3.17, hz: 1.65, top: -3.45, base: -5.5 },  // rig hull, hopper, conveyor, drills
@@ -451,7 +451,7 @@ export const ISLAND_MODELS = [
     // and a low-poly "NF Rider", the fallback template foxrace.js clones when
     // the game-derived rider below has not arrived. The old island was floor.
     id: 'neonfox',
-    file: 'neonfox-island.glb?v=1',
+    file: 'neonfox-island.glb?v=2',
     replaces: [],
     dynamic: /^NF (Game )?Rider/,
     blockers: [

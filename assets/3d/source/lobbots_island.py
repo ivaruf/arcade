@@ -33,8 +33,9 @@ WHAT IT IS MEANT TO LOOK LIKE
   sock, scorch craters, and the dotted trail of a shot still hanging in the
   air from Cobalt's muzzle to the crater it made — the game's shot memory.
 
-Everything is joined by material before export, so the island is a couple of
-dozen draw calls however many pieces it was built from.
+Everything is joined by shading class before export, with each face's flat
+colour carried as a vertex colour (see 'Shading classes' at the bottom), so
+the island is under ten draw calls however many pieces it was built from.
 """
 import math
 import random
@@ -793,27 +794,142 @@ bpy.context.view_layer.objects.active = cloud_obj
 bpy.ops.object.convert(target='MESH')
 
 # ---------------------------------------------------------------------------
-# Join by material: a few dozen draw calls rather than a thousand.
+# Shading classes: flat colours become vertex colours, a handful of materials.
+#
+# WHY. The runtime's mergeStatic (js/room.js) folds meshes together only when
+# they share a material, and the glow layer draws every mesh twice. With one
+# material per flat colour this island arrived as dozens of meshes that could
+# never merge — dozens of draw calls, twice, in every view that saw it
+# (PERFORMANCE.md, 2026-10-11). So each face's colour is written into a
+# vertex-colour attribute instead, the way cloud-world shades its clouds
+# (polish_environment.py 'CloudTint'), and every non-emissive face is given
+# one of four materials by how it catches light. Still no textures at all.
+#
+# WHAT DECIDES THE CLASS is the material as the arcade renders it, not as
+# Cycles does: no environment map ships, so js/main.js pulls any metallic
+# above .25 back to .25 with roughness at least .42. In that space every
+# surface here falls into matte, satin, metal or gloss (water, glassy facets).
+# The metallic a face gives up or gains is paid back in its colour: diffuse
+# is albedo x (1 - metallic), so the colour is scaled by the ratio and the
+# face's diffuse is exactly what it was.
+#
+# WHAT KEEPS ITS OWN MATERIAL: anything emissive. Babylon's glow layer and
+# its PBR emissive both read one emissiveColor per material and never the
+# vertex colour, so every emissive material is kept exactly as authored,
+# a mesh of its own — neon reads as before, and the glows are most of what
+# is left (one per distinct colour and strength).
+#
+# glTF COLOR_0 is linear, Blender's FLOAT_COLOR attribute is linear and the
+# Base Color inputs below are linear, so the numbers pass straight through.
+# Face-corner domain, so two colours meeting at a shared vertex stay crisp.
 # ---------------------------------------------------------------------------
 
-bpy.ops.object.select_all(action='SELECT')
-bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
-bpy.ops.object.convert(target='MESH')  # applies bevels and solidify
-groups = {}
-for obj in list(bpy.context.scene.objects):
-    if obj.type != 'MESH' or not obj.data.materials:
-        continue
-    groups.setdefault(obj.data.materials[0].name, []).append(obj)
-for name, objs in groups.items():
+TINT = 'Tint'
+SHADING_CLASSES = {      # name: (metallic, roughness), in the runtime's terms
+    'matte': (0.0, 0.85),
+    'satin': (0.1, 0.45),
+    'metal': (0.25, 0.45),
+    'gloss': (0.0, 0.15),
+}
+
+
+def runtime_finish(metal, rough):
+    """js/main.js: no environment map, so metals are dialled back."""
+    return (0.25, max(rough, 0.42)) if metal > 0.25 else (metal, rough)
+
+
+def shading_class(metal, rough):
+    metal, rough = runtime_finish(metal, rough)
+    if rough >= 0.65:
+        return 'matte'
+    if rough < 0.3:
+        return 'gloss'
+    return 'metal' if metal >= 0.2 else 'satin'
+
+
+def consolidate(objs, label, rename=lambda n: n):
+    """Join `objs` into one mesh per shading class plus one per glow.
+
+    `label` prefixes the class materials ('<label> matte'); emissive pieces
+    keep their own. Each object is named rename(its material's name).
+    Returns the new objects."""
+    class_mats = {}
+
+    def class_material(cls):
+        if cls not in class_mats:
+            metal, rough = SHADING_CLASSES[cls]
+            m = bpy.data.materials.new(f'{label} {cls}')
+            m.use_nodes = True
+            p = m.node_tree.nodes.get('Principled BSDF')
+            p.inputs['Base Color'].default_value = (1, 1, 1, 1)
+            p.inputs['Metallic'].default_value = metal
+            p.inputs['Roughness'].default_value = rough
+            vc = m.node_tree.nodes.new('ShaderNodeVertexColor')
+            vc.layer_name = TINT
+            m.node_tree.links.new(vc.outputs['Color'], p.inputs['Base Color'])
+            class_mats[cls] = m
+        return class_mats[cls]
+
+    def target(src):
+        """(material, linear colour) a face painted with `src` becomes."""
+        p = src.node_tree.nodes.get('Principled BSDF')
+        rgb = tuple(p.inputs['Base Color'].default_value[:3])
+        if p.inputs['Emission Strength'].default_value > 0:
+            return src, rgb
+        metal, rough = p.inputs['Metallic'].default_value, p.inputs['Roughness'].default_value
+        cls = shading_class(metal, rough)
+        k = (1 - runtime_finish(metal, rough)[0]) / (1 - SHADING_CLASSES[cls][0])
+        return class_material(cls), tuple(min(1.0, c * k) for c in rgb)
+
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs:
         o.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.convert(target='MESH')  # apply bevels, solidify, text
+    for o in objs:
+        me = o.data
+        while me.uv_layers:  # no textures anywhere, so UVs are dead weight
+            me.uv_layers.remove(me.uv_layers[0])
+        tint = me.color_attributes.new(TINT, 'FLOAT_COLOR', 'CORNER')
+        news, index, cols = [], [], []
+        for poly in me.polygons:
+            m, rgb = target(me.materials[poly.material_index])
+            if m not in news:
+                news.append(m)
+            index.append(news.index(m))
+            for li in poly.loop_indices:
+                tint.data[li].color = (*rgb, 1.0)
+        me.materials.clear()
+        for m in news:
+            me.materials.append(m)
+        me.polygons.foreach_set('material_index', index)
+        me.update()
+    # One object, then one per material: join merges slots that share a
+    # material, separate splits them back out.
     if len(objs) > 1:
         bpy.ops.object.join()
-    joined = bpy.context.view_layer.objects.active
-    joined.name = name.replace('Lobbots ', 'Proving ground ')
-    joined.data.name = joined.name
+    whole = bpy.context.view_layer.objects.active
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.separate(type='MATERIAL')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    parts = [o for o in bpy.context.selected_objects] or [whole]
+    for o in parts:
+        bpy.ops.object.select_all(action='DESELECT')
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.material_slot_remove_unused()
+        m = o.data.materials[0]
+        o.name = rename(m.name)
+        o.data.name = o.name
+        if m not in class_mats.values():
+            # A glow keeps its material, which never reads the tint.
+            o.data.color_attributes.remove(o.data.color_attributes[TINT])
+    return parts
+
+
+parts = consolidate([o for o in bpy.context.scene.objects if o.type == 'MESH'], 'Lobbots',
+                    rename=lambda n: n.replace('Lobbots ', 'Proving ground '))
 
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'lobbots-island.blend'))
@@ -821,4 +937,5 @@ bpy.ops.export_scene.gltf(filepath=str(OUT / 'lobbots-island.glb'),
     export_format='GLB', use_selection=True, export_apply=True,
     export_animations=False, export_cameras=False, export_lights=False,
     export_yup=True)
-print('LOBBOTS_ISLAND_COMPLETE', len(groups), 'materials')
+tris = sum(len(p.vertices) - 2 for o in parts for p in o.data.polygons)
+print('LOBBOTS_ISLAND_COMPLETE', len(parts), 'materials', tris, 'triangles')
