@@ -1,21 +1,35 @@
 /* =============================================================================
  * launcher.js — handing the screen over to the actual game.
  *
- * This is the whole point of the room, so it is worth being precise about what
- * is real. You cannot texture an iframe onto a mesh: WebGL has no way to sample
- * a live document, and there is no trick that makes it possible. What you CAN
- * do is put the document exactly where the mesh was.
+ * THE HANDOVER IS A CURTAIN, AND IT USED TO BE A ZOOM. Until 2026-10-11 the
+ * game's iframe was revealed through a clip-path shaped like the cabinet's
+ * glass, scaled down to fit it, and then both animated open to the whole
+ * screen while the 3D sky kept rendering around it. It was the prettiest
+ * moment in the room and it chopped on most devices, for reasons that add up
+ * rather than compete: a clip-path animation is repainted on the main thread
+ * every frame (it is not one the compositor can run alone), the thing being
+ * repainted was a full-size document that was busy booting a game — parsing
+ * modules, building a canvas, sometimes starting Babylon — and the arcade was
+ * still drawing a thousand meshes underneath. Three jobs on one thread, each
+ * one enough to drop frames on an old tablet.
  *
- * So: the CRT's four corners are projected from 3D into screen pixels, and the
- * game's iframe — full size, laid out for the final viewport all along — is
- * revealed through a clip-path inset matching that rectangle, then the inset
- * animates away. The cabinet screen becomes the game's screen becomes the
- * whole screen, and the only thing that moved was a clip.
+ * So the handover now does one thing at a time, and nothing it animates costs
+ * the main thread anything:
  *
- * Coming back reverses it, which is why the camera stays parked in front of the
- * glass the entire time the game is running. The 3D render loop stops while a
- * game has the machine — a browser game does not want to share a GPU with an
- * arcade — but the scene is kept alive so stepping away is instant.
+ *   1. The camera has finished its dive (main.js). The 3D loop STOPS at once;
+ *      a WebGL canvas keeps showing its last frame, so the sky is still there,
+ *      frozen, costing nothing.
+ *   2. A cover in the game's own colours, with its icon and name, fades in
+ *      over that frozen frame. Opacity only: the compositor runs it.
+ *   3. Only once the cover is up is the iframe built, underneath it, so the
+ *      game boots with the whole device to itself and nothing on screen is
+ *      waiting on it.
+ *   4. When the game has loaded and had a moment to paint, the cover fades
+ *      out (opacity again) and the game is simply there.
+ *
+ * Leaving is the same curtain the other way: cover in over the game, iframe
+ * removed, one fresh frame of the sky rendered, cover out. The camera stays
+ * parked in front of the glass the whole time so that frame is the right one.
  *
  * The URL hash is the source of truth, same contract as the 2D launcher, so
  * Escape, the back button and Android's back gesture all leave the game, and
@@ -31,14 +45,24 @@
  * animation frames when the player steps away.
  * ========================================================================== */
 
-const identity = BABYLON.Matrix.Identity();
-
 /** Kept in step with the arcade's own iframe: gamepads and motion included. */
 const ALLOW = 'fullscreen; autoplay; gamepad; screen-wake-lock; accelerometer; gyroscope; pointer-lock; xr-spatial-tracking';
 
-/** Never dwell forever on the cabinet screen if a game is slow to paint. */
-const DWELL_AFTER_LOAD = 420;
-const DWELL_CEILING = 2400;
+/**
+ * How long the curtain takes, kept in step with `.curtain` in style.css. The
+ * timers below are a backstop for `transitionend`, which a backgrounded tab or
+ * reduced motion may never deliver.
+ */
+const FADE = 320;
+
+/**
+ * After the iframe's `load`, a beat for the game's first frames to land before
+ * the cover lifts — `load` means its scripts ran, not that it has painted.
+ * And a ceiling, so a game that never fires `load` (a stalled request, a
+ * service worker gone wrong) still gets shown rather than hidden forever.
+ */
+const SETTLE_AFTER_LOAD = 350;
+const LOAD_CEILING = 8000;
 
 export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   let current = null;
@@ -50,60 +74,37 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   // that had it must not inherit the answer.
   let announced = false;
 
-  /**
-   * The mesh's screen rectangle in CSS pixels. Babylon projects into drawing
-   * buffer pixels, which are not CSS pixels once devicePixelRatio or the
-   * engine's hardware scaling gets involved — hence the ratio.
-   */
-  function rectOf(mesh) {
-    const viewport = scene.activeCamera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
-    const transform = scene.getTransformMatrix();
-    const scale = canvas.clientWidth / engine.getRenderWidth() || 1;
+  // The curtain, built once. Its contents are repainted per game in open().
+  const curtain = document.createElement('div');
+  curtain.className = 'curtain';
+  curtain.setAttribute('aria-hidden', 'true');
+  curtain.innerHTML =
+    '<img class="curtain-icon" alt="" decoding="async">' +
+    '<p class="curtain-title"></p>' +
+    '<span class="curtain-dots"><i></i><i></i><i></i></span>';
+  const curtainIcon = curtain.querySelector('.curtain-icon');
+  const curtainTitle = curtain.querySelector('.curtain-title');
+  root.insertBefore(curtain, pill);
 
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const corner of mesh.getBoundingInfo().boundingBox.vectorsWorld) {
-      const p = BABYLON.Vector3.Project(corner, identity, transform, viewport);
-      minX = Math.min(minX, p.x);
-      maxX = Math.max(maxX, p.x);
-      minY = Math.min(minY, p.y);
-      maxY = Math.max(maxY, p.y);
-    }
-    return {
-      left: minX * scale,
-      top: minY * scale,
-      right: maxX * scale,
-      bottom: maxY * scale,
-    };
-  }
-
-  function insetFor(mesh) {
-    const r = rectOf(mesh);
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    // A CRT has a corner radius; borrowing it here is what stops the reveal
-    // looking like a div appearing.
-    return `inset(${r.top.toFixed(1)}px ${(w - r.right).toFixed(1)}px ${(h - r.bottom).toFixed(1)}px ${r.left.toFixed(1)}px round 10px)`;
-  }
-
-  /**
-   * The iframe is always the full viewport, because that is the size the game
-   * should lay itself out for. Clipping it to the CRT alone would therefore
-   * show the middle of a full-size page rather than a small screen, so during
-   * the dwell it is also scaled down and slid so that the WHOLE game fits
-   * inside the glass. Uniform scale, because a squashed game looks broken
-   * rather than distant.
-   */
-  function shrinkFor(mesh) {
-    const r = rectOf(mesh);
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const k = Math.min((r.right - r.left) / w, (r.bottom - r.top) / h);
-    const dx = (r.left + r.right) / 2 - w / 2;
-    const dy = (r.top + r.bottom) / 2 - h / 2;
-    return `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${k.toFixed(4)})`;
+  /** Fade the curtain to `up` (true = covering). Resolves when it is there. */
+  let fadeToken = 0;
+  function fade(up) {
+    const token = ++fadeToken;
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        curtain.removeEventListener('transitionend', onEnd);
+        resolve(token === fadeToken);
+      };
+      const onEnd = (e) => {
+        if (e.target === curtain && e.propertyName === 'opacity') finish();
+      };
+      curtain.addEventListener('transitionend', onEnd);
+      setTimeout(finish, FADE + 120);
+      curtain.classList.toggle('up', up);
+    });
   }
 
   function wakePill() {
@@ -113,59 +114,58 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   }
 
   /**
-   * Open the machine. `cabinet.screenMesh` must still be where the camera is
-   * looking, which it is: whoever called this has already flown the camera in.
-   *
-   * The starting clip is applied while the overlay is still `hidden`. That is
-   * the whole trick, and doing it any other way does not animate: an element
-   * that was not being rendered has no before-change style, so becoming
-   * visible with a clip already on it starts no transition, and the change one
-   * frame later has something to transition FROM. Toggling `transition: none`
-   * around the first assignment instead ends up snapping straight to the end.
-   *
-   * `dwell` is the beat where the game is running inside the cabinet's glass,
-   * at cabinet size, before the glass becomes the whole screen. It is the best
-   * thing in the room and it costs a setTimeout.
+   * Open the machine. Whoever calls this has already flown the camera to the
+   * glass; from here nothing in 3D moves again until close().
    */
   function open(cabinet) {
     current = cabinet;
     announced = false;
 
-    frame = document.createElement('iframe');
-    frame.title = cabinet.game.title;
-    frame.setAttribute('allow', ALLOW);
-    frame.setAttribute('allowfullscreen', '');
-    frame.style.transform = shrinkFor(cabinet.screenMesh);
-    frame.src = cabinet.game.url;
+    // 1. Freeze the sky. Its last frame stays on the canvas.
+    engine.stopRenderLoop();
 
-    root.style.clipPath = insetFor(cabinet.screenMesh);
-    root.insertBefore(frame, pill);
+    // 2. The cover, in the game's colours, starting transparent. Set while the
+    //    root is still hidden and committed with a reflow, so becoming visible
+    //    and fading in are two different style changes and the fade animates.
+    const game = cabinet.game;
+    curtain.style.setProperty('--curtain-bg', game.theme || '#0b1018');
+    curtain.style.setProperty('--curtain-accent', game.accent || '#12d9b8');
+    curtainTitle.textContent = game.title || '';
+    if (game.icon) {
+      curtainIcon.src = game.icon;
+      curtainIcon.hidden = false;
+    } else {
+      curtainIcon.removeAttribute('src');
+      curtainIcon.hidden = true;
+    }
+    curtain.classList.remove('up');
     root.hidden = false;
-    void root.offsetWidth; // commit the clip and the shrink as current style
+    void root.offsetWidth;
 
-    // Hold on the cabinet screen until the game has something to show, so the
-    // beat is always "the machine is running it", never a black rectangle.
-    let opened = false;
-    const reveal = () => {
-      if (opened || current !== cabinet) return;
-      opened = true;
-      // Decided HERE and not on `load`, which is where it used to be and where
-      // it was a frame too early: exit.js announces itself by postMessage, and
-      // a posted message is a task the parent runs whenever it gets to it —
-      // measured arriving AFTER the iframe's load event, so the pill appeared
-      // and then took itself away again. This moment is the one that matters
-      // anyway. Nobody can see the pill until the game is on screen.
-      offerPillIfTheGameHasNoQuit();
-      root.style.clipPath = 'inset(0 round 0)';
-      frame.style.transform = 'none';
-      // The floor keeps rendering around the opening clip; it stops once the
-      // game owns the viewport, which is also when the iframe wants the GPU.
-      setTimeout(() => {
-        if (current === cabinet) engine.stopRenderLoop();
-      }, 620);
-    };
-    frame.addEventListener('load', () => setTimeout(reveal, DWELL_AFTER_LOAD), { once: true });
-    setTimeout(reveal, DWELL_CEILING);
+    fade(true).then(() => {
+      if (current !== cabinet) return;
+      // 3. Only now does the game start, underneath a still screen.
+      frame = document.createElement('iframe');
+      frame.title = game.title;
+      frame.setAttribute('allow', ALLOW);
+      frame.setAttribute('allowfullscreen', '');
+      frame.src = game.url;
+      root.insertBefore(frame, curtain);
+
+      // 4. Lift the cover once it has loaded and had a beat to paint.
+      let shown = false;
+      const reveal = () => {
+        if (shown || current !== cabinet) return;
+        shown = true;
+        // Decided HERE and not on `load`: exit.js announces itself by
+        // postMessage, which was measured arriving AFTER the iframe's load
+        // event. Nobody can see the pill until the game is on screen anyway.
+        offerPillIfTheGameHasNoQuit();
+        fade(false);
+      };
+      frame.addEventListener('load', () => setTimeout(reveal, SETTLE_AFTER_LOAD), { once: true });
+      setTimeout(reveal, LOAD_CEILING);
+    });
   }
 
   /**
@@ -226,30 +226,28 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   });
 
   /** Give the machine back. Resolves once the floor is on screen again. */
-  function close(render) {
-    if (!current) return Promise.resolve();
-    const cabinet = current;
+  async function close(render) {
+    if (!current) return;
     current = null;
-
-    engine.runRenderLoop(render);
-    // One render so the projection below uses this frame's camera rather than
-    // whatever the matrices held before the game took over.
-    scene.render();
-    root.style.clipPath = insetFor(cabinet.screenMesh);
-    frame.style.transform = shrinkFor(cabinet.screenMesh);
-    const leaving = frame;
-    frame = null;
     pill.hidden = true; // back to hidden for whatever opens next
 
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        leaving.remove(); // the only sure way to stop a game's audio and rAF
-        root.hidden = true;
-        // Reset while hidden, for the same reason open() sets it while hidden.
-        root.style.clipPath = 'inset(0 round 0)';
-        resolve();
-      }, 560);
-    });
+    // Cover the game, THEN take it away: removing a running document is a
+    // hitch of its own, and it should happen where nobody can see it.
+    await fade(true);
+    if (current) return; // a new machine was opened meanwhile; it owns the root
+    const leaving = frame;
+    frame = null;
+    leaving?.remove(); // the only sure way to stop a game's audio and rAF
+
+    // One fresh frame of the sky under the cover before it lifts, and the
+    // loop running again so the lift reveals a live room, not a still.
+    engine.runRenderLoop(render);
+    scene.render();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (current) return;
+    await fade(false);
+    if (current) return;
+    root.hidden = true;
   }
 
   pill.addEventListener('pointerenter', wakePill);

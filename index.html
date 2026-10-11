@@ -424,10 +424,11 @@
   <button id="tbtn-action" class="tbtn tbtn-action" type="button" aria-label="Run">&raquo;</button>
 </div>
 
-<!-- The game itself. The clip-path starts as the CRT's rectangle on screen and
-     opens to the whole viewport, so the game grows out of the cabinet.
-     The iframe is not here: launcher.js builds a fresh one per game and
-     removes it afterwards — see its header for why that matters. -->
+<!-- The game itself. launcher.js freezes the sky, fades a curtain in the
+     game's colours over it, builds a fresh iframe underneath and lifts the
+     curtain once the game has painted — see its header for why the old
+     clip-path zoom went. The iframe and the curtain are not here: both are
+     built by launcher.js, the iframe fresh for every game. -->
 <div id="cabinet" class="cabinet" hidden>
   <!-- Hidden by default: every game in the arcade has its own quit, in its own
        colours, and a second generic control over the top of it was clutter.
