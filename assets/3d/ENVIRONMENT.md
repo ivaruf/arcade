@@ -80,6 +80,10 @@ must not quietly change.
 - **Animated nodes keep a local pivot.** `gears.js` rotates about the rotor
   node's own origin and `aquarium.js` clones each fish's rest pose. A pivot
   baked to world origin sends the gear into orbit.
+- **Island GLBs carry flat colour as vertex colours too** (COLOR_0, since
+  2026-10-11): four shading classes plus one material per glow colour, so an
+  island is a handful of draw calls rather than one per colour. A new island
+  script follows the same `consolidate()` pattern (see PERFORMANCE.md).
 - **Cloud shading is vertex colours**, not textures. The GLB carries no images
   at all — 0 textures across every model in `assets/3d/`. That is worth
   protecting: it is why the palette can be tinted per game later, and it is why

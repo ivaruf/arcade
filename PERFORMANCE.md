@@ -69,7 +69,7 @@ Measured with the committed bench (below), lighter tier unless stated:
   meshes, current resolution. This is how the owner measures the iPad, and it
   is the number that actually matters. Joins `?q=` and `?scale=` (quality.js).
 
-## Lanes (2026-10-11) — one file, one owner
+## Lanes (2026-10-11, finished) — one file, one owner
 
 | lane | owns |
 |---|---|
@@ -84,6 +84,49 @@ or the owning lane makes it. Nobody commits — the integrator commits per lane.
 Nobody starts a server. Blender runs outside the sandbox. One headless Chrome
 at a time: use the shared bench, which holds the lock.
 
+## After the push (2026-10-11, d5a23dc)
+
+`tools/perf/bench.sh`, lighter tier, 960×513, scale 1:
+
+| view | draw calls | active | CPU ms | was |
+|---|---|---|---|---|
+| title | 490 | 233 | 3.07 | 870 / 6.7 |
+| near NeonFox | 269 | 104 | 2.13 | 563 / 5.2 |
+| near MiniMaze | 190 | 65 | 1.72 | 526 / 4.7 |
+| near Zoodoku | 255 | 100 | 1.88 | 457 / 4.5 |
+| mine / water / race | 334 / 319 / 319 | | ~2.1 | |
+| overview | 1,204 | 668 | 5.31 | 2,213 / 12.8 |
+
+Scene 2,257 → 917 meshes, 756 → 405 materials, 980 → 199 shadow casters
+(all enabled). Still over budget: title draw calls (490/400), three island
+views by up to 34, the overview, and materials — glow materials are the floor
+of the island GLBs (one per glow colour), and the glow pass doubles every
+draw. The next levers, if the owner's iPad says they are needed: an emissive
+palette texture per island (breaks "0 textures"), merging near-identical glow
+colours (a look change), or per-island culling (measured 0.2–0.3 ms here).
+
 ## Ratified
 
-(Filled in as lanes report.)
+- **Islands carry flat colour as vertex colours (COLOR_0, linear)**, with
+  four shading classes (matte, satin, metal, gloss) plus one material per glow
+  colour. Glow reads one `emissiveColor` per material, so that is the floor.
+  The class materials have main.js's metal clamp baked in.
+- **Nothing animates unseen.** Every animated set asks `js/moving.js`
+  `watch()` whether its fixed box is in the frustum and within ~30 m; rigid
+  multi-part things fold with `foldRigid()` under their own pivots.
+- **Wardrobe items are built on first wear** and are shadow casters only while
+  worn. Folding is opt-in, because fishtank refits eyewear mesh by mesh.
+- **Identical machines are instances**, not thin instances: thin instances
+  share one bounding box, which would draw all nine machines from anywhere.
+- **The shadow map follows the gopher** (20 m square, whole-texel steps,
+  casters outside skipped). Distant take-home machines cast no shadow until
+  approached. The full tier's shadow is crisper than before.
+- **The lighter tier has a resolution governor** (1.25 → 0.75, hysteresis,
+  ignores boot, dives and stalls) and trimmed PBR terms that only matter with
+  an environment map. StandardMaterial was rejected: up to 83% of pixels
+  changed.
+- **Handing over to a game is a curtain**, not a clip-path zoom: the 3D loop
+  stops, an opacity-only cover fades in, the iframe is built under it, and the
+  cover lifts after load (launcher.js header).
+- The fox race's roof is still a third alpha-blended material: it is the point
+  of the roof. Owner's call.
