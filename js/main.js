@@ -660,9 +660,23 @@ function startRise() {
   phase = 'rising';
   const cabinet = atMachine;
   quality.hold(2);
+  // The rise ends EXACTLY where the follow rig in updateCamera() wants to be —
+  // the gopher's position plus CAMERA.height, at CAMERA.beta and .radius — so
+  // the handover at the end is a no-op rather than a second move. It used to
+  // aim at CAMERA.height as an absolute world height, which on a cloud floating
+  // 6–12 m up is a point under the floor: the camera sank toward it and the
+  // rig then dragged it back up over 1.4 s, a visible drop and refocus.
+  const p = gopher ? gopher.pivot.position : null;
+  const home = new BABYLON.Vector3(
+    p ? p.x : cabinet.stand.x,
+    (p ? p.y : cabinet.floor) + CAMERA.height,
+    p ? p.z : cabinet.stand.z,
+  );
   dive = {
     t: 0,
-    duration: 0.8,
+    // A touch longer than the dive in: coming away is a breath out, and the
+    // smoothstep below starts and lands at rest either way.
+    duration: 1.0,
     out: true,
     from: {
       alpha: camera.alpha,
@@ -674,7 +688,7 @@ function startRise() {
       alpha: cabinet.cameraAlpha,
       beta: CAMERA.beta,
       radius: CAMERA.radius,
-      target: new BABYLON.Vector3(cabinet.stand.x, CAMERA.height, cabinet.stand.z),
+      target: home,
     },
   };
 }
@@ -724,7 +738,8 @@ function updateDive(dt) {
     pushSlug(atMachine.game.slug);
     launcher.open(atMachine);
   } else {
-    // Give the camera its rig and its limits back.
+    // Give the camera its rig and its limits back. The rig is already where
+    // the rise left it, so nothing should move on this frame.
     cameraTarget.position.copyFrom(to.target);
     camera.lockedTarget = cameraTarget;
     camera.lowerRadiusLimit = 2.4;
