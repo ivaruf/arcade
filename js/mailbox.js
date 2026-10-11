@@ -77,6 +77,7 @@
 
 import { container, mergeStatic } from './room.js';
 import { IS_TOUCH } from './controls.js';
+import { t, locale } from './i18n.js';
 
 /**
  * Where a posted letter goes. Not a secret and never was — it is one URL in a
@@ -332,7 +333,20 @@ function plainMailbox(root, scene, shadows) {
 // The correspondence
 // ---------------------------------------------------------------------------
 
-const when = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+/* The date on each letter, in the arcade's language rather than the browser's
+   (hub §2: a game already formatting through Intl passes the current locale).
+   Rebuilt only when the language actually changes, not per letter. */
+let whenFor = '';
+let whenFormat = null;
+const when = {
+  format(at) {
+    if (whenFor !== locale()) {
+      whenFor = locale();
+      whenFormat = new Intl.DateTimeFormat(whenFor, { day: 'numeric', month: 'short' });
+    }
+    return whenFormat.format(at);
+  },
+};
 
 /**
  * Wire up the panel. `onShut` closes the world side of things (phase, camera, the door) and
@@ -401,7 +415,7 @@ export function createLetterPanel({ onShut, onRead }) {
     article.className = `note ${item.mine ? 'mine' : 'theirs'}`;
     const who = document.createElement('span');
     who.className = 'who';
-    who.textContent = `${item.mine ? 'You' : 'The arcade'} · ${when.format(item.at)}`;
+    who.textContent = `${t(item.mine ? 'mail.you' : 'mail.arcade')} · ${when.format(item.at)}`;
     const body = document.createElement('p');
     body.textContent = item.text;
     article.append(who, body);
@@ -419,7 +433,7 @@ export function createLetterPanel({ onShut, onRead }) {
     if (!items.length) {
       const empty = document.createElement('p');
       empty.className = 'letter-empty';
-      empty.textContent = 'Nothing in the box yet. Write the first letter and I will write back.';
+      empty.textContent = t('mail.empty');
       thread.append(empty);
       return;
     }
@@ -434,13 +448,16 @@ export function createLetterPanel({ onShut, onRead }) {
     // letter, so counting characters in the same word tells a child they may
     // write five hundred of them.
     room.textContent = written
-      ? `room for ${ROOM - text.value.length} more characters`
-      : `room for ${ROOM} characters`;
+      ? t('mail.roomLeft', ROOM - text.value.length)
+      : t('mail.room', ROOM);
     post.disabled = sending || !written || !POST_TO;
   }
 
-  function say(message, tone = '') {
-    status.textContent = message;
+  /* Said by key, so the line is always in the language of the moment it was
+     said; the panel cannot be open while the language changes (the switch
+     lives on the welcome card and in the menu), so it never needs repainting. */
+  function say(key, tone = '') {
+    status.textContent = key ? t(key) : '';
     status.dataset.tone = tone;
   }
 
@@ -452,12 +469,12 @@ export function createLetterPanel({ onShut, onRead }) {
     // Real limiting belongs at whatever POST_TO is, which is the one part of
     // this that can hold something the player cannot see.
     if (Date.now() - postedAt < 30000) {
-      say('One letter at a time — give the post a minute to get going.');
+      say('mail.wait');
       return;
     }
     sending = true;
     paint();
-    say('Posting…');
+    say('mail.posting');
     try {
       // application/json is not a CORS-safelisted content type, so this is a
       // preflighted request and the service has to answer an OPTIONS before it
@@ -486,7 +503,7 @@ export function createLetterPanel({ onShut, onRead }) {
       // nothing in this page can. It is not a fault, so it does not get the
       // voice of one.
       if (answer.status === 429) {
-        say('The post is busy just now. Give it a minute and send it again.');
+        say('mail.busy');
         return;
       }
       if (!answer.ok) throw new Error(`post refused with ${answer.status}`);
@@ -498,12 +515,12 @@ export function createLetterPanel({ onShut, onRead }) {
       text.value = '';
       remember('');
       drawThread();
-      say('It is in the box. I will write back here.', 'good');
+      say('mail.sent', 'good');
     } catch (err) {
       // Keep the letter. Somebody wrote it, the sky was quiet, and losing it
       // on the way out of a failed fetch is the rudest thing this could do.
       console.warn('[cloudnine] the letter did not get out', err);
-      say('It would not go — the sky is quiet. Your letter is still here, so try again in a bit.', 'bad');
+      say('mail.failed', 'bad');
     } finally {
       sending = false;
       paint();
@@ -538,7 +555,7 @@ export function createLetterPanel({ onShut, onRead }) {
     hasUnread: () => unread > 0,
     open() {
       text.value = recall();
-      say(POST_TO ? '' : 'The post is not collecting from this box yet. Write your letter — it will keep.');
+      say(POST_TO ? '' : 'mail.closed');
       paint();
       // Open the dialog BEFORE drawing the thread. A hidden element has no
       // scrollHeight, so scrolling to the newest letter while the panel is
@@ -557,7 +574,7 @@ export function createLetterPanel({ onShut, onRead }) {
         answers = fresh;
         drawThread();
         markRead();
-        say('An answer just came in.', 'good');
+        say('mail.arrived', 'good');
       });
     },
     close() {

@@ -20,10 +20,24 @@
  * double-sided one. A double-sided plane shows the same UVs from behind, so
  * half the time you would be reading the text mirrored — which is exactly the
  * sort of thing that looks like a rendering bug rather than a sign.
+ *
+ * The lettering speaks the arcade's language (js/i18n.js). Each board keeps a
+ * `draw` that paints its canvas from scratch, run once when it goes up and
+ * once more on every `arcade:lang` — a language switch is a handful of canvas
+ * redraws and texture uploads, and the render loop never hears about it
+ * (PERFORMANCE.md: nothing per frame). Game names are names and stay; only
+ * the platform names and the welcome board's sentences change.
  * ========================================================================== */
 
 import { BEACONS, PLATFORMS } from './room.js';
+import { t } from './i18n.js';
 import './version.js';
+
+/** Every board's redraw, for the language switch. */
+const redraws = [];
+document.addEventListener('arcade:lang', () => {
+  for (const redraw of redraws) redraw();
+});
 
 const css = (c) => `rgb(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)})`;
 
@@ -78,6 +92,8 @@ function enamel(ctx, w, h, tint) {
 function drawBeacon(ctx, w, h, titles, subtitle, tint) {
   enamel(ctx, w, h, tint);
   ctx.fillStyle = '#c3b291';
+  // "The marble garden" boards as MARBLE GARDEN; Norwegian names carry their
+  // article on the end ("Kulehagen") and have nothing to strip.
   lettering(ctx, subtitle.replace(/^The /, '').toUpperCase(), w / 2, h * .23, w * .83, h * .09, 550);
   ctx.fillStyle = '#fff8e9';
   titles.forEach((title, i) => lettering(ctx, title, w / 2, h * (.57 + (i - (titles.length - 1) / 2) * .24), w * .85, h * (titles.length > 1 ? .18 : .27)));
@@ -106,14 +122,18 @@ export function raiseSigns(scene, cabinets) {
     const tint = css(here[0].accent);
 
     const texture = new BABYLON.DynamicTexture(`beacon:${id}`, { width: 1536, height: 512 }, scene, true);
-    drawBeacon(
-      texture.getContext(),
-      1536, 512,
-      here.map((c) => c.game.title),
-      platform?.name || '',
-      tint,
-    );
-    texture.update();
+    const draw = () => {
+      drawBeacon(
+        texture.getContext(),
+        1536, 512,
+        here.map((c) => c.game.title),
+        platform ? t(`platform.${platform.id}`) : '',
+        tint,
+      );
+      texture.update();
+    };
+    draw();
+    redraws.push(draw);
 
     const sign = board(`beacon:${id}`, texture, 4.8, 1.6, scene);
     sign.position.set(mast.x, mast.y + mast.top + 0.9, mast.z);
@@ -131,21 +151,25 @@ function raiseWelcomeSign(scene) {
   }
   const texture = new BABYLON.DynamicTexture('welcome:version', { width: 1536, height: 1280 }, scene, true);
   const ctx = texture.getContext();
-  enamel(ctx, 1536, 1280, '#82ebd7');
-  ctx.fillStyle = '#a9c8c4';
-  lettering(ctx, 'WELCOME TO THE ARCADE', 768, 220, 1260, 55, 550);
-  ctx.fillStyle = '#fff8e9';
-  lettering(ctx, 'Gopher Cloud', 768, 455, 1280, 154, 750);
-  ctx.fillStyle = '#82ebd7';
-  lettering(ctx, `${globalThis.GOPHER_CLOUD_VERSION}  —  BETA`, 768, 680, 1250, 94, 650);
-  ctx.strokeStyle = '#567b77'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(270, 845); ctx.lineTo(1266, 845); ctx.stroke();
-  ctx.fillStyle = '#cfddd6';
-  lettering(ctx, 'Jump twice to fly', 768, 985, 1230, 66, 550);
-  lettering(ctx, 'Find your next game in the clouds', 768, 1090, 1230, 43, 450);
+  const draw = () => {
+    enamel(ctx, 1536, 1280, '#82ebd7');
+    ctx.fillStyle = '#a9c8c4';
+    lettering(ctx, t('sign.welcome'), 768, 220, 1260, 55, 550);
+    ctx.fillStyle = '#fff8e9';
+    lettering(ctx, 'Gopher Cloud', 768, 455, 1280, 154, 750);
+    ctx.fillStyle = '#82ebd7';
+    lettering(ctx, `${globalThis.GOPHER_CLOUD_VERSION}  —  BETA`, 768, 680, 1250, 94, 650);
+    ctx.strokeStyle = '#567b77'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(270, 845); ctx.lineTo(1266, 845); ctx.stroke();
+    ctx.fillStyle = '#cfddd6';
+    lettering(ctx, t('sign.fly'), 768, 985, 1230, 66, 550);
+    lettering(ctx, t('sign.find'), 768, 1090, 1230, 43, 450);
+    texture.update();
+  };
   texture.hasAlpha = false;
   texture.anisotropicFilteringLevel = 8;
-  texture.update();
+  draw();
+  redraws.push(draw);
   const mat = new BABYLON.StandardMaterial('welcome:version ink', scene);
   mat.disableLighting = true;
   // StandardMaterial adds the emissive color to its texture: no added white.

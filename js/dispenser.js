@@ -29,6 +29,7 @@
 
 import { container, blockerFor, mergeUnder } from './room.js';
 import { accentFor, realizeInstances, stillParts, foldBody, shareBody } from './cabinets.js';
+import { t } from './i18n.js';
 
 /**
  * One beside every cabinet, in world metres, each facing the way its cabinet
@@ -373,25 +374,9 @@ function plainDispenser(root, scene, shadows) {
  * somebody steps that lead to a menu without the item in it.
  */
 function steps(title) {
-  if (DEVICE === 'ios') {
-    return [
-      `${title} opens in Safari.`,
-      'Tap the Share button — the square with an arrow out of it.',
-      'Choose "Add to Home Screen".',
-    ];
-  }
-  if (DEVICE === 'android') {
-    return [
-      `${title} opens in your browser.`,
-      'Tap the ⋮ menu, top right.',
-      'Choose "Install app", or "Add to Home screen".',
-    ];
-  }
-  return [
-    `${title} opens in a new tab.`,
-    'Look in the address bar for the install button — a little screen with an arrow.',
-    'Chrome and Edge have one. Firefox does not, and that is not your fault.',
-  ];
+  // Each list is one function in js/i18n.js, because the game's name sits in a
+  // different place in the Norwegian sentence than in the English one.
+  return t(DEVICE === 'ios' ? 'take.ios' : DEVICE === 'android' ? 'take.android' : 'take.desktop', title);
 }
 
 export function createTakeawayPanel({ onShut }) {
@@ -416,19 +401,18 @@ export function createTakeawayPanel({ onShut }) {
   return {
     open(spec) {
       game = spec;
-      heading.textContent = `Take ${spec.title} home`;
-      blurb.textContent =
-        `${spec.title} can live on your device like anything else on it: its own icon, no address bar, and it keeps working when the internet does not.`;
+      // Painted at open, in whatever language is current: the switch lives on
+      // the welcome card and in the menu, so it cannot change under this card.
+      heading.textContent = t('take.heading', spec.title);
+      blurb.textContent = t('take.blurb', spec.title);
       list.replaceChildren(...steps(spec.title).map((line) => {
         const item = document.createElement('li');
         item.textContent = line;
         return item;
       }));
-      note.textContent = DEVICE === 'android' && inStandaloneArcade()
-        ? 'You are in the installed arcade, so this opens in a plain browser window — and that kind of window has no install button. If the menu does not offer it, open the arcade in Chrome itself and come back to this machine.'
-        : '';
+      note.textContent = DEVICE === 'android' && inStandaloneArcade() ? t('take.note') : '';
       note.hidden = !note.textContent;
-      go.textContent = `Open ${spec.title} on its own`;
+      go.textContent = t('take.go', spec.title);
       el.showModal();
     },
     close() { el.close(); },

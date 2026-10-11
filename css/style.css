@@ -259,6 +259,86 @@ kbd {
 }
 .pause-pair .ghost { margin-top: 0; width: 100%; padding-inline: 10px; letter-spacing: .08em; }
 
+/* ---------- the language row ----------
+   One line on purpose: the caption, then Norsk and English as two equal
+   buttons (hub §2 — one segmented row, `flex: 1 1 0`, Norsk first), each with
+   its flag and its name in its own language. It appears twice, on the welcome
+   card and in the menu, and is the same object in both. The chosen one is lit
+   like .neon and the other sits like .ghost, both drawn off aria-pressed,
+   which js/i18n.js writes — so what is lit and what a screen reader is told
+   cannot drift. Endonyms keep their own case ("Norsk", not NORSK): they are
+   names, and a name written in somebody else's capitals reads as a label. */
+.lang-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.lang-cap {
+  flex: none;
+  min-width: 4.6em;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ivory);
+}
+
+.lang-seg {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lang-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.lang-btn:hover { color: var(--ink); border-color: rgba(255, 255, 255, .24); }
+
+.lang-btn[aria-pressed="true"] {
+  border-color: rgba(18, 217, 184, .55);
+  background: linear-gradient(180deg, rgba(18, 217, 184, .22), rgba(18, 217, 184, .07));
+  color: #d9fff7;
+  box-shadow: 0 0 14px rgba(18, 217, 184, .22), inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+
+.lang-btn:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+/* Both flags at one height; the widths follow their own proportions. */
+.lang-btn .flag {
+  flex: none;
+  height: 14px;
+  width: auto;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+}
+.lang-btn .flag[viewBox="0 0 22 16"] { width: 19px; }
+.lang-btn .flag[viewBox="0 0 60 30"] { width: 28px; }
+
+/* On the welcome card it sits under the way in, with the same breathing room
+   the offer row below it has. */
+.title .lang-row { margin-top: 12px; }
+
 /* The menu is taller than it was now that two switches have become two dials,
    and a phone on its side is 300–430px tall. A safety net, and only that: the
    squeeze in the max-height block further down is the plan. touch-action has to
@@ -858,11 +938,19 @@ kbd {
   -webkit-backdrop-filter: blur(10px);
   color: #d9fff7;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: .16em;
+  /* Sentence case now, "Back to arcade" (hub §2): the wide tracking was for
+     the old all-caps FLOOR and only spreads ordinary words apart. */
+  letter-spacing: .02em;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
+
+/* The hub's back arrow, stroked like the corner glyphs, in the pill's mint. */
+.pill button svg { width: 16px; height: 16px; flex: none; }
 
 .pill button:hover { border-color: var(--mint); }
 
@@ -968,6 +1056,8 @@ kbd {
   .pause .ghost { margin-top: 8px; padding: 11px 16px; }
   .pause-pair { margin-top: 8px; }
   .pause-pair .ghost { margin-top: 0; padding: 11px 10px; }
+  .lang-row { margin-top: 8px; }
+  .lang-btn { padding: 9px 10px; }
 
   /* The board is the one thing here that grew, so it gives the pixels back. The
      note stays: it is what tells somebody which of the two rows is theirs, and
@@ -995,6 +1085,43 @@ kbd {
   .glyph svg { width: 25px; height: 25px; }
   .step { font-size: 13px; line-height: 1.5; }
   .install-note { margin-top: 8px; font-size: 11px; }
+}
+
+/* ---------- the menu on a phone held sideways ----------
+   The menu must not scroll on a landscape phone (hub §2), and by 2026-10-11 it
+   did: the language row was the eighth thing in the column, and on a phone the
+   install button already made it seven, so a 390px-tall screen lost its last
+   hundred pixels — the language, which is exactly what a stranger opening the
+   menu is looking for. A sideways phone has width where it lacks height, so
+   this does what maxgear's landscape block does: one two-column grid laid
+   over the existing markup BY GRID AREA, nothing moved in index.html, portrait
+   and every taller screen untouched (a tablet is taller than 500px whichever
+   way up). The way back in and the sound board, which belong together as "the
+   round", take the left; the settings that are set once stack on the right,
+   language last, and the two columns end on one line. The overflow safety net
+   on .pause stays behind it. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .card.pause {
+    width: min(760px, calc(100vw - 32px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas:
+      "sign   sign"
+      "resume pair"
+      "board  install"
+      "board  welcome"
+      "board  lang";
+    gap: 8px 14px;
+    align-content: start;
+  }
+  .pause > .sign { grid-area: sign; }
+  .pause > #resume { grid-area: resume; margin: 0; }
+  .pause > .board { grid-area: board; margin: 0; }
+  .pause > .pause-pair { grid-area: pair; margin: 0; }
+  .pause > #install-pause { grid-area: install; margin: 0; }
+  .pause > #welcome { grid-area: welcome; margin: 0; }
+  .pause > .lang-row { grid-area: lang; margin: 0; align-self: end; }
 }
 
 

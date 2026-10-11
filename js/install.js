@@ -48,6 +48,8 @@
  * it. As a separate tag the worst case is that the install offer quietly does
  * not appear, and the sky still opens.
  * ========================================================================== */
+import { t } from './i18n.js';
+
 (() => {
   'use strict';
 
@@ -186,13 +188,19 @@
   // Word the offer for the device holding it. "Install" is a promise Safari
   // cannot keep — there is no install on iOS, there is a home screen — and a
   // button that says one thing and does another is worse than a longer label.
+  //
+  // The wording is chosen as a KEY on the node, so js/i18n.js's repaint on a
+  // language switch keeps saying the right one for this device; the first
+  // paint is ours, because i18n.js has already painted the page by now.
+  const word = (el, key) => {
+    el.dataset.i18n = key;
+    el.textContent = t(key);
+  };
   if (KIND === 'ios') {
-    dom.openLabel.textContent = 'Add to home screen';
-    dom.iosWhere.textContent = IPAD
-      ? 'in the row of buttons at the top'
-      : 'in the bar at the bottom of the screen';
+    word(dom.openLabel, 'install.offerIos');
+    word(dom.iosWhere, IPAD ? 'install.whereIpad' : 'install.wherePhone');
   } else {
-    dom.openLabel.textContent = 'Install on your device';
+    word(dom.openLabel, 'install.offer');
   }
 
   refresh();

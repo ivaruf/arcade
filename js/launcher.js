@@ -161,7 +161,9 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
         // postMessage, which was measured arriving AFTER the iframe's load
         // event. Nobody can see the pill until the game is on screen anyway.
         offerPillIfTheGameHasNoQuit();
-        fade(false);
+        fade(false).then((settled) => {
+          if (settled && current === cabinet) handFocusTo(frame);
+        });
       };
       frame.addEventListener('load', () => setTimeout(reveal, SETTLE_AFTER_LOAD), { once: true });
       setTimeout(reveal, LOAD_CEILING);
@@ -169,7 +171,9 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
   }
 
   /**
-   * The FLOOR pill is a safety net now, not furniture.
+   * The back-to-arcade pill is a safety net now, not furniture. It said
+   * "◂ FLOOR" until 2026-10-11; it wears the hub's back arrow and the plain
+   * words every game's own exit wears now (index.html, and hub §2).
    *
    * Every game in the arcade has its own quit, in its own colours and its own
    * words, so a second control out here was just clutter over the top of it —
@@ -200,6 +204,35 @@ export function createLauncher({ engine, scene, canvas, root, pill, onLeft }) {
     }
     pill.hidden = hasOwnQuit;
     if (!hasOwnQuit) wakePill();
+  }
+
+  /**
+   * Put the keyboard inside the game once it is on screen.
+   *
+   * Until now the focus stayed on the arcade page — on the canvas, or on the
+   * button that was last pressed — so a game's own Escape (one step back, and
+   * from its start screen back to the arcade: hub §2) never heard the key, and
+   * neither did its arrows until the player clicked into it. Focusing the
+   * iframe element moves keyboard input into its document for a same-origin
+   * game and a cross-origin one alike; the contentWindow call is the belt to
+   * that brace on engines that want the window itself, and it can throw
+   * across origins, which is a refusal and not a fault.
+   *
+   * The arcade's own Escape (main.js) still stands for whenever focus is back
+   * on this page — a click on the pill, say — so the key works either way.
+   */
+  function handFocusTo(target) {
+    if (!target) return;
+    try {
+      target.focus();
+    } catch {
+      /* nothing to focus, or not allowed to: the arcade's Escape still works */
+    }
+    try {
+      target.contentWindow?.focus();
+    } catch {
+      /* cross-origin: the element's focus above is the part that counts */
+    }
   }
 
   /**

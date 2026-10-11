@@ -22,9 +22,12 @@ assert.equal(offline.icon, 'http://localhost:8000/arcade/assets/games/lobbots-19
 assert.equal(offline.url, 'http://localhost:8000/lobbots/');
 assert.equal(offline.tagline, 'Big robots, bigger lobs.');
 assert.ok(offline.description);
+// The Norwegian card rides through the resolver untouched, reachable or not.
+assert.equal(offline.nb?.tagline, entry.nb.tagline, 'registry passes games.json `nb` through');
 available = true;
 const [online] = await loadMachines();
 assert.equal(online.icon, offline.icon);
+assert.equal(online.nb?.tagline, entry.nb.tagline, 'a reachable manifest does not drop the Norwegian');
 assert.equal(online.url, offline.url);
 await readFile(new URL(`../${entry.icon}`, import.meta.url));
 // Every bundled cabinet face is committed, not only Lobbots': a game that is
@@ -49,5 +52,20 @@ const block = room.slice(room.indexOf('export const ISLAND_MODELS'), room.indexO
 const asked = [...block.matchAll(/file: '([^']+\.glb\?v=[^']+)'/g)].map((m) => m[1]);
 assert.ok(asked.some((f) => f.startsWith('lobbots-island.glb')), 'room.js loads the Lobbots island');
 for (const file of asked) assert.ok(sw.includes(`'./assets/3d/${file}'`), `sw.js preloads ${file}`);
+// Two languages, Norwegian first (hub §2). An entry may carry an `nb` block
+// beside its English; where it does, it holds strings and only the fields the
+// arcade reads. A bare slug stays legal — adding one to games.json is the whole
+// registration step (hub §5) — it simply shows its English card in both.
+let norwegian = 0;
+for (const game of config.games) {
+  const nb = typeof game === 'object' ? game.nb : undefined;
+  if (nb === undefined) continue;
+  assert.ok(nb && typeof nb === 'object', `${game.slug}: nb is an object`);
+  assert.ok(typeof nb.tagline === 'string' && nb.tagline.trim(), `${game.slug} has a Norwegian tagline`);
+  if ('description' in nb) assert.equal(typeof nb.description, 'string', `${game.slug}'s nb description is a string`);
+  for (const key of Object.keys(nb)) assert.ok(['tagline', 'description'].includes(key), `${game.slug}: nb.${key} is not a field anything reads`);
+  norwegian++;
+}
 console.log('Registry artwork and launch URLs pass with reachable and missing manifests.');
+console.log(`${norwegian} of ${config.games.length} machines carry a Norwegian tagline.`);
 console.log(`The worker preloads every island room.js asks for (${asked.join(', ')}).`);

@@ -28,6 +28,34 @@
 // main.js having already pulled in signs.js for the global to exist.
 import './version.js';
 
+/*
+ * Its own words, and deliberately not js/i18n.js's. The hub's contract keeps
+ * the fullscreen file free of the rest of the page (§2, "Two languages"): it
+ * reads <html lang> — which index.html sets in the head before anything runs —
+ * and listens for `arcade:lang` to say it again in the other language. Every
+ * entry here is a key the button or the rotate notice can show; the two
+ * fullscreen words are the hub's glossary, verbatim.
+ */
+const WORDS = {
+  nb: {
+    enter: 'Fullskjerm',
+    leave: 'Avslutt fullskjerm',
+    landscape: 'Spill liggende',
+    orFull: 'Eller spill i fullskjerm',
+    noLock: 'Denne enheten vil ikke låse seg på siden. Snu den selv.',
+    refused: 'Fullskjerm ble avslått. Snu enheten i stedet.',
+  },
+  en: {
+    enter: 'Fullscreen',
+    leave: 'Exit fullscreen',
+    landscape: 'Play in landscape',
+    orFull: 'Or play fullscreen',
+    noLock: 'This device will not lock sideways. Please turn it.',
+    refused: 'Fullscreen was refused. Please turn the device instead.',
+  },
+};
+const say = (key) => (WORDS[document.documentElement.lang] || WORDS.en)[key];
+
 /**
  * @param onResize called after every fullscreen change, on the next frame —
  *        the viewport is a different size and the engine has to be told.
@@ -50,10 +78,14 @@ export function setupScreen(onResize) {
    * the button never claims something it cannot do.
    */
   const canPin = typeof screen.orientation?.lock === 'function';
-  if (rotateButton) {
-    rotateLabel.textContent = canPin ? 'Play in landscape' : 'Or play fullscreen';
-    rotateButton.hidden = false;
+  // Which note is showing, by key, so a language switch can say it again.
+  let noteKey = '';
+  function paintWords() {
+    if (rotateButton) rotateLabel.textContent = say(canPin ? 'landscape' : 'orFull');
+    if (note && noteKey) note.textContent = say(noteKey);
   }
+  if (rotateButton) rotateButton.hidden = false;
+  paintWords();
 
   let pinned = false;
 
@@ -74,7 +106,8 @@ export function setupScreen(onResize) {
       // physically held the other way round. The overlay still says which way.
       pinned = false;
       if (active && note) {
-        note.textContent = 'This device will not lock sideways. Please turn it.';
+        noteKey = 'noLock';
+        note.textContent = say(noteKey);
         note.hidden = false;
       }
     }
@@ -82,7 +115,7 @@ export function setupScreen(onResize) {
 
   function sync() {
     const active = !!document.fullscreenElement;
-    const label = active ? 'Leave fullscreen' : 'Go fullscreen';
+    const label = say(active ? 'leave' : 'enter');
     button.setAttribute('aria-label', label);
     button.setAttribute('aria-pressed', String(active));
     button.title = label;
@@ -113,7 +146,8 @@ export function setupScreen(onResize) {
       else await root.requestFullscreen();
     } catch {
       if (trigger === rotateButton && note) {
-        note.textContent = 'Fullscreen was refused. Please turn the device instead.';
+        noteKey = 'refused';
+        note.textContent = say(noteKey);
         note.hidden = false;
       }
     } finally {
@@ -124,6 +158,13 @@ export function setupScreen(onResize) {
   button.addEventListener('click', () => toggle(button));
   rotateButton?.addEventListener('click', () => toggle(rotateButton));
   document.addEventListener('fullscreenchange', sync);
+  // A language switch relabels the plate and the notice; nothing else moves.
+  document.addEventListener('arcade:lang', () => {
+    const label = say(document.fullscreenElement ? 'leave' : 'enter');
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    paintWords();
+  });
   sync();
 }
 

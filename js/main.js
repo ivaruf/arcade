@@ -1,3 +1,6 @@
+// First, so <html lang> and the static page are in the right language before
+// any other module paints a word (js/i18n.js says why Norwegian is the default).
+import { t, bindLangButtons } from './i18n.js';
 import { createParentsSign } from './parents.js';
 import { seatNear } from './seating.js';
 import { createPets } from './pets.js';
@@ -159,7 +162,7 @@ const say = (text) => {
 };
 
 if (typeof BABYLON === 'undefined') {
-  say('Babylon.js did not load. The floor needs the network the first time.');
+  say(t('boot.noBabylon'));
   throw new Error('Babylon.js missing');
 }
 
@@ -435,15 +438,15 @@ let atMachine = null;
 // ---------------------------------------------------------------------------
 
 async function boot() {
-  say('rolling out the clouds…');
+  say(t('boot.clouds'));
   const machinesPromise = loadMachines();
   const world = await buildWorld(scene);
   animateWorld = world.animate;
 
-  say('reading the machines…');
+  say(t('boot.machines'));
   const machines = await machinesPromise;
 
-  say(`wheeling in ${machines.length} cabinet${machines.length === 1 ? '' : 's'}…`);
+  say(t('boot.cabinets', machines.length));
   cabinets = await placeCabinets(scene, shadows, machines);
   customizationStation = createCustomizationStation(scene, shadows);
   pets = createPets(scene);
@@ -467,12 +470,12 @@ async function boot() {
   blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
-  say('waking the gopher…');
+  say(t('boot.gopher'));
   gopher = await createGopher(scene, shadows);
   gopher.pivot.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
   gopher.pivot.rotation.y = state.yaw;
   platform = platformNear(SPAWN.x, SPAWN.z, SPAWN.y);
-  ui.hudRoom.textContent = platform?.name || '';
+  paintPlatform();
 
   // No environment map ships with this page, and a PBR material that is mostly
   // metal with nothing to reflect renders black. The kit only pushes past this
@@ -487,7 +490,7 @@ async function boot() {
   // Every material now exists: give the lighter tier its leaner PBR (quality.js).
   quality.shade(scene);
 
-  ui.hudCount.textContent = `${cabinets.filter((c) => c.game).length} machines in the sky`;
+  paintCount();
   ui.boot.hidden = true;
 
   // Nothing on this floor swaps a texture or a blend mode after boot; the only
@@ -531,7 +534,7 @@ async function boot() {
 boot().catch((err) => {
   console.error('[cloudnine]', err);
   ui.boot.hidden = false;
-  say(`The arcade did not open: ${err.message}`);
+  say(t('boot.failed', err.message));
 });
 
 // ---------------------------------------------------------------------------
@@ -727,7 +730,7 @@ function updateDive(dt) {
     // From the player's side nothing goes anywhere: the corner is continuously
     // present and always means the same thing, which is the entire point of the
     // rule. What changes is which document owns it, and that changes exactly
-    // when the thing on screen changes. It is the same call the FLOOR pill
+    // when the thing on screen changes. It is the same call the back-to-arcade pill
     // makes one file over — launcher.js offers it only to a game that turns out
     // to have no way out of its own, rather than stacking ours over theirs.
     //
@@ -1057,13 +1060,30 @@ function findNear() {
   return best;
 }
 
+/**
+ * The callout's two lines, written only when they change. updatePrompt runs
+ * every frame the gopher is on the floor, and rewriting the same innerHTML
+ * sixty times a second is DOM work for nothing; a language switch clears the
+ * cache (see `arcade:lang` below) so the next frame writes the new words.
+ */
+let promptTitleNow = null;
+let promptCueNow = null;
+function setPrompt(title, cueHtml) {
+  ui.prompt.hidden = false;
+  if (title !== promptTitleNow) ui.promptTitle.textContent = promptTitleNow = title;
+  if (cueHtml !== promptCueNow) ui.promptCue.innerHTML = promptCueNow = cueHtml;
+}
+/** "tap <kbd>SPILL</kbd>" on a touch screen, "<kbd>E</kbd> spill" with keys. */
+const cue = (action, words) => (input.IS_TOUCH ? t('cue.tap', t(`glyph.${action}`)) : `<kbd>E</kbd> ${words}`);
+
 function updatePrompt(dt) {
   if (state.seated) {
     near = null; nearParents = nearPets = nearCustomization = nearMailbox = false; nearSeat = nearDispenser = null;
     gopher.setReach(0, dt);
-    ui.prompt.hidden = false; ui.promptTitle.textContent = sitMotion ? 'Sitting down…' : standMotion ? 'Getting up…' : 'Taking a break';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>STAND</kbd> to get up' : '<kbd>E</kbd> stand up · move or jump to leave';
-    if (standMotion || sitMotion) ui.promptCue.textContent = '';
+    setPrompt(
+      t(sitMotion ? 'prompt.sitting' : standMotion ? 'prompt.standing' : 'prompt.resting'),
+      standMotion || sitMotion ? '' : input.IS_TOUCH ? t('cue.standTouch', t('glyph.stand')) : t('cue.standKeys'),
+    );
     input.setAction('stand'); return;
   }
   nearParents = state.mode === 'walk' && state.grounded && parentsSign.inReach(gopher.pivot.position);
@@ -1096,35 +1116,27 @@ function updatePrompt(dt) {
   // the arcade closes the way every installed app does: from the system. The
   // games keep their own quit (exit.js), which hands them back to the sky.
   if (near) {
-    ui.prompt.hidden = false;
-    ui.promptTitle.textContent = near.game.title;
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PLAY</kbd>' : '<kbd>E</kbd> play game';
+    setPrompt(near.game.title, cue('play', t('cue.play')));
   } else if (nearPets) {
-    ui.prompt.hidden = false;
-    ui.promptTitle.textContent = 'Pets';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>PETS</kbd>' : '<kbd>E</kbd> choose companion';
+    setPrompt(t('prompt.pets'), cue('pets', t('cue.pets')));
   } else if (nearCustomization) {
-    ui.prompt.hidden = false;
-    ui.promptTitle.textContent = 'Dresser';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>DRESS</kbd>' : '<kbd>E</kbd> customize gopher';
+    setPrompt(t('prompt.dress'), cue('dress', t('cue.dress')));
   } else if (nearParents) {
-    ui.prompt.hidden = false; ui.promptTitle.textContent = 'For parents and guardians';
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>READ</kbd>' : '<kbd>E</kbd> read';
+    setPrompt(t('prompt.parents'), cue('read', t('cue.read')));
   } else if (nearMailbox) {
-    ui.prompt.hidden = false;
     // The flag is up for a reason, and the prompt says the reason out loud
     // rather than making the player work out what changed about the model.
     const mail = letter.hasUnread();
-    ui.promptTitle.textContent = mail ? 'The mailbox — an answer for you' : 'The mailbox';
-    ui.promptCue.innerHTML = input.IS_TOUCH
-      ? `tap <kbd>WRITE</kbd>${mail ? ' to read it' : ''}`
-      : `<kbd>E</kbd> ${mail ? 'read your answer' : 'write a letter'}`;
+    setPrompt(
+      t(mail ? 'prompt.mailboxAnswer' : 'prompt.mailbox'),
+      input.IS_TOUCH
+        ? `${t('cue.tap', t('glyph.write'))}${mail ? t('cue.toRead') : ''}`
+        : `<kbd>E</kbd> ${t(mail ? 'cue.readAnswer' : 'cue.write')}`,
+    );
   } else if (nearDispenser) {
-    ui.prompt.hidden = false; ui.promptTitle.textContent = `${nearDispenser.spec.title} to take home`;
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>TAKE</kbd>' : '<kbd>E</kbd> keep it on your device';
+    setPrompt(t('prompt.take', nearDispenser.spec.title), cue('take', t('cue.take')));
   } else if (nearSeat) {
-    ui.prompt.hidden = false; ui.promptTitle.textContent = nearSeat.name;
-    ui.promptCue.innerHTML = input.IS_TOUCH ? 'tap <kbd>SIT</kbd>' : '<kbd>E</kbd> sit down';
+    setPrompt(t(`seat.${nearSeat.key}`), cue('sit', t('cue.sit')));
   } else {
     ui.prompt.hidden = true;
   }
@@ -1201,11 +1213,20 @@ function updateCamera(dt) {
  */
 function updatePlatform() {
   const found = platformNear(gopher.pivot.position.x, gopher.pivot.position.z, gopher.pivot.position.y);
-  const name = found ? found.name : 'The open sky';
-  if (found !== platform || ui.hudRoom.textContent !== name) {
+  if (found !== platform) {
     platform = found;
-    ui.hudRoom.textContent = name;
+    paintPlatform();
   }
+}
+
+/** The HUD's "where am I", in the current language: room.js keeps the ids. */
+function paintPlatform() {
+  ui.hudRoom.textContent = t(platform ? `platform.${platform.id}` : 'platform.open');
+}
+
+/** "10 maskiner i lufta", counting the machines that actually got a game. */
+function paintCount() {
+  ui.hudCount.textContent = t('hud.count', cabinets.filter((c) => c.game).length);
 }
 
 /**
@@ -1355,7 +1376,7 @@ ui.skipWelcome.addEventListener('click', () => {
   const skip = ui.skipWelcome.getAttribute('aria-pressed') !== 'true';
   ui.skipWelcome.setAttribute('aria-pressed', String(skip));
   rememberWelcome(!skip);
-  paintToggle(ui.welcome, 'Welcome screen', !skip);
+  paintToggle(ui.welcome, 'welcome.label', !skip);
   sfx.unlock();
   sfx.click();
 });
@@ -1378,16 +1399,11 @@ ui.resume.addEventListener('click', unpause);
 // but what it opens is a menu and it is named for that now.
 ui.menuBtn.addEventListener('click', () => (phase === 'paused' ? unpause() : pause()));
 
-/** Reads as a label plus a state, and says so to a screen reader. */
+/** Reads as a label plus a state, and says so to a screen reader. `label` is a key. */
 const paintToggle = (el, label, on) => {
-  el.textContent = `${label}: ${on ? 'on' : 'off'}`;
+  el.textContent = t('toggle', t(label), on);
   el.setAttribute('aria-pressed', String(on));
 };
-
-/* The line under the two dials, kept so it can be put back after the board has
-   had to say something more urgent. Read once, from the markup, so the wording
-   lives in exactly one place. */
-const SOUND_NOTE = ui.soundNote.textContent;
 
 /** One dial: the thumb, the track's own fill, and the number beside the label. */
 const paintDial = (slider, out, level) => {
@@ -1408,8 +1424,9 @@ const paintAudio = () => {
   // engraving and the announcement come from one write. The board dims and says
   // why, because two faders that do nothing are otherwise a mystery.
   ui.muteBtn.setAttribute('aria-pressed', String(muted));
-  ui.muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
-  ui.muteBtn.title = muted ? 'Unmute' : 'Mute';
+  const muteWords = t(muted ? 'unmute' : 'mute');
+  ui.muteBtn.setAttribute('aria-label', muteWords);
+  ui.muteBtn.title = muteWords;
   ui.soundBoard.classList.toggle('muted', muted);
   ui.soundMuted.hidden = !muted;
 
@@ -1418,9 +1435,7 @@ const paintAudio = () => {
   // a file since renamed lands exactly here.
   const haveTheme = sfx.isMusicAvailable();
   ui.volMusic.disabled = !haveTheme;
-  ui.soundNote.textContent = haveTheme
-    ? SOUND_NOTE
-    : 'The theme could not be loaded, so there is no music to set. The room still makes its own noise.';
+  ui.soundNote.textContent = t(haveTheme ? 'sound.note' : 'sound.noTheme');
 };
 paintAudio();
 
@@ -1428,11 +1443,11 @@ paintAudio();
 // them the shortcut. Both controls write the same key, so they paint each
 // other: turning the card back on here unticks the box over there.
 ui.welcome = $('welcome');
-paintToggle(ui.welcome, 'Welcome screen', welcomeWanted());
+paintToggle(ui.welcome, 'welcome.label', welcomeWanted());
 ui.welcome.addEventListener('click', () => {
   const on = ui.welcome.getAttribute('aria-pressed') !== 'true';
   rememberWelcome(on);
-  paintToggle(ui.welcome, 'Welcome screen', on);
+  paintToggle(ui.welcome, 'welcome.label', on);
   ui.skipWelcome.setAttribute('aria-pressed', String(!on));
   sfx.unlock();
   sfx.click();
@@ -1500,8 +1515,8 @@ ui.volSfx.addEventListener('change', () => {
 const paintQuality = () => {
   const lighter = quality.tier() === 'lighter';
   ui.quality.textContent = quality.probing()
-    ? `Sky detail: ${Math.round(quality.pixels() * 100) / 100}x (from the link)`
-    : `Sky detail: ${lighter ? 'lighter' : 'full'}`;
+    ? t('quality.probe', Math.round(quality.pixels() * 100) / 100)
+    : `${t('quality.label')}: ${t(lighter ? 'quality.lighter' : 'quality.full')}`;
   ui.quality.setAttribute('aria-pressed', String(!lighter));
   ui.quality.disabled = quality.probing();
 };
@@ -1516,7 +1531,7 @@ ui.quality.addEventListener('click', () => {
 /** The stats readout's switch (quality.js owns the readout itself). */
 const paintStats = () => {
   const on = quality.statsShown();
-  ui.stats.textContent = `Stats: ${on ? 'on' : 'off'}${quality.statsForced() ? ' (from the link)' : ''}`;
+  ui.stats.textContent = t('toggle', t('stats.label'), on) + (quality.statsForced() ? t('fromLink') : '');
   ui.stats.setAttribute('aria-pressed', String(on));
 };
 paintStats();
@@ -1525,6 +1540,33 @@ ui.stats.addEventListener('click', () => {
   quality.showStats(!quality.statsShown());
   paintStats();
   sfx.click();
+});
+
+/**
+ * THE LANGUAGE, on the welcome card and in this menu. A press repaints words
+ * and nothing else: the menu stays open, the sky stays paused, a run is never
+ * restarted (hub §2). The static page repaints itself inside setLang; what is
+ * left is everything this file wrote at runtime, which is the list below. The
+ * signs and cabinet screens in the sky redraw their own lettering off the same
+ * event, once each (signs.js, cabinets.js).
+ */
+bindLangButtons(() => {
+  sfx.unlock();
+  sfx.click();
+});
+document.addEventListener('arcade:lang', () => {
+  paintAudio();
+  paintQuality();
+  paintStats();
+  paintToggle(ui.welcome, 'welcome.label', welcomeWanted());
+  // The callout writes only on change, so forget what it last wrote and the
+  // next floor frame says it again in the new words.
+  promptTitleNow = promptCueNow = null;
+  paintOutfitWords();
+  if (!gopher) return; // still booting: boot() paints these once it is done
+  paintPlatform();
+  paintCount();
+  paintOutfit();
 });
 
 // The hash is the source of truth, so back / Escape / the pill all agree.
@@ -1536,7 +1578,7 @@ window.addEventListener('popstate', () => {
  * Escape out of a running game cannot come through the render loop, because
  * the loop is stopped while the game has the machine. It also only arrives at
  * all when this page rather than the iframe has focus — which is exactly why
- * the FLOOR pill exists. The key is the shortcut; the pill is the way out.
+ * the back-to-arcade pill exists. The key is the shortcut; the pill is the way out.
  */
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && phase === 'playing') leaveGame();
@@ -1635,22 +1677,38 @@ for (const item of ACCESSORIES) {
   const button = document.createElement('button');
   button.type = 'button'; button.className = 'outfit-item'; button.dataset.accessory = item.id;
   button.setAttribute('aria-pressed', 'false');
-  button.innerHTML = `<span class="item-photo"><img alt="" hidden/><span class="item-photo-status">Loading preview…</span></span><span>${item.label}</span><small>${item.slotLabel} slot</small>`;
+  // Labels are keyed rather than copied: wardrobe.js imports nothing (the games
+  // borrow it), so its English names stay its own and the words live here.
+  // paintOutfitWords fills them, now and on every language switch.
+  button.innerHTML = '<span class="item-photo"><img alt="" hidden/><span class="item-photo-status"></span></span><span class="item-name"></span><small class="item-slot"></small>';
   button.addEventListener('click', () => {
     if (phase !== 'customizing') return;
     gopher.setAccessory(item.id, !gopher.getAccessories()[item.id]); paintOutfit(); sfx.click();
   });
   inventory.append(button);
 }
+/** Whether the item photos failed, so a language switch says so in the new words. */
+let previewsFailed = false;
+function paintOutfitWords() {
+  for (const button of inventory.children) {
+    const item = ACCESSORIES.find((i) => i.id === button.dataset.accessory);
+    button.querySelector('.item-name').textContent = t(`acc.${item.id}`);
+    button.querySelector('.item-slot').textContent = t('outfit.slotSmall', t(`slot.${item.slot}`));
+    button.querySelector('.item-photo-status').textContent = t(previewsFailed ? 'outfit.noPreview' : 'outfit.loading');
+  }
+}
+paintOutfitWords();
 function paintOutfit() {
+  if (!gopher) return; // a language switch can land before the gopher exists
   const worn = gopher.getAccessories();
   for (const button of inventory.children) button.setAttribute('aria-pressed', String(worn[button.dataset.accessory]));
   const count = Object.values(worn).filter(Boolean).length;
-  $('outfit-count').textContent = count ? `${count} ${count === 1 ? 'item' : 'items'} selected` : 'Nothing on yet';
+  $('outfit-count').textContent = count ? t('outfit.count', count) : t('outfit.none');
   $('outfit-clear').disabled = count === 0;
   $('outfit-slots').textContent = [...new Set(ACCESSORIES.map(i => i.slot))].map(slot => {
     const items = ACCESSORIES.filter(i => i.slot === slot);
-    return `${items[0].slotLabel}: ${items.find(i => worn[i.id])?.label || 'empty'}`;
+    const on = items.find(i => worn[i.id]);
+    return `${t(`slot.${slot}`)}: ${on ? t(`acc.${on.id}`) : t('outfit.empty')}`;
   }).join(' · ');
 }
 function openCustomization() {
@@ -1677,7 +1735,8 @@ function openCustomization() {
     }
   }).catch(error => {
     console.warn('[dresser] Item preview unavailable', error);
-    for (const status of inventory.querySelectorAll('.item-photo-status')) status.textContent = 'Preview unavailable';
+    previewsFailed = true;
+    for (const status of inventory.querySelectorAll('.item-photo-status')) status.textContent = t('outfit.noPreview');
   });
 }
 function closeCustomization() {

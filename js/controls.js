@@ -11,6 +11,8 @@
  * air to become a cloud" depends on a second press rather than a held key.
  * ========================================================================== */
 
+import { t } from './i18n.js';
+
 const held = new Set();
 const edges = { hop: false, coin: false, pause: false };
 
@@ -238,17 +240,20 @@ export function attachTouch(root) {
  * underneath a thumb that is already down.
  * ------------------------------------------------------------------------ */
 
+/* Glyph and label are keys into js/i18n.js (`glyph.<name>`, `action.<name>`),
+   looked up at paint time so a language switch can repaint the button in place.
+   Run and descend draw a symbol rather than a word, so they have no glyph key. */
 const ACTIONS = {
-  read:    { code: 'KeyE', glyph: 'READ', label: 'Read sign' },
-  sit:     { code: 'KeyE', glyph: 'SIT', label: 'Sit down' },
-  stand:   { code: 'KeyE', glyph: 'STAND', label: 'Stand up' },
-  pets:    { code: 'KeyE', glyph: 'PETS', label: 'Choose a pet' },
-  dress:   { code: 'KeyE', glyph: 'DRESS', label: 'Customize gopher' },
-  write:   { code: 'KeyE', glyph: 'WRITE', label: 'Write a letter' },
-  take:    { code: 'KeyE', glyph: 'TAKE', label: 'Take this game home' },
-  run:     { code: 'ShiftLeft', glyph: '\u00bb',  label: 'Run' },
-  descend: { code: 'ShiftLeft', glyph: '\u25bc',  label: 'Descend' },
-  play:    { code: 'KeyE',      glyph: 'PLAY',     label: 'Play game' },
+  read:    { name: 'read',    code: 'KeyE' },
+  sit:     { name: 'sit',     code: 'KeyE' },
+  stand:   { name: 'stand',   code: 'KeyE' },
+  pets:    { name: 'pets',    code: 'KeyE' },
+  dress:   { name: 'dress',   code: 'KeyE' },
+  write:   { name: 'write',   code: 'KeyE' },
+  take:    { name: 'take',    code: 'KeyE' },
+  run:     { name: 'run',     code: 'ShiftLeft', glyph: '\u00bb' },
+  descend: { name: 'descend', code: 'ShiftLeft', glyph: '\u25bc' },
+  play:    { name: 'play',    code: 'KeyE' },
 };
 
 let actionEl = null;
@@ -283,10 +288,14 @@ function bindAction(el) {
   el.addEventListener('pointercancel', up);
 }
 
+// A language switch repaints the button where it stands: setAction only paints
+// when the ACTION changes, and the gopher may be standing still at a machine.
+document.addEventListener('arcade:lang', () => paintAction());
+
 function paintAction() {
   if (!actionEl) return;
-  actionEl.textContent = action.glyph;
-  actionEl.setAttribute('aria-label', action.label);
+  actionEl.textContent = action.glyph || t(`glyph.${action.name}`);
+  actionEl.setAttribute('aria-label', t(`action.${action.name}`));
   // Every nearby tap interaction uses E; run/descend remain unhighlighted.
   actionEl.classList.toggle('is-play', action.code === 'KeyE');
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nb">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
@@ -8,7 +8,19 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>GOPHER CLOUD ARCADE — the sky is the arcade</title>
+<title>GOPHER CLOUD ARCADE — himmelen er arkaden</title>
+<!-- The language, before anything is painted. js/i18n.js owns it, but it is a
+     module and runs after the page has been parsed; this reads the same
+     hub-wide key first so <html lang> is right from the first frame. The text
+     below is written in Norwegian, the default, and i18n.js repaints it for a
+     player who chose English. -->
+<script>
+  try {
+    if (localStorage.getItem('arcade.lang.v1') === 'en') document.documentElement.lang = 'en';
+  } catch (e) {
+    /* No storage: Norwegian, the default. */
+  }
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -31,14 +43,48 @@
 <div id="boot" class="card boot">
   <p class="sign">GOPHER CLOUD</p>
   <p class="sub">A R C A D E</p>
-  <p id="boot-line" class="line">rolling out the clouds&hellip;</p>
+  <p id="boot-line" class="line" data-i18n="boot.clouds">ruller ut skyene&hellip;</p>
 </div>
 
 <div id="title" class="card title" hidden>
   <p class="sign">GOPHER CLOUD</p>
   <p class="sub">A R C A D E</p>
-  <p class="blurb">Every machine is on its own cloud. Jump twice to ride the cloud, and fly to whichever one you fancy.</p>
-  <button id="walk-in" class="neon" type="button">Play!</button>
+  <p class="blurb" data-i18n="title.blurb">Hver maskin står på sin egen sky. Hopp to ganger for å ri på skyen, og fly dit du vil.</p>
+  <button id="walk-in" class="neon" type="button" data-i18n="play">Spill</button>
+  <!-- THE LANGUAGE, before anyone has played (hub §2, "Two languages"): the
+       player who needs it most is the stranger who cannot read the Norwegian
+       the arcade opened in, so it sits right under the way in rather than
+       behind a menu they would first have to find. The menu carries the same
+       row. Flags are kitchens' inline SVGs as they are, never emoji, and this
+       copy's Union Jack has its own clipPath ids — ids are page-global, and
+       the second flag on the page would otherwise clip against the first. -->
+  <div class="lang-row" role="group" aria-labelledby="lang-cap-title">
+    <span class="lang-cap" id="lang-cap-title" data-i18n="lang">Språk</span>
+    <div class="lang-seg">
+      <button type="button" class="lang-btn" data-lang="nb" lang="nb" aria-pressed="true">
+        <svg class="flag" viewBox="0 0 22 16" aria-hidden="true">
+          <rect width="22" height="16" fill="#ba0c2f"/>
+          <path d="M6 0h4v16H6zM0 6h22v4H0z" fill="#fff"/>
+          <path d="M7 0h2v16H7zM0 7h22v2H0z" fill="#00205b"/>
+        </svg>
+        <span>Norsk</span>
+      </button>
+      <button type="button" class="lang-btn" data-lang="en" lang="en" aria-pressed="false">
+        <svg class="flag" viewBox="0 0 60 30" aria-hidden="true">
+          <clipPath id="uk-clip-title"><path d="M0 0v30h60V0z"/></clipPath>
+          <clipPath id="uk-diag-title"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+          <g clip-path="url(#uk-clip-title)">
+            <path d="M0 0v30h60V0z" fill="#012169"/>
+            <path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>
+            <path d="M0 0l60 30m0-30L0 30" clip-path="url(#uk-diag-title)" stroke="#c8102e" stroke-width="4"/>
+            <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+            <path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/>
+          </g>
+        </svg>
+        <span>English</span>
+      </button>
+    </div>
+  </div>
   <!-- The other half of the same decision: play here, or keep it. Hidden in
        the markup and revealed only by js/install.js, and only on a phone or
        tablet that is not already running the installed arcade — a desktop and
@@ -50,9 +96,9 @@
         <rect x="6" y="2.6" width="12" height="18.8" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
         <path d="M12 8.4v7.2M8.4 12h7.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
       </svg>
-      <span id="install-open-label">Install on your device</span>
+      <span id="install-open-label" data-i18n="install.offer">Installer på enheten din</span>
     </button>
-    <button id="install-hide" class="offer-hide" type="button" aria-label="Hide this, I will play in the browser">
+    <button id="install-hide" class="offer-hide" type="button" data-i18n-aria="install.hide" aria-label="Skjul dette, jeg spiller i nettleseren">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7.5 7.5l9 9M16.5 7.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
@@ -64,7 +110,7 @@
        space frees up, and a launcher you opened on purpose should be able to
        stop greeting you. The pause menu owns the same setting for everyone,
        so a tab can still turn it off — it just is not asked. -->
-  <button id="skip-welcome" class="skip-next" type="button" aria-pressed="false" hidden>Go straight in next time</button>
+  <button id="skip-welcome" class="skip-next" type="button" aria-pressed="false" data-i18n="welcome.skip" hidden>Gå rett inn neste gang</button>
   <!-- Two hints, not one line rewritten in place. A phone has no W, A, S or D,
        and a card that opens by telling a child to press them is the kind of
        small lie that makes them decide the game is broken. js/main.js reveals
@@ -75,19 +121,16 @@
        » carry their meaning as art, which a screen reader cannot read out, and
        the markup below already says what they are: the top one is always up,
        the one under it is whatever the gopher can do where it stands. -->
-  <p id="hint-keys" class="fine" hidden>
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &middot;
-    <kbd>Space</kbd> hop, again for the cloud &middot;
-    <kbd>E</kbd> play &middot;
-    drag to look
-    <br>fall off a cloud and the cloud comes back for you
+  <p id="hint-keys" class="fine" data-i18n-html="hint.keys" hidden>
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> gå &middot;
+    <kbd>Mellomrom</kbd> hopp, én gang til for skyen &middot;
+    <kbd>E</kbd> spill &middot; dra for å se deg rundt
+    <br>faller du av en sky, kommer skyen og henter deg
   </p>
-  <p id="hint-touch" class="fine" hidden>
-    left thumb walks &middot;
-    the top button hops, again for the cloud &middot;
-    the one under it plays at a machine &middot;
-    drag the sky to look
-    <br>fall off a cloud and the cloud comes back for you
+  <p id="hint-touch" class="fine" data-i18n-html="hint.touch" hidden>
+    venstre tommel går &middot; den øverste knappen hopper, én gang til for skyen &middot;
+    den under spiller på en maskin &middot; dra i himmelen for å se deg rundt
+    <br>faller du av en sky, kommer skyen og henter deg
   </p>
 </div>
 
@@ -95,7 +138,7 @@
 <div id="hud" class="hud" hidden>
   <div class="hud-room">
     <span class="hud-name">GOPHER CLOUD</span>
-    <span id="hud-room" class="hud-where">The welcome cloud</span>
+    <span id="hud-room" class="hud-where">Velkomstskyen</span>
     <span id="hud-count" class="hud-count"></span>
   </div>
   <!-- ===================== THE CORNER =====================
@@ -127,7 +170,7 @@
          menu is where everything that is not walking around lives. Three bars
          and not a gear — a gear says settings, and this holds the way back to
          the floor as well. -->
-    <button id="menu-btn" class="chip" type="button" title="Menu (Esc)" aria-label="Menu">
+    <button id="menu-btn" class="chip" type="button" title="Meny (Esc)" aria-label="Meny" data-i18n-aria="menu" data-i18n-title="menu.title">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round"/>
@@ -138,7 +181,7 @@
          so muting and unmuting gives back the exact mix rather than zeroing what
          the player set. -->
     <button id="mute-btn" class="chip" type="button" aria-pressed="false"
-            title="Mute" aria-label="Mute">
+            title="Slå av lyden" aria-label="Slå av lyden">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M11 5 6 9H3v6h3l5 4Z" fill="none" stroke="currentColor"
               stroke-width="1.9" stroke-linejoin="round"/>
@@ -153,7 +196,7 @@
          nothing when pressed is worse than no plate. screen.js also pins the
          orientation off the same press, which a browser will only do for a
          fullscreen page — so the two can only ever be offered together. -->
-    <button id="fullscreen" class="chip" type="button" aria-label="Go fullscreen" aria-pressed="false" title="Go fullscreen" hidden>
+    <button id="fullscreen" class="chip" type="button" aria-label="Fullskjerm" aria-pressed="false" title="Fullskjerm" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path class="ico-expand" d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6" fill="none"
               stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -167,25 +210,25 @@
 <!-- The callout that floats over whatever the gopher is standing in front of. -->
 <div id="prompt" class="prompt" hidden aria-live="polite">
   <span id="prompt-title" class="prompt-title"></span>
-  <span id="prompt-cue" class="prompt-cue"><kbd>E</kbd> play game</span>
+  <span id="prompt-cue" class="prompt-cue"><kbd>E</kbd> spill</span>
 </div>
 
 <dialog id="parents-dialog" aria-labelledby="parents-title">
-  <div class="parents-portrait"><img src="assets/images/parents-gopher.png" width="708" height="890" alt="The Gopher wearing a top hat and monocle, floating on a little cloud"></div>
+  <div class="parents-portrait"><img src="assets/images/parents-gopher.png" width="708" height="890" alt="Gopheren med flosshatt og monokkel, svevende på en liten sky" data-i18n-alt="parents.alt"></div>
   <div class="parents-panel">
-    <article class="parents-copy" tabindex="0" aria-label="Arcade philosophy">
+    <article class="parents-copy" tabindex="0" aria-label="Arkadens filosofi" data-i18n-aria="parents.aria">
       <p class="parents-eyebrow">GOPHER CLOUD</p>
-      <h2 id="parents-title">For parents and guardians</h2>
+      <h2 id="parents-title" data-i18n="parents.title">For foreldre og foresatte</h2>
       <!-- Editable draft: the arcade philosophy. Only shown after choosing READ. -->
-      <p>I’m a developer and a father of two boys, and I built Gopher Cloud Arcade to feel like the games I grew up with: you turn it on, you play, and nothing gets in the way.</p>
-      <p>So there are no ads and no push notifications. Nothing here nags your child to come back: no daily streaks to keep up, no countdowns, no rewards for showing up. There are no accounts and nothing to sign up for, and every game is free to play for everyone.</p>
-      <p>I hope it can be a place to share: discover a game together, cheer each other on, and let children find their own favourites and their own pace. There’s room to wander, be silly, or just sit in the clouds for a while.</p>
-      <p>Some of the games play together over the internet, and they run in a browser on tablets, phones and computers alike, so a friend, a cousin or a grandparent can join from whatever they already have in their hands. One player shares a room code, the others enter it, and that is the whole setup: nothing to install, nobody to sign up.</p>
-      <p>I won’t sell your data. I don’t even want it. There is no analytics here and no tracking of any kind, and nothing is quietly gathered up while your child plays. What the arcade remembers is small, and it stays on the device you are playing on: whether the sound is on, how sharp you like the sky. If accounts and saved progress arrive one day, that is where they will be saved too. And if something leaves the device, like a letter your child chooses to post in the arcade’s mailbox, it carries what they wrote, which game it was about, and a random name the arcade gave this browser — something like gc-7f3q-k2m9. That name is how my answer finds its way back to the right mailbox, and it does mean I can tell that two letters came from the same one, which is what makes a conversation possible at all. It is also all I ever know: no real name, no account, no email, nothing about who or where you are. It belongs to a browser rather than to a person, and clearing that browser’s data ends it for good. The company that carries the post for me, Forminit, keeps the letters on servers in Ireland and, like any postal service, notes the internet address they came from. I never use it for anything, and I delete letters once I have answered them.</p>
-      <p>Everything in the arcade is free today. If it ever pays for itself, it will be through silly hats and cloud companions for anyone who feels like chipping in. Never a subscription, never a price on a game, and never anything that gives one player an advantage or locks part of a game away.</p>
-      <p>The arcade is still in beta and growing. Games can differ in pace and challenge, so I invite you to explore alongside your child and choose what feels right for your family.</p>
+      <p data-i18n="parents.p1">Jeg er utvikler og far til to gutter, og jeg laget Gopher Cloud Arcade for at det skulle føles som spillene jeg vokste opp med: du slår det på, du spiller, og ingenting står i veien.</p>
+      <p data-i18n="parents.p2">Derfor finnes det ingen reklame og ingen varsler her. Ingenting maser på barnet ditt om å komme tilbake: ingen daglige rekker å holde ved like, ingen nedtellinger, ingen belønning for å møte opp. Det finnes ingen kontoer og ingenting å melde seg på, og alle spillene er gratis for alle.</p>
+      <p data-i18n="parents.p3">Jeg håper det kan bli et sted å dele: finn et spill sammen, hei på hverandre, og la barna finne sine egne favoritter og sitt eget tempo. Her er det plass til å vandre, tulle eller bare sitte i skyene en stund.</p>
+      <p data-i18n="parents.p4">Noen av spillene kan spilles sammen over internett, og de kjører i nettleseren på nettbrett, telefoner og datamaskiner, så en venn, et søskenbarn eller en besteforelder kan være med fra det de allerede har i hendene. Én spiller deler en romkode, de andre skriver den inn, og det er alt: ingenting å installere, ingen å registrere.</p>
+      <p data-i18n="parents.p5">Jeg kommer ikke til å selge dataene dine. Jeg vil ikke engang ha dem. Det finnes ingen analyse her og ingen sporing av noe slag, og ingenting blir stille samlet inn mens barnet ditt spiller. Det arkaden husker er lite, og det blir værende på enheten du spiller på: om lyden er på, hvor skarp du vil ha himmelen. Hvis kontoer og lagret fremgang kommer en dag, er det der de blir lagret også. Og hvis noe forlater enheten, som et brev barnet ditt velger å legge i arkadens postkasse, inneholder det det de skrev, hvilket spill det handlet om, og et tilfeldig navn arkaden har gitt denne nettleseren — noe sånt som gc-7f3q-k2m9. Det navnet er hvordan svaret mitt finner veien tilbake til riktig postkasse, og det betyr at jeg kan se at to brev kom fra samme sted, som er det som gjør en samtale mulig i det hele tatt. Det er også alt jeg noen gang vet: ikke noe ekte navn, ingen konto, ingen e-post, ingenting om hvem eller hvor du er. Det hører til en nettleser og ikke til en person, og tømmer du nettleserens data, er det borte for godt. Selskapet som bringer posten for meg, Forminit, oppbevarer brevene på servere i Irland og noterer, som alle postvesen, hvilken internettadresse de kom fra. Jeg bruker den aldri til noe, og jeg sletter brevene når jeg har svart på dem.</p>
+      <p data-i18n="parents.p6">Alt i arkaden er gratis i dag. Hvis den noen gang skal betale for seg selv, blir det gjennom tullete hatter og skyvenner for alle som har lyst til å bidra. Aldri et abonnement, aldri en pris på et spill, og aldri noe som gir én spiller en fordel eller låser en del av et spill.</p>
+      <p data-i18n="parents.p7">Arkaden er fortsatt i beta og vokser. Spillene kan ha ulikt tempo og ulik vanskelighetsgrad, så jeg inviterer deg til å utforske sammen med barnet ditt og velge det som passer for familien deres.</p>
     </article>
-    <footer><button id="parents-close" type="button">Back to the clouds</button></footer>
+    <footer><button id="parents-close" type="button" data-i18n="back">Tilbake</button></footer>
   </div>
 </dialog>
 
@@ -194,22 +237,22 @@
     <section class="letter-log">
       <header class="letter-head">
         <p class="letter-eyebrow">GOPHER CLOUD POST</p>
-        <h2 id="mailbox-title">The mailbox</h2>
-        <p>Write to whoever built this place. Answers come back to this box, on this device — clear your browser and they go with it, like a paper letter you lost.</p>
+        <h2 id="mailbox-title" data-i18n="mail.title">Postkassen</h2>
+        <p data-i18n="mail.intro">Skriv til den som har laget dette stedet. Svarene kommer tilbake til denne postkassen, på denne enheten — tømmer du nettleseren, forsvinner de, akkurat som et papirbrev du har mistet.</p>
       </header>
-      <div id="letter-thread" class="letter-thread" tabindex="0" aria-label="Your letters and the answers"></div>
+      <div id="letter-thread" class="letter-thread" tabindex="0" aria-label="Brevene dine og svarene" data-i18n-aria="mail.thread"></div>
     </section>
     <section class="letter-write">
       <div class="letter-sheet">
-        <textarea id="letter-text" aria-label="Your letter" rows="4" placeholder="Dear arcade…"></textarea>
-        <p id="letter-room" class="letter-room" aria-live="polite">room for 500 letters</p>
+        <textarea id="letter-text" aria-label="Brevet ditt" data-i18n-aria="mail.letter" rows="4" placeholder="Kjære arkade …" data-i18n-placeholder="mail.placeholder"></textarea>
+        <p id="letter-room" class="letter-room" aria-live="polite">plass til 500 tegn</p>
       </div>
-      <p class="letter-care">No need to write your name, your school or where you live — tell me as much or as little as you like.</p>
+      <p class="letter-care" data-i18n="mail.care">Du trenger ikke skrive navnet ditt, skolen din eller hvor du bor — fortell så mye eller så lite du vil.</p>
       <footer class="letter-foot">
         <p id="letter-status" role="status"></p>
         <div class="letter-actions">
-          <button id="letter-shut" class="ghost" type="button">Shut the door</button>
-          <button id="letter-post" class="neon" type="button">Post it</button>
+          <button id="letter-shut" class="ghost" type="button" data-i18n="back">Tilbake</button>
+          <button id="letter-post" class="neon" type="button" data-i18n="mail.post">Send brevet</button>
         </div>
       </footer>
     </section>
@@ -218,51 +261,51 @@
 
 <dialog id="takeaway-dialog" aria-labelledby="takeaway-title">
   <div class="takeaway-card">
-    <p class="takeaway-eyebrow">TAKE ONE HOME</p>
-    <h2 id="takeaway-title">Take it home</h2>
+    <p class="takeaway-eyebrow" data-i18n="take.eyebrow">TA MED HJEM</p>
+    <h2 id="takeaway-title">Ta det med hjem</h2>
     <p id="takeaway-blurb"></p>
     <ol id="takeaway-steps" class="takeaway-steps"></ol>
     <p id="takeaway-note" class="takeaway-note" hidden></p>
     <div class="takeaway-actions">
-      <button id="takeaway-shut" class="ghost" type="button">Maybe later</button>
-      <button id="takeaway-go" class="neon" type="button">Open it on its own</button>
+      <button id="takeaway-shut" class="ghost" type="button" data-i18n="take.later">Kanskje senere</button>
+      <button id="takeaway-go" class="neon" type="button">Åpne det for seg selv</button>
     </div>
   </div>
 </dialog>
 
 <dialog id="pets-dialog" aria-labelledby="pets-title">
-  <section class="pet-preview" aria-label="Live 3D pet preview">
-    <canvas aria-label="Selected creature on its own cloud"></canvas>
-    <span>Your cloud companion</span>
+  <section class="pet-preview" aria-label="Levende 3D-bilde av kjæledyret" data-i18n-aria="pets.preview">
+    <canvas aria-label="Det valgte dyret på sin egen sky" data-i18n-aria="pets.canvas"></canvas>
+    <span>Skyvennen din</span>
   </section>
   <section class="pet-picker">
-    <header><p class="pet-eyebrow">A LITTLE COMPANY</p><h2 id="pets-title">Pets</h2><p>Pick one friend to follow you, on foot and in the sky.</p></header>
-    <div class="pet-choices" role="group" aria-label="Choose your companion">
-      <button type="button" data-pet="pip" aria-pressed="false"><strong>Pip</strong><span>Leaf-eared rabbit · cotton tail</span></button>
-      <button type="button" data-pet="noodle" aria-pressed="false"><strong>Noodle</strong><span>Frilly axolotl · swishing fin tail</span></button>
-      <button type="button" data-pet="nyan" aria-pressed="false"><strong>Nyan Cat</strong><span>Pastry cat · rainbow trail in flight</span></button>
-      <button type="button" data-pet="" aria-pressed="true"><strong>No pet</strong><span>Travel solo</span></button>
+    <header><p class="pet-eyebrow" data-i18n="pets.eyebrow">LITT SELSKAP</p><h2 id="pets-title" data-i18n="pets.title">Kjæledyr</h2><p data-i18n="pets.intro">Velg en venn som følger deg, både til fots og i lufta.</p></header>
+    <div class="pet-choices" role="group" aria-label="Velg skyvennen din" data-i18n-aria="pets.group">
+      <button type="button" data-pet="pip" aria-pressed="false"><strong>Pip</strong><span data-i18n="pets.pip">Kanin med bladører · bomullshale</span></button>
+      <button type="button" data-pet="noodle" aria-pressed="false"><strong>Noodle</strong><span data-i18n="pets.noodle">Aksolotl med frynser · svingende finnehale</span></button>
+      <button type="button" data-pet="nyan" aria-pressed="false"><strong>Nyan Cat</strong><span data-i18n="pets.nyan">Bakverkskatt · regnbuestripe når den flyr</span></button>
+      <button type="button" data-pet="" aria-pressed="true"><strong data-i18n="pets.none">Ingen kjæledyr</strong><span data-i18n="pets.solo">Reis alene</span></button>
     </div>
-    <footer><p id="pet-status" role="status"></p><button type="button" data-pet-done>Done</button></footer>
+    <footer><p id="pet-status" role="status"></p><button type="button" data-pet-done data-i18n="pets.done">Ferdig</button></footer>
   </section>
 </dialog>
 
 <dialog id="customize-dialog" aria-labelledby="customize-title">
-  <section class="outfit-preview" aria-label="Live gopher preview">
-    <div class="outfit-preview-heading"><span class="outfit-eyebrow">THE DRESSING ROOM</span><h2>Your gopher</h2></div>
-    <div class="outfit-turn"><button id="outfit-left" type="button" aria-label="Turn gopher left">↶</button><span>Take a look around</span><button id="outfit-right" type="button" aria-label="Turn gopher right">↷</button></div>
+  <section class="outfit-preview" aria-label="Levende bilde av gopheren" data-i18n-aria="outfit.preview">
+    <div class="outfit-preview-heading"><span class="outfit-eyebrow" data-i18n="outfit.eyebrow">UTKLEDNINGSROMMET</span><h2 data-i18n="outfit.yours">Gopheren din</h2></div>
+    <div class="outfit-turn"><button id="outfit-left" type="button" aria-label="Snu gopheren mot venstre" data-i18n-aria="outfit.left">↶</button><span data-i18n="outfit.look">Ta en titt rundt</span><button id="outfit-right" type="button" aria-label="Snu gopheren mot høyre" data-i18n-aria="outfit.right">↷</button></div>
   </section>
   <section class="outfit-inventory">
-    <header><span class="outfit-eyebrow">MIX &amp; MATCH</span><h2 id="customize-title">Dresser</h2><p>One item per slot. Pick a new item to swap it in, or select it again to take it off.</p></header>
+    <header><span class="outfit-eyebrow" data-i18n="outfit.mix">MIKS OG MATCH</span><h2 id="customize-title" data-i18n="outfit.title">Utkledning</h2><p data-i18n="outfit.intro">Én ting på hver plass. Velg noe nytt for å bytte, eller trykk på det igjen for å ta det av.</p></header>
     <p id="outfit-slots" class="outfit-slots" aria-live="polite"></p>
-    <div id="outfit-items" class="outfit-items" role="group" aria-label="Accessory inventory"></div>
-    <footer><p id="outfit-count" aria-live="polite">Nothing on yet</p><button id="outfit-clear" class="ghost" type="button">Take everything off</button><button id="customize-done" class="neon" type="button">Wear this look</button><p class="customize-note">Your look is remembered, and your fox wears it in NeonFox.</p></footer>
+    <div id="outfit-items" class="outfit-items" role="group" aria-label="Utstyret" data-i18n-aria="outfit.items"></div>
+    <footer><p id="outfit-count" aria-live="polite">Ingenting på ennå</p><button id="outfit-clear" class="ghost" type="button" data-i18n="outfit.clear">Ta av alt</button><button id="customize-done" class="neon" type="button" data-i18n="outfit.done">Bruk dette antrekket</button><p class="customize-note" data-i18n="outfit.note">Antrekket ditt blir husket, og reven din har det på seg i NeonFox.</p></footer>
   </section>
 </dialog>
 
 <div id="pause" class="card pause" hidden>
-  <p class="sign small">Paused</p>
-  <button id="resume" class="neon" type="button">Back to the floor</button>
+  <p class="sign small" data-i18n="paused">Pause</p>
+  <button id="resume" class="neon" type="button" data-i18n="resume">Fortsett</button>
   <!-- ===================== THE SOUND BOARD =====================
        Two levels where there were two switches. "Theme music: on" and "Room
        sound: on" could each only answer half of what people actually want,
@@ -285,14 +328,14 @@
   <div id="sound-board" class="board">
     <div class="dial-row">
       <div class="dial-head">
-        <label class="dial-label" for="vol-music">MUSIC</label>
+        <label class="dial-label" for="vol-music" data-i18n="music">MUSIKK</label>
         <output class="dial-val" id="vol-music-val" for="vol-music">100%</output>
       </div>
       <input type="range" id="vol-music" min="0" max="100" step="5" value="100" aria-describedby="sound-note">
     </div>
     <div class="dial-row">
       <div class="dial-head">
-        <label class="dial-label" for="vol-sfx">EFFECTS</label>
+        <label class="dial-label" for="vol-sfx" data-i18n="effects">EFFEKTER</label>
         <output class="dial-val" id="vol-sfx-val" for="vol-sfx">100%</output>
       </div>
       <input type="range" id="vol-sfx" min="0" max="100" step="5" value="100" aria-describedby="sound-note">
@@ -300,8 +343,8 @@
     <!-- js/main.js reads this line once at boot and puts it back after saying
          the theme could not be loaded, so the two never have to be kept in
          step by hand. -->
-    <p id="sound-note" class="board-note">MUSIC is the arcade’s own tune · EFFECTS is the room around you — coins, footsteps and other people’s machines</p>
-    <p id="sound-muted" class="board-muted" hidden>Silenced from the corner. Move a slider, or press the speaker again, to bring the room back.</p>
+    <p id="sound-note" class="board-note">MUSIKK er arkadens egen melodi · EFFEKTER er alt rundt deg — mynter, skritt og andres maskiner</p>
+    <p id="sound-muted" class="board-muted" data-i18n="sound.muted" hidden>Lyden er slått av i hjørnet. Flytt en glidebryter, eller trykk på høyttaleren igjen, for å få lyden tilbake.</p>
   </div>
   <!-- Set once on an older tablet and then forgotten, which is exactly why it
        is behind the pause menu and not on the HUD. js/quality.js writes the
@@ -312,18 +355,49 @@
        judging an older device by eye; remembered, and ?perf=1 turns it on for
        one visit. -->
   <div class="pause-pair">
-    <button id="quality" class="ghost" type="button" aria-pressed="true">Sky detail: full</button>
-    <button id="stats" class="ghost" type="button" aria-pressed="false">Stats: off</button>
+    <button id="quality" class="ghost" type="button" aria-pressed="true">Grafikk: full</button>
+    <button id="stats" class="ghost" type="button" aria-pressed="false">Ytelse: av</button>
   </div>
   <!-- Waving the title card's offer away must not delete the feature, so this
        is the way back to it. js/install.js reveals it on the same devices and
        leaves it alone afterwards; it never carries a badge or a count. -->
-  <button id="install-pause" class="ghost" type="button" hidden>Keep it on your device</button>
+  <button id="install-pause" class="ghost" type="button" data-i18n="install.pause" hidden>Ha arkaden på enheten din</button>
   <!-- The way back. The card's own shortcut is only offered to an installed
        arcade, but the setting belongs to everyone, so it lives here where a
        preference you cannot find again is a preference you should not have
        been allowed to set. -->
-  <button id="welcome" class="ghost" type="button" aria-pressed="true">Welcome screen: on</button>
+  <button id="welcome" class="ghost" type="button" aria-pressed="true">Velkomstskjerm: på</button>
+  <!-- The language, mid-session: switching repaints every word in place and
+       neither closes this menu nor unpauses the sky (hub §2). Last in the
+       column because it is set once, and on one line — caption and both
+       buttons side by side — so a sideways phone pays one row for it. -->
+  <div class="lang-row" role="group" aria-labelledby="lang-cap-pause">
+    <span class="lang-cap" id="lang-cap-pause" data-i18n="lang">Språk</span>
+    <div class="lang-seg">
+      <button type="button" class="lang-btn" data-lang="nb" lang="nb" aria-pressed="true">
+        <svg class="flag" viewBox="0 0 22 16" aria-hidden="true">
+          <rect width="22" height="16" fill="#ba0c2f"/>
+          <path d="M6 0h4v16H6zM0 6h22v4H0z" fill="#fff"/>
+          <path d="M7 0h2v16H7zM0 7h22v2H0z" fill="#00205b"/>
+        </svg>
+        <span>Norsk</span>
+      </button>
+      <button type="button" class="lang-btn" data-lang="en" lang="en" aria-pressed="false">
+        <svg class="flag" viewBox="0 0 60 30" aria-hidden="true">
+          <clipPath id="uk-clip-pause"><path d="M0 0v30h60V0z"/></clipPath>
+          <clipPath id="uk-diag-pause"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath>
+          <g clip-path="url(#uk-clip-pause)">
+            <path d="M0 0v30h60V0z" fill="#012169"/>
+            <path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/>
+            <path d="M0 0l60 30m0-30L0 30" clip-path="url(#uk-diag-pause)" stroke="#c8102e" stroke-width="4"/>
+            <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+            <path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/>
+          </g>
+        </svg>
+        <span>English</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- =========================================================================
@@ -339,15 +413,12 @@
      ====================================================================== -->
 <div id="install" class="veil" hidden>
   <div class="card install" role="dialog" aria-modal="true" aria-labelledby="install-head">
-    <p id="install-head" class="sign small">Take it with you</p>
-    <p class="blurb install-why">
-      Its own icon, straight into the sky, full screen &mdash; no address bar in the way.
-      Same arcade, same machines, nothing held back for it.
-    </p>
+    <p id="install-head" class="sign small" data-i18n="install.head">Ta den med deg</p>
+    <p class="blurb install-why" data-i18n="install.why">Sitt eget ikon, rett inn i himmelen, i fullskjerm — ingen adresselinje i veien. Samme arkade, samme maskiner, ingenting holdt tilbake.</p>
 
     <!-- Android, Chrome: a real one-tap install, because the browser gave us one. -->
     <div id="install-now" class="install-body" hidden>
-      <button id="install-go" class="neon" type="button">Install the arcade</button>
+      <button id="install-go" class="neon" type="button" data-i18n="install.go">Installer arkaden</button>
     </div>
 
     <!-- iPhone and iPad: Safari has no install API, so this is all there is. -->
@@ -363,8 +434,8 @@
           </svg>
         </span>
         <span class="step">
-          Tap <b>Share</b> <span id="install-ios-where">in the bar at the bottom of the screen</span>
-          &mdash; the box with an arrow jumping out of it.
+          <span data-i18n="install.tap">Trykk på</span> <b data-i18n="install.share">Del</b> <span id="install-ios-where" data-i18n="install.wherePhone">i linjen nederst på skjermen</span>
+          <span data-i18n="install.shareTail">— boksen med en pil som hopper ut av den.</span>
         </span>
       </li>
       <li>
@@ -374,7 +445,7 @@
             <path d="M24 17v14M17 24h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="step">Scroll that list and choose <b>Add to Home Screen</b>.</span>
+        <span class="step" data-i18n-html="install.ios2">Bla nedover i lista og velg <b>Legg til på Hjem-skjerm</b>.</span>
       </li>
     </ol>
 
@@ -394,7 +465,7 @@
             <circle cx="34" cy="31" r="2.7" fill="currentColor"/>
           </svg>
         </span>
-        <span class="step">Open your browser's menu &mdash; the <b>three dots</b> at the top right.</span>
+        <span class="step" data-i18n-html="install.android1">Åpne menyen i nettleseren — de <b>tre prikkene</b> øverst til høyre.</span>
       </li>
       <li>
         <span class="glyph" aria-hidden="true">
@@ -406,15 +477,12 @@
                   stroke-width="3" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="step">Choose <b>Install app</b>. Some browsers call it <b>Add to Home screen</b>.</span>
+        <span class="step" data-i18n-html="install.android2">Velg <b>Installer app</b>. Noen nettlesere kaller det <b>Legg til på startsiden</b>.</span>
       </li>
     </ol>
 
-    <p class="install-note">
-      No account, nothing to sign up for, nothing sent anywhere. Playing in the browser
-      instead costs you none of it.
-    </p>
-    <button id="install-close" class="ghost" type="button">Not now &mdash; playing here is fine</button>
+    <p class="install-note" data-i18n="install.note">Ingen konto, ingenting å melde seg på, ingenting sendes noe sted. Spiller du i nettleseren i stedet, går du ikke glipp av noe av dette.</p>
+    <button id="install-close" class="ghost" type="button" data-i18n="install.close">Ikke nå — det går fint å spille her</button>
   </div>
 </div>
 
@@ -428,8 +496,8 @@
        one under it is whatever the gopher can do where it is standing — run
        on a cloud, sink in the air, play at a machine — and controls.js swaps
        its glyph and its key together so the two can never disagree. -->
-  <button class="tbtn tbtn-hop" type="button" aria-label="Up">&#9650;</button>
-  <button id="tbtn-action" class="tbtn tbtn-action" type="button" aria-label="Run">&raquo;</button>
+  <button class="tbtn tbtn-hop" type="button" aria-label="Opp" data-i18n-aria="action.up">&#9650;</button>
+  <button id="tbtn-action" class="tbtn tbtn-action" type="button" aria-label="Løp" data-i18n-aria="action.run">&raquo;</button>
 </div>
 
 <!-- The game itself. launcher.js freezes the sky, fades a curtain in the
@@ -441,9 +509,21 @@
   <!-- Hidden by default: every game in the arcade has its own quit, in its own
        colours, and a second generic control over the top of it was clutter.
        launcher.js reveals this only for a game that turns out not to have one
-       (see offerPillIfTheGameHasNoQuit), so nobody is ever stuck inside. -->
+       (see offerPillIfTheGameHasNoQuit), so nobody is ever stuck inside.
+
+       It wears what every game's own exit wears (hub §2, "A way back to the
+       arcade"): the shared back arrow, to the path data, and the plain words in
+       sentence case. "FLOOR" was a name for the place behind the door, and a
+       way out is the one control somebody reaches for when they have stopped
+       wanting to read. -->
   <div class="pill" hidden>
-    <button id="step-away" type="button" aria-label="Step away from the machine">&#9666; FLOOR</button>
+    <button id="step-away" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span data-i18n="back.arcade">Tilbake til arkaden</span>
+    </button>
   </div>
 </div>
 
@@ -460,15 +540,17 @@
       <rect x="102" y="84" width="36" height="66" rx="3" fill="#132038"/>
     </g>
   </svg>
-  <h2>Turn your device sideways</h2>
-  <p>The sky is wider than it is tall.</p>
+  <h2 data-i18n="rotate.head">Snu enheten på siden</h2>
+  <p data-i18n="rotate.why">Himmelen er bredere enn den er høy.</p>
   <button id="rotate-go" class="neon rotate-go" type="button" hidden>
-    <b id="rotate-go-label">Or play fullscreen</b> <span aria-hidden="true">&rarr;</span>
+    <b id="rotate-go-label">Eller spill i fullskjerm</b> <span aria-hidden="true">&rarr;</span>
   </button>
   <p id="rotate-note" class="rotate-note" hidden></p>
 </div>
 
-<noscript><p class="card boot">The arcade floor needs JavaScript.</p></noscript>
+<!-- No script, so no way to know which language was chosen: both, each
+     marked so a screen reader pronounces it right. -->
+<noscript><p class="card boot"><span lang="nb">Arkaden trenger JavaScript.</span><br><span lang="en">The arcade floor needs JavaScript.</span></p></noscript>
 
 <!--
   Babylon from jsDelivr, pinned to an exact version and locked with an
@@ -503,10 +585,18 @@
     var line = document.getElementById('boot-line');
     if (!line) return;
     line.className = 'line warn';
+    // Its own words, read off <html lang> at the moment it fires: js/i18n.js is
+    // one of the modules whose silence this is reporting, so it cannot be asked.
+    var nb = document.documentElement.lang !== 'en';
+    var cmd = '<br><br><code>cd ~/projects/games &amp;&amp; python3 -m http.server 8000</code><br>';
     line.innerHTML =
       location.protocol === 'file:'
-        ? 'The floor has to be served over HTTP &mdash; browsers refuse to load ES modules from a file:// page.<br><br><code>cd ~/projects/games &amp;&amp; python3 -m http.server 8000</code><br>then open <code>localhost:8000/arcade/</code>'
-        : 'The floor did not start. Check the browser console \u2014 and note that a module script reports its whole graph through this one tag, so the error names js/main.js even when the file that actually failed is one of its imports.';
+        ? (nb
+          ? 'Arkaden m\u00e5 lastes over HTTP &mdash; nettlesere nekter \u00e5 laste ES-moduler fra en file://-side.' + cmd + 'og \u00e5pne <code>localhost:8000/arcade/</code>'
+          : 'The floor has to be served over HTTP &mdash; browsers refuse to load ES modules from a file:// page.' + cmd + 'then open <code>localhost:8000/arcade/</code>')
+        : (nb
+          ? 'Arkaden startet ikke. Se i nettleserens konsoll \u2014 og merk at et modulskript melder feil for hele grafen sin gjennom denne ene taggen, s\u00e5 feilen nevner js/main.js selv n\u00e5r det var en av filene den importerer som feilet.'
+          : 'The floor did not start. Check the browser console \u2014 and note that a module script reports its whole graph through this one tag, so the error names js/main.js even when the file that actually failed is one of its imports.');
   }, 5000);
 </script>
 <script type="module" src="js/main.js"></script>
@@ -516,6 +606,8 @@
   graph, and filenames are a blocklist somebody else writes (§2). Hung off
   main.js, an install.js that some filter list takes a dislike to would be a
   blank sky. Standing alone, the worst it can cost is the install offer.
+  Its one import is js/i18n.js, for its words — a file main.js cannot boot
+  without either, so it adds no new way for the sky to go dark.
 -->
 <script type="module" src="js/install.js"></script>
 </body>

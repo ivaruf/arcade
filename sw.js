@@ -48,6 +48,8 @@ const SHELL_FILES = [
   './games.json',
   './manifest.webmanifest',
   './js/main.js',
+  // Every word the arcade says; main.js and install.js both import it.
+  './js/i18n.js',
   './js/parents.js',
   './js/parents-scroll.js',
   './css/parents-scroll.css',

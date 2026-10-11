@@ -1,4 +1,5 @@
 import { mergeStatic } from './room.js';
+import { t } from './i18n.js';
 import { ACCESSORIES, makeAccessories, paint } from './wardrobe.js';
 
 // The items themselves live in wardrobe.js, which games import too; this file
@@ -78,7 +79,15 @@ export function createCustomizationStation(scene, shadows) {
   box('Dresser marquee',1.88,.35,1.03,0,2.16,0,enamel);
   box('Dresser marquee lower trim',1.90,.055,1.05,0,1.972,0,brass);
   const texture=new B.DynamicTexture('Dresser lettering',{width:768,height:192},scene,false);
-  texture.drawText('DRESSER',null,124,'bold 88px sans-serif','#fff1d2','#254b57',true);
+  // Lettered now and on each language switch, never per frame. UTKLEDNING is
+  // longer than DRESSER, so the type shrinks to the plate rather than running off it.
+  const letter=()=>{
+    const ctx=texture.getContext(),word=t('sign.dresser');let size=88;
+    ctx.font=`bold ${size}px sans-serif`;const wide=ctx.measureText(word).width;
+    if(wide>690)size=Math.floor(size*690/wide);
+    texture.drawText(word,null,124,`bold ${size}px sans-serif`,'#fff1d2','#254b57',true);
+  };
+  letter();document.addEventListener('arcade:lang',letter);
   const signMat=new B.PBRMaterial('Dresser lettering',scene);signMat.albedoTexture=texture;signMat.metallic=0;signMat.roughness=.6;
   signMat.emissiveColor=new B.Color3(.18,.18,.18).toLinearSpace();
   const sign=part(B.MeshBuilder.CreatePlane('Dresser marquee face',{width:1.61,height:.29},scene),signMat,0,2.16,.524);sign.rotation.y=Math.PI;

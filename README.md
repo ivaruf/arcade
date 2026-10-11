@@ -178,6 +178,24 @@ An entry can be an object when the automatic answer is wrong:
 
 Every field is optional except `slug`.
 
+### Two languages
+
+The arcade speaks bokmål and English, Norwegian by default, switched live from
+the welcome card or the menu (hub `CLAUDE.md` §2, "Two languages, Norwegian
+first"; the choice is the hub-wide `arcade.lang.v1`). Every word lives in
+`js/i18n.js` except the game cards, which come from here: the manifest is the
+game's one language and reads as the English card, and an entry may add
+Norwegian beside it —
+
+```json
+{ "slug": "minimaze", "tagline": "Tilt. Roll. Find your way.",
+  "nb": { "tagline": "Vipp. Trill. Finn veien.", "description": "…" } }
+```
+
+— which the cabinet screen shows when the arcade is in Norwegian, falling back
+to the English whenever a field is missing. A bare slug still works and shows
+its English card in both. `tools/check-registry.mjs` checks the shape.
+
 ## One PWA opening another
 
 A machine opens its game **inside the arcade**, in a same-origin iframe, so:
@@ -278,9 +296,11 @@ on the title and level screens; `maxgear` on the title and pause menus;
 `swirls` across the foot of the gear panel, which is always on screen;
 `fishtank` in the panel its corner ✕ opens from anywhere.
 
-### The FLOOR pill is a fallback
+### The back-to-arcade pill is a fallback
 
-The launcher still carries its own `◂ FLOOR` pill, but it starts `hidden`. Once
+The launcher still carries its own pill — the hub's back arrow and "Tilbake til
+arkaden" / "Back to arcade", the words every game's own exit wears (it said
+`◂ FLOOR` until 2026-10-11) — but it starts `hidden`. Once
 the game is revealed, the launcher decides whether it has a quit of its own and
 shows the pill **only if it does not**. In normal play the pill is gone,
 because the game's own quit is better dressed and better worded than ours could
@@ -384,6 +404,7 @@ boot card says so plainly if the script never arrives.
 | `js/launcher.js` | The handover from cabinet screen to running game |
 | `js/registry.js` | `games.json` → titles, icons, colours, URLs |
 | `js/signs.js` | Each platform's name board |
+| `js/i18n.js` | Every word, in bokmål and English, and the live switch |
 | `js/controls.js` | Keyboard, touch stick, gamepad, all answering the same questions |
 | `js/audio.js` | The sky synthesized, plus the theme on its own bus |
 | `js/screen.js` | Fullscreen, the landscape lock, and the worker registration |
@@ -526,7 +547,9 @@ These are honest, not oversights.
    screen**, then opens out. Play it.
 6. Quit from inside the game, using the game's own button. It shrinks back into
    the cabinet, the HUD returns, the URL hash is clear and no iframe is left.
-   No `◂ FLOOR` pill should have been on screen while it was running.
+   No back-to-arcade pill should have been on screen while it was running, and
+   the game's keys (Escape included) should have worked without clicking into
+   it first.
 7. Back button from inside a game leaves it the same way.
 8. `…/arcade/#play=supermine` lands straight in that game; quitting puts you at
    the outcrop rather than throwing you out of the arcade.
@@ -537,3 +560,8 @@ These are honest, not oversights.
     menu do what they say and survive a reload, and the corner's mute silences
     everything in one press without losing where they were set.
 11. `…/arcade/cloudnine/` still arrives here.
+12. Language: a first visit opens in Norwegian whatever the browser says. Press
+    **English** on the welcome card — every word on it, the boards in the sky,
+    the cabinet screens and the HUD switch at once. Open the menu mid-flight and
+    switch back to **Norsk**: the menu stays open, the sky stays paused, and the
+    choice survives a reload (and opens every game in the same language).

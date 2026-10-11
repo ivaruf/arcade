@@ -1,17 +1,60 @@
 {
   "origin": "https://ivaruf.github.io",
   "games": [
-    "fishtank",
-    "swirls",
-    "dam_break",
-    "supermine",
-    "supermine_adventure",
-    "maxgear",
+    {
+      "slug": "fishtank",
+      "tagline": "Eat, grow, and don't get eaten.",
+      "nb": {
+        "tagline": "Spis, voks, og ikke bli spist.",
+        "description": "Svøm, spis mindre fisker, voks deg stor — og prøv å ikke bli lunsj selv."
+      }
+    },
+    {
+      "slug": "swirls",
+      "tagline": "drifting, breathing light",
+      "nb": {
+        "tagline": "lys som driver og puster",
+        "description": "Et rolig lerret av lys som driver og puster."
+      }
+    },
+    {
+      "slug": "dam_break",
+      "tagline": "Will your dam hold?",
+      "nb": {
+        "tagline": "Holder demningen din?",
+        "description": "Et byggespill med ekte fysikk: bygg en demning, slipp løs flommen, og se om den holder — eller ryker med et brak."
+      }
+    },
+    {
+      "slug": "supermine",
+      "nb": {
+        "tagline": "Gruvedrift mot klokka",
+        "description": "Kjør en graver som vokser, rett ned gjennom jord, granitt og krystall. Slå klokka i MOT KLOKKA, eller grav så lenge du vil i FRITT SPILL."
+      }
+    },
+    {
+      "slug": "supermine_adventure",
+      "nb": {
+        "tagline": "Driv ditt eget gruvefirma",
+        "description": "Kjøp rettighetene, fyll tanken og kjør en beltegraver ned gjennom lag på lag med stein. Fyll lasterommet, kom deg tilbake til heisen og selg før tanken går tom."
+      }
+    },
+    {
+      "slug": "maxgear",
+      "nb": {
+        "tagline": "Full fart gjennom portene",
+        "description": "Reklamen var falsk. Dette er ekte. Et steampunk-løp der kanonene skyter av seg selv: styr gjennom oppgraderingsporter, gang opp ildkraften og knus IRONCLAD."
+      }
+    },
     {
       "slug": "neonfox",
       "name": "NeonFox",
       "accent": "#39daf2",
-      "icon": "assets/games/neonfox-192.png"
+      "icon": "assets/games/neonfox-192.png",
+      "nb": {
+        "tagline": "Neon-Kurve for kuleryttere",
+        "description": "Rever som rir på lysende kuler og legger igjen neonspor i en liten arena. Treffer du et spor eller veggen, er du ute; den siste som fortsatt rir, vinner runden. En 3D-versjon av Achtung, die Kurve."
+      }
     },
     {
       "slug": "lobbots",
@@ -20,7 +63,11 @@
       "icon": "assets/games/lobbots-192.png",
       "tagline": "Big robots, bigger lobs.",
       "description": "Turn-based mech artillery: aim, pick a power, watch the shell cross the hill, then spend your bolts on something unreasonable. Two to ten walkers, hot-seat or against seven kinds of bot.",
-      "theme": "#15181e"
+      "theme": "#15181e",
+      "nb": {
+        "tagline": "Store roboter, enda større skudd.",
+        "description": "Turbasert artilleri med kjemperoboter: sikt, velg kraft, se granaten fly over åsen, og bruk boltene dine på noe helt urimelig. To til ti roboter, på samme skjerm eller mot sju slags datamotstandere."
+      }
     },
     {
       "slug": "minimaze",
@@ -29,7 +76,11 @@
       "icon": "assets/games/minimaze.svg",
       "tagline": "Tilt. Roll. Find your way.",
       "description": "Tilt a wooden maze and roll the steel marble past the holes into the brass cup. Play with device tilt, drag, arrow keys, WASD, or a gamepad.",
-      "theme": "#30251b"
+      "theme": "#30251b",
+      "nb": {
+        "tagline": "Vipp. Trill. Finn veien.",
+        "description": "Vipp en labyrint av tre og trill stålkula forbi hullene og ned i messingkoppen. Spill ved å vippe enheten, dra, med piltaster, WASD eller håndkontroll."
+      }
     },
     {
       "slug": "zoodoku",
@@ -38,7 +89,11 @@
       "icon": "assets/games/zoodoku.svg",
       "tagline": "Sudoku, starting with a fox.",
       "description": "Sudoku for young puzzlers: drag little animals into a 4×4 board, then climb through 6×6 to the classic 9×9 with numbers. One of each in every row, column and box.",
-      "theme": "#1f5f5b"
+      "theme": "#1f5f5b",
+      "nb": {
+        "tagline": "Sudoku som starter med en rev.",
+        "description": "Sudoku for unge gåteløsere: dra små dyr inn på et 4×4-brett, og klatre videre via 6×6 til klassisk 9×9 med tall. Ett av hvert i hver rad, kolonne og boks."
+      }
     }
   ]
 }

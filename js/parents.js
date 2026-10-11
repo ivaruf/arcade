@@ -1,5 +1,6 @@
 import './parents-scroll.js';
 import { mergeStatic } from './room.js';
+import { t } from './i18n.js';
 /** Only the title appears in-world; the full philosophy lives in the HTML dialog. */
 export function createParentsSign(scene) {
   const B=BABYLON,root=new B.TransformNode('Parents and guardians sign',scene);
@@ -14,10 +15,14 @@ export function createParentsSign(scene) {
   box('Parents sign frame',1.78,.90,.12,0,1.65,0,brass);
   box('Parents sign board',1.70,.82,.14,0,1.65,0,teal);
   const texture=new B.DynamicTexture('Parents sign title',{width:1536,height:704},scene,true);
-  const ctx=texture.getContext();ctx.fillStyle='#193740';ctx.fillRect(0,0,1536,704);
-  ctx.strokeStyle='#a4ccbe';ctx.lineWidth=3;ctx.strokeRect(24,24,1488,656);
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff4dc';ctx.font='600 138px system-ui, sans-serif';
-  ctx.fillText('For parents',768,255);ctx.fillText('and guardians',768,445);texture.update();
+  // Lettered now and again on each language switch, never per frame.
+  const letter=()=>{
+    const ctx=texture.getContext();ctx.fillStyle='#193740';ctx.fillRect(0,0,1536,704);
+    ctx.strokeStyle='#a4ccbe';ctx.lineWidth=3;ctx.strokeRect(24,24,1488,656);
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff4dc';ctx.font='600 138px system-ui, sans-serif';
+    ctx.fillText(t('sign.parents1'),768,255);ctx.fillText(t('sign.parents2'),768,445);texture.update();
+  };
+  letter();document.addEventListener('arcade:lang',letter);
   const ink=new B.StandardMaterial('Parents sign printed title',scene);ink.disableLighting=true;ink.emissiveTexture=texture;
   ink.emissiveColor=ink.diffuseColor=B.Color3.Black();
   for(const side of [-1,1]){

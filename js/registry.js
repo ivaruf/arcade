@@ -24,6 +24,17 @@
  * try that first and fall back to games.json's `origin` only if nothing
  * answers there, which keeps a locally served floor entirely offline while a
  * page served from somewhere else still finds the live games.
+ *
+ * TWO LANGUAGES. The manifest speaks one, and it is the game's: the arcade
+ * reads it as the English card. An entry in games.json may add Norwegian
+ * beside it, backward compatible with every reader that ignores it:
+ *
+ *   { "slug": "minimaze", "tagline": "Tilt. Roll. Find your way.",
+ *     "nb": { "tagline": "Vipp. Trill. Finn veien.", "description": "…" } }
+ *
+ * It is passed through here untouched as `nb` and chosen at paint time by
+ * js/i18n.js gameText(), so this file stays free of the DOM and of the
+ * current language — tools/check-registry.mjs runs it under plain Node.
  * ========================================================================== */
 
 const CONFIG_URL = './games.json';
@@ -34,6 +45,15 @@ const SIBLINGS = new URL('../', location.href).href;
 const first = (...vals) => vals.find((v) => typeof v === 'string' && v.trim())?.trim() ?? '';
 
 const prettify = (slug) => slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** games.json's Norwegian block, or null: only strings get through. */
+function nbOf(entry) {
+  const nb = entry.nb;
+  if (!nb || typeof nb !== 'object') return null;
+  const out = {};
+  for (const field of ['tagline', 'description']) if (typeof nb[field] === 'string') out[field] = nb[field];
+  return out;
+}
 
 /** "MAXGEAR — Gate Rush" -> ["MAXGEAR", "Gate Rush"] */
 function splitTitle(name) {
@@ -102,6 +122,7 @@ async function describeAt(entry, base, depth = 0) {
     title,
     tagline,
     description: first(entry.description, manifest?.description, meta('description')),
+    nb: nbOf(entry),
     theme: first(entry.theme, manifest?.theme_color, manifest?.background_color, meta('theme-color')),
     accent: entry.accent || '',
     icon: entry.icon
@@ -135,6 +156,7 @@ function fallback(entry, base) {
     title: entry.name || prettify(entry.slug),
     tagline: entry.tagline || '',
     description: entry.description || '',
+    nb: nbOf(entry),
     theme: entry.theme || '',
     accent: entry.accent || '',
     // The cabinet's bundled artwork remains usable when the game is offline

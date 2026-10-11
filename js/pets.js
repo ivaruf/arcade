@@ -1,4 +1,5 @@
 import { mergeStatic } from './room.js';
+import { t } from './i18n.js';
 // wardrobe.js imports nothing, which is what makes its fold safe to borrow:
 // it bakes normals the way the shader lights a squashed sphere, and a pet is
 // almost nothing but squashed spheres. See foldByMaterial there.
@@ -178,8 +179,15 @@ function station(scene) {
     b.parent=root;b.position.set(x,.94,.48);b.material=mint;b.isPickable=false;
   }
   const texture=new B.DynamicTexture('Pet machine lettering',{width:1024,height:224},scene,false);
-  const ctx=texture.getContext();ctx.fillStyle='#142d3b';ctx.fillRect(0,0,1024,224);
-  ctx.fillStyle='#e8f9e8';ctx.font='bold 105px system-ui';ctx.textAlign='center';ctx.fillText('PETS',512,146);texture.update();
+  // Drawn once now and once per language switch, never per frame; the word is
+  // shrunk to fit because KJÆLEDYR is twice as long as PETS.
+  const letter=()=>{
+    const ctx=texture.getContext();ctx.fillStyle='#142d3b';ctx.fillRect(0,0,1024,224);
+    const word=t('sign.pets');let size=105;ctx.font=`bold ${size}px system-ui`;
+    const wide=ctx.measureText(word).width;if(wide>900){size*=900/wide;ctx.font=`bold ${size}px system-ui`;}
+    ctx.fillStyle='#e8f9e8';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText(word,512,146);texture.update();
+  };
+  letter();document.addEventListener('arcade:lang',letter);
   const ink=new B.StandardMaterial('Pet sign ink',scene);ink.disableLighting=true;
   ink.emissiveTexture=texture;ink.emissiveColor=B.Color3.Black();ink.diffuseColor=B.Color3.Black();
   const face=B.MeshBuilder.CreatePlane('PETS sign',{width:1.84,height:.39},scene);
@@ -249,10 +257,16 @@ export function createPets(scene) {
     if(id) followerFor(id);
     Object.entries(followers).forEach(([key,pet])=>pet.root.setEnabled(key===id));
     choices.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.pet=== (id || ''))));
-    status.textContent=id ? `${PETS.find(p=>p.id===id).name} is your companion.` : 'Travelling without a pet.';
-    dialog.querySelector('.pet-preview > span').textContent = id ? PETS.find(p=>p.id===id).name + ' · your cloud companion' : 'Choose a pet to preview';
+    paintChoice();
     preview?.show(id);
   }
+  /** The two lines that name the choice, in the current language. Pet names are names and stay. */
+  function paintChoice() {
+    const name=selected ? PETS.find(p=>p.id===selected).name : '';
+    status.textContent=selected ? t('pets.chosen',name) : t('pets.alone');
+    dialog.querySelector('.pet-preview > span').textContent = selected ? t('pets.previewOf',name) : t('pets.choose');
+  }
+  document.addEventListener('arcade:lang',paintChoice);
   choices.forEach(button=>button.addEventListener('click',()=>choose(button.dataset.pet || null)));
   function stopPreview() {preview?.dispose();preview=null;}
   function close(){if(!dialog.open)return;dialog.close();stopPreview();closeHandler?.();closeHandler=null;}

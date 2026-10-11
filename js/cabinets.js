@@ -28,6 +28,7 @@
  * ========================================================================== */
 
 import { container, footprintOf, blockerFor, mergeStatic, PLACEMENT, SLOTS, PLATFORMS } from './room.js';
+import { t, gameText } from './i18n.js';
 
 /**
  * One cabinet, in whatever colour the game is.
@@ -199,15 +200,18 @@ function drawScreen(ctx, w, h, game, accent, icon, lit) {
   ctx.font = `600 ${Math.round(h * 0.115)}px system-ui, sans-serif`;
   ctx.fillText(fit(ctx, (game.title || '').toUpperCase(), w * 0.88), w / 2, h * 0.71);
 
-  if (game.tagline) {
+  // The tagline in the arcade's language: games.json's `nb` beside the English
+  // (js/i18n.js gameText), falling back to English or the game's own manifest.
+  const tagline = gameText(game, 'tagline');
+  if (tagline) {
     ctx.fillStyle = 'rgba(217,219,191,.6)';
     ctx.font = `400 ${Math.round(h * 0.062)}px system-ui, sans-serif`;
-    ctx.fillText(fit(ctx, game.tagline, w * 0.86), w / 2, h * 0.79);
+    ctx.fillText(fit(ctx, tagline, w * 0.86), w / 2, h * 0.79);
   }
 
   ctx.fillStyle = lit ? '#ffd08a' : 'rgba(250,145,16,.55)';
   ctx.font = `700 ${Math.round(h * 0.07)}px system-ui, sans-serif`;
-  ctx.fillText('PLAY  GAME', w / 2, h * 0.93);
+  ctx.fillText(t('screen.play'), w / 2, h * 0.93);
 
   // Scanlines and a soft tube edge, baked in rather than animated.
   ctx.fillStyle = 'rgba(0,0,0,.22)';
@@ -541,6 +545,7 @@ async function machine(scene, shadows, held, spec, game, slot) {
   });
 
   setLit(cabinet, false);
+  screens.push(cabinet);
   for (const node of holder.getChildMeshes()) {
     if (node !== screen && node !== marquee && node !== decal) node.freezeWorldMatrix();
   }
@@ -551,6 +556,21 @@ async function machine(scene, shadows, held, spec, game, slot) {
 export function setLit(cabinet, lit) {
   if (!cabinet.screenTex || cabinet.lit === lit) return;
   cabinet.lit = lit;
+  paintScreen(cabinet);
+}
+
+/**
+ * Every screen in the sky, so a language switch can reletter each one ONCE —
+ * the tagline and PLAY GAME are the only words on it that change. The
+ * marquee carries the game's name alone and is left as it is.
+ */
+const screens = [];
+document.addEventListener('arcade:lang', () => {
+  for (const cabinet of screens) paintScreen(cabinet);
+});
+
+function paintScreen(cabinet) {
+  const lit = cabinet.lit;
   const { width, height } = cabinet.screenTex.getSize();
   drawScreen(cabinet.screenTex.getContext(), width, height, cabinet.game, cabinet.accent, cabinet.icon, lit);
   cabinet.screenTex.update();

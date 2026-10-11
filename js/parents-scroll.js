@@ -1,4 +1,6 @@
 /** A tactile, always-visible scroll control without changing the editable copy. */
+import { t } from './i18n.js';
+
 const stylesheet = document.createElement('link');
 stylesheet.rel = 'stylesheet';
 stylesheet.href = new URL('../css/parents-scroll.css', import.meta.url).href;
@@ -16,19 +18,21 @@ function installScrollbar(copy) {
   function arrow(text, name) {
     const button = document.createElement('button'); button.type = 'button';
     button.className = 'parents-scroll-arrow'; button.textContent = text;
-    button.setAttribute('aria-label', name); button.setAttribute('aria-controls', copy.id);
+    // A key, so js/i18n.js's repaint on a language switch relabels it too.
+    button.dataset.i18nAria = name; button.setAttribute('aria-label', t(name));
+    button.setAttribute('aria-controls', copy.id);
     rail.append(button); return button;
   }
-  const up = arrow('▲', 'Scroll text up');
+  const up = arrow('▲', 'parents.scrollUp');
   const track = document.createElement('div'); track.className = 'parents-scroll-track'; rail.append(track);
   const thumb = document.createElement('div'); thumb.className = 'parents-scroll-thumb';
   thumb.tabIndex = 0; thumb.setAttribute('role', 'scrollbar');
-  thumb.setAttribute('aria-label', 'Scroll the parents and guardians text');
+  thumb.dataset.i18nAria = 'parents.scrollThumb'; thumb.setAttribute('aria-label', t('parents.scrollThumb'));
   thumb.setAttribute('aria-controls', copy.id); thumb.setAttribute('aria-orientation', 'vertical');
   thumb.setAttribute('aria-valuemin', '0');
   const grip = document.createElement('span'); grip.textContent = '≡'; grip.setAttribute('aria-hidden', 'true');
   thumb.append(grip); track.append(thumb);
-  const down = arrow('▼', 'Scroll text down'); shell.append(rail);
+  const down = arrow('▼', 'parents.scrollDown'); shell.append(rail);
   let pending = false, drag = null;
   function metrics() {
     const max = Math.max(0, copy.scrollHeight - copy.clientHeight);
@@ -43,7 +47,7 @@ function installScrollbar(copy) {
     thumb.style.transform = `translateY(${m.max ? top / m.max * m.travel : 0}px)`;
     thumb.setAttribute('aria-valuemax', String(Math.round(m.max)));
     thumb.setAttribute('aria-valuenow', String(Math.round(top)));
-    thumb.setAttribute('aria-valuetext', m.max ? `${Math.round(top / m.max * 100)}% scrolled` : 'All text visible');
+    thumb.setAttribute('aria-valuetext', m.max ? t('parents.scrolled', Math.round(top / m.max * 100)) : t('parents.allVisible'));
     thumb.setAttribute('aria-disabled', String(m.max < 1));
     thumb.tabIndex = m.max < 1 ? -1 : 0;
     up.disabled = top <= 1; down.disabled = top >= m.max - 1;
