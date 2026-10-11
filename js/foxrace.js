@@ -23,8 +23,8 @@
  *     is allocated while a round runs, and a round has a time cap so the buffer
  *     cannot run out.
  *   - A crash is a burst of a dozen sparks and a ring, reused every time.
- * About a dozen draw calls in all, and none of it touches the gopher: the roof
- * is not a platform and the riders are not blockers.
+ * None of it touches the gopher: the roof is not a platform and the riders
+ * are not blockers.
  *
  * THE RIDERS are clones of a template from the island models (room.js
  * ISLAND_MODELS): "NF Game Rider", made from the game's own fox model
@@ -32,7 +32,25 @@
  * "NF Rider" from neonfox-island.glb. Either has an "… orb" child to roll about
  * its local X and "NF tint …" materials to recolour. No template, no race; the
  * roof still stands.
+ *
+ * COST (PERFORMANCE.md, 2026-10-11). Measured before this, the race was 75
+ * meshes and ~150 draw calls a frame near the arena, and it ran — trails
+ * uploading, foxes rolling — from anywhere in the sky. Now:
+ *   - Each rider is folded into five draw calls (moving.js foldRigid): every
+ *     part that does not glow is painted into its vertices and merged into
+ *     one body, glossy bits into a second; the glowing accent keeps its own
+ *     material, and the orb and its rings stay a separate child because they
+ *     roll. The game's fox is kept rather than the low-poly one: 12k
+ *     triangles each is nothing to a GPU, and it is the draw calls that cost.
+ *   - The trails have a fixed bound over the roof and a frozen world matrix
+ *     instead of alwaysSelectAsActiveMesh, so they cull like anything else;
+ *     a new point uploads six floats instead of the whole buffer.
+ *   - The race pauses, and the riders are switched off, while the roof is out
+ *     of view or more than FAR metres away (moving.js watch). It resumes where
+ *     it stopped: the step is clamped, so no time is "caught up".
  */
+
+import { FAR, foldRigid, watch, whiteCopy } from './moving.js';
 
 const COLORS = ['#3aa0ff', '#ff5fb4', '#5cf07a', '#ffa03c'];  // the game's first four seats
 const RISE = 4.4;           // roof height above the arena floor
@@ -47,6 +65,7 @@ const WALL = .2;            // trail wall height
 const SELF_GRACE = .45;     // seconds before your own trail can kill you
 const RIDER_SCALE = .62;    // the template's 0.55 m orb, shrunk for the roof
 const START_DELAY = 1.1, END_DELAY = 1.6;
+const STEERS = [-1, 0, 1];  // one array, not one per look-ahead
 
 export function createFoxRace(scene, platform) {
   const B = BABYLON;
@@ -60,6 +79,10 @@ export function createFoxRace(scene, platform) {
   const template = scene.getTransformNodeByName('NF Game Rider') || scene.getTransformNodeByName('NF Rider');
   for (const name of ['NF Game Rider', 'NF Rider']) scene.getTransformNodeByName(name)?.setEnabled(false);
   if (!template) return { animate() {} };
+  // The riders are the roof's only tall things; a metre above it covers a
+  // fox mid-hop. The box is fixed, so asking about it costs nothing.
+  const seen = watch(scene, [x0 - .3, y0 - .1, z0 - .3], [x1 + .3, y0 + 1, z1 + .3], { range: FAR });
+  let showing = true;
 
   // ---- grid -----------------------------------------------------------------
   const GW = Math.ceil((x1 - x0) / CELL), GH = Math.ceil((z1 - z0) / CELL);
@@ -78,8 +101,12 @@ export function createFoxRace(scene, platform) {
   };
 
   // ---- riders ---------------------------------------------------------------
-  const riders = COLORS.map((hex, i) => makeRider(scene, template, hex, i, y0));
+  const shared = new Map();  // 'matte' / 'glossy' -> one white material for every rider
+  const riders = COLORS.map((hex, i) => makeRider(scene, template, hex, i, y0, shared,
+    { x0, x1, z0, z1 }));
   const sparks = makeSparks(scene, y0);
+  disposeTemplates(scene);
+  const spin = new B.Quaternion();
 
   let clock = 0, roundTime = 0, phase = 'start', phaseLeft = START_DELAY, decideIn = 0;
 
@@ -114,7 +141,7 @@ export function createFoxRace(scene, platform) {
   /** Look ahead along each of three arcs and take the longest clear one. */
   function decide(rd, i) {
     let best = 0, bestScore = -1;
-    for (const s of [-1, 0, 1]) {
+    for (const s of STEERS) {
       let x = rd.x, z = rd.z, h = rd.heading, d = 0;
       for (let k = 0; k < 16; k++) {
         h += s * TURN * .08;
@@ -140,6 +167,15 @@ export function createFoxRace(scene, platform) {
   return {
     animate(dt) {
       if (!Number.isFinite(dt) || dt <= 0) return;
+      const now = seen();
+      if (now !== showing) {
+        showing = now;
+        for (const rd of riders) rd.pivot.setEnabled(now && rd.alive);
+        if (!now) sparks.hide();
+      }
+      // Out of view or far: the round simply waits. The trails stay up — they
+      // are the race as seen from across the sky, and four static meshes.
+      if (!now) return;
       dt = Math.min(dt, .05);
       clock += dt;
       sparks.animate(dt);
@@ -158,23 +194,28 @@ export function createFoxRace(scene, platform) {
       const rethink = decideIn <= 0;
       if (rethink) decideIn = .12;
       let alive = 0;
-      riders.forEach((rd, i) => {
-        if (!rd.alive) return;
+      // A plain loop: a forEach here built a fresh closure every frame.
+      for (let i = 0; i < riders.length; i++) {
+        const rd = riders[i];
+        if (!rd.alive) continue;
         if (rethink) decide(rd, i);
         rd.heading += rd.steer * TURN * dt;
         const step = SPEED * dt;
         const nx = rd.x + Math.sin(rd.heading) * step;
         const nz = rd.z + Math.cos(rd.heading) * step;
-        if (!free(nx, nz, i, clock)) { crash(rd); return; }
+        if (!free(nx, nz, i, clock)) { crash(rd); continue; }
         rd.x = nx; rd.z = nz;
         const c = cellOf(nx, nz);
         if (owner[c] !== i + 1) { owner[c] = i + 1; stamped[c] = clock; }
         rd.trail.extend(nx, nz);
         place(rd);
         rd.roll += step / rd.radius;
-        if (rd.orb) rd.orb.rotationQuaternion = rd.rest.multiply(B.Quaternion.RotationAxis(B.Axis.X, rd.roll));
+        if (rd.orb) {
+          B.Quaternion.RotationAxisToRef(B.Axis.X, rd.roll, spin);
+          rd.rest.multiplyToRef(spin, rd.orb.rotationQuaternion);
+        }
         alive++;
-      });
+      }
       if (alive <= 1 || roundTime > ROUND_CAP) {
         phase = 'end';
         phaseLeft = END_DELAY;
@@ -239,72 +280,141 @@ function buildRoof(scene, platform, y) {
     m.isPickable = false;
     m.freezeWorldMatrix();
   }
+  // The pane is a third alpha-blended material where ENVIRONMENT.md allows
+  // two. It is the whole point of the roof (the race is watched through it),
+  // so it stays, as a decision rather than a detail; see PERFORMANCE.md.
+  for (const mat of [glass, neon, etch]) mat.freeze();
+}
+
+/**
+ * Both rider templates go once the riders are built: hidden, they still sat
+ * in the list the engine walks every frame, and the materials only they used
+ * (every one, when the fold worked) go with them.
+ */
+function disposeTemplates(scene) {
+  for (const name of ['NF Game Rider', 'NF Rider']) {
+    const node = scene.getTransformNodeByName(name);
+    if (!node) continue;
+    const mats = new Set(node.getChildMeshes(false).map((m) => m.material).filter(Boolean));
+    node.dispose(false, false);
+    for (const mat of mats) if (!scene.meshes.some((m) => m.material === mat)) mat.dispose();
+  }
 }
 
 // ---------------------------------------------------------------------------
-// A rider: a tinted clone of the template, a pivot, and a trail
+// A rider: a tinted, folded clone of the template, a pivot, and a trail
 // ---------------------------------------------------------------------------
 
-const WHITE = () => new BABYLON.Color3(1, 1, 1);
-
-/** The game's tintFox recipe, by the names neonfox_rider_from_game.py gives. */
-function tintPart(mat, colour) {
-  const B = BABYLON;
-  const name = mat.name;
-  const set = (albedo, emissive) => {
-    if (mat.albedoColor) mat.albedoColor = albedo;
-    if (emissive && mat.emissiveColor) mat.emissiveColor = emissive;
-  };
-  if (name.startsWith('NF tint fur shadow')) set(colour.scale(.45));
-  else if (name.startsWith('NF tint fur')) set(colour);
-  else if (name.startsWith('NF tint tips')) set(B.Color3.Lerp(colour, WHITE(), .35));
-  else if (name.startsWith('NF tint accent')) set(B.Color3.Lerp(colour, WHITE(), .3), colour.scale(.8));
-  else if (name.startsWith('NF tint orb')) set(colour.scale(.6), colour.scale(.6));
-  else if (name.startsWith('NF tint rings')) { const c = B.Color3.Lerp(colour, WHITE(), .4); set(c, c); }
+/**
+ * The game's tintFox recipe, by the names neonfox_rider_from_game.py gives:
+ * the albedo a part takes in this rider's colour, and its emission where it
+ * glows. Null for a part the tint leaves alone.
+ */
+function tintOf(name, colour) {
+  const B = BABYLON, white = B.Color3.White();
+  if (name.startsWith('NF tint fur shadow')) return { albedo: colour.scale(.45) };
+  if (name.startsWith('NF tint fur')) return { albedo: colour };
+  if (name.startsWith('NF tint tips')) return { albedo: B.Color3.Lerp(colour, white, .35) };
+  if (name.startsWith('NF tint accent')) return { albedo: B.Color3.Lerp(colour, white, .3), emissive: colour.scale(.8) };
+  if (name.startsWith('NF tint orb')) return { albedo: colour.scale(.6), emissive: colour.scale(.6) };
+  if (name.startsWith('NF tint rings')) { const c = B.Color3.Lerp(colour, white, .4); return { albedo: c, emissive: c }; }
+  return null;
 }
 
-function makeRider(scene, template, hex, i, y0) {
+/** Emission is a material property, so a glowing part cannot be painted. */
+const glows = (mat) => !!(mat.emissiveColor && mat.emissiveColor.r + mat.emissiveColor.g + mat.emissiveColor.b > 0);
+/** Shiny or metal parts (the riding suit, the inner ears, the brass) keep a
+ * glossier surface than the fur; the rest is matte. */
+const glossy = (mat) => (mat.metallic ?? 0) > .3 || (mat.roughness ?? 1) < .55;
+
+/**
+ * One rider. The clone keeps the template's world transform (the loader's
+ * handedness flip with it) under a pivot the race moves. Then its parts are
+ * folded: glowing ones get a tinted material of their own, as before; the
+ * orb's stay a separate child because it rolls; everything else is painted
+ * with its colour and merged into a matte body and a glossy one, sharing two
+ * white materials across all four riders (moving.js foldRigid). If a fold
+ * fails the parts stay as they were, tinted, and the race still runs.
+ */
+function makeRider(scene, template, hex, i, y0, shared, area) {
   const B = BABYLON;
   const colour = B.Color3.FromHexString(hex).toLinearSpace();
   const clone = template.clone(`${template.name} ${i + 1}`, template.parent, false);
   const pivot = new B.TransformNode(`Fox racer ${i + 1}`, scene);
   clone.setEnabled(true);
   clone.computeWorldMatrix(true);
-  // Keep the template's world transform, the loader's handedness flip with it.
   clone.setParent(pivot);
   pivot.scaling.setAll(RIDER_SCALE);
   pivot.position.y = y0;
+  const nodes = clone.getDescendants(false);
+  const orb = nodes.find((node) => /Rider orb$/.test(node.name)) || null;
   const own = new Map();
-  let orb = null;
-  for (const node of clone.getDescendants(false)) {
-    if (/Rider orb$/.test(node.name)) orb = node;
+  const groups = { matte: [], glossy: [] };
+  for (const node of nodes) {
+    // Children of a pivot that moves every frame cannot be frozen.
     node.unfreezeWorldMatrix?.();
     if (!node.material) continue;
     node.isPickable = false;
     const mat = node.material;
-    if (!/^NF tint/.test(mat.name)) continue;
-    if (!own.has(mat)) {
-      const m = mat.clone(`${mat.name} (${hex})`);
-      tintPart(m, colour);
-      own.set(mat, m);
+    if (glows(mat) || (orb && node.isDescendantOf(orb))) {
+      const tint = tintOf(mat.name, colour);
+      if (!tint) continue;
+      if (!own.has(mat)) {
+        const m = mat.clone(`${mat.name} (${hex})`);
+        if (m.albedoColor) m.albedoColor = tint.albedo;
+        if (tint.emissive && m.emissiveColor) m.emissiveColor = tint.emissive;
+        m.freeze();
+        own.set(mat, m);
+      }
+      node.material = own.get(mat);
+      continue;
     }
-    node.material = own.get(mat);
+    groups[glossy(mat) ? 'glossy' : 'matte'].push(node);
+  }
+  for (const [kind, parts] of Object.entries(groups)) {
+    if (!parts.length) continue;
+    // The white copy takes its surface from the biggest part — the fur for
+    // matte (sheen and all), the riding suit for glossy.
+    if (!shared.has(kind)) {
+      const base = parts.reduce((a, b) => (b.getTotalVertices() > a.getTotalVertices() ? b : a));
+      shared.set(kind, whiteCopy(base.material, `Fox racer ${kind} (vertex colours)`));
+    }
+    const colourFor = (m) => tintOf(m.material.name, colour)?.albedo || m.material.albedoColor || m.material.diffuseColor;
+    const one = foldRigid(clone, parts, shared.get(kind), `Fox racer ${i + 1} ${kind}`, colourFor);
+    if (one) continue;
+    // Not folded: tint in place, the way every rider was before.
+    for (const node of parts) {
+      const tint = tintOf(node.material.name, colour);
+      if (!tint) continue;
+      if (!own.has(node.material)) {
+        const m = node.material.clone(`${node.material.name} (${hex})`);
+        if (m.albedoColor) m.albedoColor = tint.albedo;
+        own.set(node.material, m);
+      }
+      node.material = own.get(node.material);
+    }
   }
   if (orb && !orb.rotationQuaternion) orb.rotationQuaternion = B.Quaternion.FromEulerVector(orb.rotation);
   return {
     pivot, orb, color: colour, x: 0, z: 0, heading: 0, steer: 0, alive: true, roll: 0,
     radius: .275 * RIDER_SCALE,
     rest: orb ? orb.rotationQuaternion.clone() : null,
-    trail: makeTrail(scene, colour, y0, i),
+    trail: makeTrail(scene, colour, y0, i, area),
   };
 }
 
 /**
  * A wall of light: MAX_POINTS pairs of vertices (foot and top), allocated
- * once. Unused pairs sit on the newest point, so the quads past it collapse to
- * nothing; extend() writes the new pair, re-pins the tail to it, and uploads.
+ * once, drawn up to the newest pair by narrowing the submesh's index count.
+ * extend() writes one new pair into the buffer and uploads just those six
+ * floats; nothing past the newest pair is ever drawn, so nothing there needs
+ * pinning.
+ *
+ * Its bound is the whole play area, fixed, and its world matrix is frozen at
+ * identity: the vertices move, the mesh never does, so it culls by a box that
+ * is always right instead of being forced active every frame.
  */
-function makeTrail(scene, colour, y0, i) {
+function makeTrail(scene, colour, y0, i, area) {
   const B = BABYLON;
   const positions = new Float32Array(MAX_POINTS * 2 * 3);
   const indices = new Uint32Array((MAX_POINTS - 1) * 6);
@@ -322,34 +432,40 @@ function makeTrail(scene, colour, y0, i) {
   mat.disableLighting = true;
   mat.backFaceCulling = false;
   mat.emissiveColor = colour.scale(.75);
+  mat.freeze();
   mesh.material = mat;
   mesh.isPickable = false;
-  mesh.alwaysSelectAsActiveMesh = true;  // the buffer moves; never let a stale bound cull it
+  mesh.setBoundingInfo(new B.BoundingInfo(new B.Vector3(area.x0, y0, area.z0),
+    new B.Vector3(area.x1, y0 + WALL + .01, area.z1)));
+  mesh.doNotSyncBoundingInfo = true;
+  mesh.freezeWorldMatrix();
+  const sub = mesh.subMeshes[0];
+  // Straight to the engine rather than VertexBuffer.updateDirectly, which
+  // drops the buffer's CPU copy on a partial write; `positions` IS that copy
+  // and stays whole, so a lost context still restores the trail.
+  const engine = scene.getEngine();
+  const gpu = mesh.getVertexBuffer(B.VertexBuffer.PositionKind).getBuffer();
+  const pair = new Float32Array(6);
   let count = 0, lastX = 0, lastZ = 0;
   function write(k, x, z) {
-    const o = k * 6;
-    positions[o] = x; positions[o + 1] = y0 + .005; positions[o + 2] = z;
-    positions[o + 3] = x; positions[o + 4] = y0 + WALL; positions[o + 5] = z;
-  }
-  function pinTail(x, z) {
-    for (let k = count; k < MAX_POINTS; k++) write(k, x, z);
+    pair[0] = x; pair[1] = y0 + .005; pair[2] = z;
+    pair[3] = x; pair[4] = y0 + WALL; pair[5] = z;
+    positions.set(pair, k * 6);
+    engine.updateDynamicVertexBuffer(gpu, pair, k * 6 * 4);
+    sub.indexCount = Math.max(0, count - 1) * 6;
   }
   return {
     reset(x, z) {
       count = 1;
       write(0, x, z);
-      pinTail(x, z);
       lastX = x; lastZ = z;
-      mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions);
     },
     extend(x, z) {
       if (count >= MAX_POINTS) return;
       if (Math.hypot(x - lastX, z - lastZ) < POINT_EVERY) return;
-      write(count, x, z);
       count++;
-      pinTail(x, z);
+      write(count - 1, x, z);
       lastX = x; lastZ = z;
-      mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions);
     },
   };
 }
@@ -370,6 +486,12 @@ function makeSparks(scene, y0) {
   for (const m of [ring, ...bits.map((b) => b.mesh)]) { m.isPickable = false; m.setEnabled(false); }
   let left = 0;
   return {
+    /** Paused mid-burst (the camera looked away): no frozen sparks left hanging. */
+    hide() {
+      left = 0;
+      ring.setEnabled(false);
+      for (const b of bits) b.mesh.setEnabled(false);
+    },
     burst(x, z, colour) {
       mat.emissiveColor = colour;
       left = .7;

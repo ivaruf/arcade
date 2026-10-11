@@ -3,7 +3,21 @@
  * The foxes that briefly rode three of these lines on 2026-10-02 moved up to
  * the glass roof (js/foxrace.js), where they play a round of the game out of
  * the gopher's way; the floor is the six roaming lines again.
+ *
+ * COST (PERFORMANCE.md, 2026-10-11). Each repaint is 576 stroked segments over
+ * a 768² copy of the grid, and a 768² texture upload — 2.4 MB, which is what
+ * actually hurts an old tablet. It used to happen 24 times a second from
+ * anywhere in the sky. Now it happens only while the floor is in view and
+ * within FAR metres, at 24 Hz from close by and 12 Hz from beyond NEAR, where
+ * a line moves a couple of pixels between paints rather than half a dozen.
+ * The paint itself is unchanged (same strokes, same canvas size: from the
+ * arena floor the texture fills the screen, and 512² visibly softens it); it
+ * just no longer allocates two arrays per segment.
  */
+import { FAR, watch } from './moving.js';
+
+const NEAR = 14;   // metres; inside this the floor repaints at the full 24 Hz
+
 export function createNeonFoxFloor(scene, platform) {
   const B = BABYLON;
   const size = 768;
@@ -52,19 +66,26 @@ export function createNeonFoxFloor(scene, platform) {
   floor.position.set((platform.x[0] + platform.x[1]) / 2, platform.y + .004,
     (platform.z[0] + platform.z[1]) / 2);
   floor.material = material;
+  // Nothing about the material changes; only the texture's pixels do.
+  material.freeze();
   floor.isPickable = false;
   floor.freezeWorldMatrix();
   // Painted halos supply glow without blooming the whole display into white.
   for (const layer of scene.effectLayers || []) layer.addExcludedMesh?.(floor);
   const colors = ['#3aa0ff', '#ff5fb4', '#5cf07a', '#ffa03c', '#7838e8', '#ed3038'];
   const ctx = texture.getContext();
+  const seen = watch(scene, [platform.x[0], platform.y, platform.z[0]],
+    [platform.x[1], platform.y + .05, platform.z[1]], { range: FAR });
   let time = 0, pending = 0;
   // Bounded continuous paths at different tempos; sample past positions for
   // fading trails without retaining a growing history or allocating meshes.
+  // The position is written into px/py rather than returned as an array: 576
+  // small arrays per paint was the allocation in this loop.
+  let px = 0, py = 0;
   function point(t, i) {
     const a = t * (.34 + i * .023) + i * 1.047;
-    return [c + edge * (.69 * Math.sin(a) + .16 * Math.sin(a * 2.3 + i)),
-      c + edge * (.65 * Math.sin(a * 1.37 + i * .7) + .18 * Math.cos(a * 2.1))];
+    px = c + edge * (.69 * Math.sin(a) + .16 * Math.sin(a * 2.3 + i));
+    py = c + edge * (.65 * Math.sin(a * 1.37 + i * .7) + .18 * Math.cos(a * 2.1));
   }
   function paint() {
     ctx.globalAlpha = 1;
@@ -73,10 +94,10 @@ export function createNeonFoxFloor(scene, platform) {
     for (let i = 0; i < colors.length; i++) {
       ctx.strokeStyle = colors[i];
       for (let j = 0; j < 48; j++) {
-        const a = point(time - (48 - j) * .055, i);
-        const b = point(time - (47 - j) * .055, i);
         const fade = (j + 1) / 48;
-        ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b);
+        ctx.beginPath();
+        point(time - (48 - j) * .055, i); ctx.moveTo(px, py);
+        point(time - (47 - j) * .055, i); ctx.lineTo(px, py);
         ctx.globalAlpha = fade * .12; ctx.lineWidth = 12; ctx.stroke();
         ctx.globalAlpha = fade * .9; ctx.lineWidth = 3.2; ctx.stroke();
       }
@@ -89,10 +110,14 @@ export function createNeonFoxFloor(scene, platform) {
     blockers: [],
     animate(dt) {
       if (!Number.isFinite(dt) || dt <= 0) return;
+      // Unseen, the lines stop where they are; time does not run on, so they
+      // pick up from the same place rather than jumping.
+      if (!seen()) return;
       const elapsed = Math.min(dt, .1);
       time += elapsed; pending += elapsed;
-      if (pending < 1 / 24) return;
-      pending %= 1 / 24;
+      const every = seen.distance > NEAR ? 1 / 12 : 1 / 24;
+      if (pending < every) return;
+      pending %= every;
       paint();
     },
   };

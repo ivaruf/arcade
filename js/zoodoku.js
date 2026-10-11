@@ -25,7 +25,10 @@
  * tiles and the blocks; the tiles and blocks are one hand-built rounded slab
  * (`slab`) of ~80 triangles, so "chunky rounded tile" costs no CSG and no
  * earcut. The only per-frame work is nine position/rotation writes; nothing
- * is allocated in animate().
+ * is allocated in animate(), and animate() does nothing at all while the board
+ * is out of view or beyond FAR metres (moving.js, PERFORMANCE.md 2026-10-11):
+ * the blocks wait where they are and carry on from there. Every material is
+ * frozen once built; nothing about them changes.
  *
  * Coordinates: cell (i, j) is column i along +x and row j along +z, (0, 0) at
  * the hub-facing northwest corner. A slot at yaw 0 faces +z, as in room.js.
@@ -64,6 +67,8 @@ const STARTER = [[0, 1, 2, 3], [2, 3, 0, 1], [1, 0, 3, 2], [3, 2, 1, 0]];
 const STARTER_SHOWN = [[1, 1, 0, 1], [0, 1, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1]];
 /** The starter tray's corner cell on the big board: columns 5–8, rows 0–3. */
 const TRAY_I = 5, TRAY_J = 0;
+
+import { FAR, watch } from './moving.js';
 
 const CELL = 1.2;
 const BLOCK = .95;
@@ -441,8 +446,13 @@ export function createZoodokuIsland(scene, island, { mast, cabinet } = {}) {
   const smooth = (t) => t * t * (3 - 2 * t);
   const angleGap = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 
+  // The ring: R from the centre plus a block, and up to ~4 m above the board.
+  const reach = R + BLOCK * .75;
+  const seen = watch(scene, [cx - reach, floor - .5, cz - reach], [cx + reach, floor + 4.5, cz + reach],
+    { range: FAR });
   function animate(dt) {
     if (!Number.isFinite(dt) || dt <= 0) return;
+    if (dt > 1e-3 && !seen()) return;
     clock += Math.min(dt, .05);
     if (clock >= nextLaunch) {
       nextLaunch = clock + EVERY;
@@ -501,5 +511,6 @@ export function createZoodokuIsland(scene, island, { mast, cabinet } = {}) {
     }
   }
   animate(1e-3);
+  for (const mat of [...materials.values(), digitMat]) mat.freeze();
   return { blockers, statics, animate };
 }

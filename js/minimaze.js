@@ -1,13 +1,23 @@
 /** A floating wooden tilt board. The display follows MiniMaze's first maze,
- * “Roll”; its clear eastern lane leads straight to the playable cabinet. */
+ * “Roll”; its clear eastern lane leads straight to the playable cabinet.
+ *
+ * COST (PERFORMANCE.md, 2026-10-11). Some seventy boxes, screws and marbles,
+ * every one of them still. Like zoodoku.js, everything that does not move is
+ * returned in `statics` for room.js to fold into one draw call per material
+ * (mergeStatic); the rolling marble is the only thing kept out, and it rolls
+ * only while the island is in view and within FAR metres (moving.js). */
+import { FAR, watch } from './moving.js';
+
 export function createMiniMazeIsland(scene, island) {
   const B = BABYLON;
   const floor = island.y;
   const blockers = [];
+  const statics = [];
   function material(name, colour, shine = .04) {
     const mat = new B.StandardMaterial(`MiniMaze ${name}`, scene);
     mat.diffuseColor = B.Color3.FromHexString(colour);
     mat.specularColor = new B.Color3(shine, shine, shine);
+    mat.freeze();
     return mat;
   }
   const walnut = material('walnut', '#674127');
@@ -24,6 +34,7 @@ export function createMiniMazeIsland(scene, island) {
     mesh.isPickable = false;
     mesh.receiveShadows = true;
     mesh.freezeWorldMatrix();
+    statics.push(mesh);
     if (solid) blockers.push({ x, z, hx: width / 2, hz: depth / 2, base: y - height / 2, top: y + height / 2 });
     return mesh;
   }
@@ -53,6 +64,7 @@ export function createMiniMazeIsland(scene, island) {
       screw.material = brass;
       screw.isPickable = false;
       screw.freezeWorldMatrix();
+      statics.push(screw);
       box('screw slot', x, floor + .022, z, .09, .008, .018, dark);
     }
   }
@@ -73,6 +85,7 @@ export function createMiniMazeIsland(scene, island) {
     spare.material = steel;
     spare.isPickable = false;
     spare.freezeWorldMatrix();
+    statics.push(spare);
   }
 
   // A tabletop-scale copy keeps the walking route open beside the exhibit.
@@ -99,6 +112,7 @@ export function createMiniMazeIsland(scene, island) {
     wheel.material = brass;
     wheel.isPickable = false;
     wheel.freezeWorldMatrix();
+    statics.push(wheel);
     box('wheel grip', x, floor + .43, oz - .58, .06, .28, .06, walnut);
   }
   const goalX = ox + 7 * cell, goalZ = oz + 5 * cell;
@@ -108,7 +122,7 @@ export function createMiniMazeIsland(scene, island) {
   const inside = B.MeshBuilder.CreateCylinder('MiniMaze goal recess', { diameter: .30, height: .012, tessellation: 24 }, scene);
   inside.position.set(goalX, tableY + .047, goalZ);
   inside.material = dark;
-  for (const mesh of [cup, inside]) { mesh.isPickable = false; mesh.freezeWorldMatrix(); }
+  for (const mesh of [cup, inside]) { mesh.isPickable = false; mesh.freezeWorldMatrix(); statics.push(mesh); }
   const marble = B.MeshBuilder.CreateSphere('MiniMaze rolling steel marble', { diameter: .32, segments: 16 }, scene);
   marble.material = steel;
   marble.isPickable = false;
@@ -116,8 +130,12 @@ export function createMiniMazeIsland(scene, island) {
   const lengths = path.slice(1).map((p, i) => Math.hypot(p[0] - path[i][0], p[1] - path[i][1]));
   const total = lengths.reduce((sum, n) => sum + n, 0);
   let elapsed = 0;
+  // The board and everything on it, up to the sign; the marble never leaves it.
+  const seen = watch(scene, [island.x[0], floor - 1.2, island.z[0]], [island.x[1], floor + 5.4, island.z[1]],
+    { range: FAR });
   function animate(dt) {
-    elapsed = (elapsed + dt * 1.8) % (total + 3);
+    if (dt > 0 && !seen()) return;
+    elapsed = (elapsed + Math.min(dt, .05) * 1.8) % (total + 3);
     let distance = Math.min(elapsed, total);
     let segment = 0;
     while (segment < lengths.length - 1 && distance > lengths[segment]) distance -= lengths[segment++];
@@ -127,5 +145,5 @@ export function createMiniMazeIsland(scene, island) {
       tableY + .20, oz + (a[1] + (b[1] - a[1]) * t) * cell);
   }
   animate(0);
-  return { blockers, animate };
+  return { blockers, statics, animate };
 }

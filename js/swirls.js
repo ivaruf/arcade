@@ -2,7 +2,16 @@
  * Source: games/swirls/effects.js — its palettes, 0.7 elliptical aspect,
  * circling aurora heads and slowly precessing orbit motes. No game simulation.
  * Fixed-size geometry updates at 30 Hz; no canvas textures or extra lights.
+ *
+ * COST (PERFORMANCE.md, 2026-10-11). The updates ran from anywhere in the sky
+ * (0.13–0.18 ms a frame) and every upload recomputed each ribbon's bounds. Now
+ * the whole display shares one fixed box that holds every ribbon at every
+ * moment, so uploads skip the bounds and the ribbons' world matrices are
+ * frozen; and nothing updates while that box is out of view or beyond FAR
+ * metres (moving.js). Time is the display's own, so it resumes where it was.
  */
+import { FAR, watch } from './moving.js';
+
 export function createIslandSwirls(scene, island) {
   const B = BABYLON;
   const cx = (island.x[0] + island.x[1]) / 2;
@@ -19,6 +28,7 @@ export function createIslandSwirls(scene, island) {
     mat.emissiveColor = color.scale(.82);
     mat.specularColor = B.Color3.Black();
     mat.disableLighting = true;
+    mat.freeze();
     return mat;
   });
 
@@ -36,11 +46,23 @@ export function createIslandSwirls(scene, island) {
     mesh.material = material;
     mesh.isPickable = false;
     mesh.checkCollisions = false;
+    // The vertices move; the mesh never does. A fixed bound instead of one
+    // recomputed on every upload (see `lo`/`hi` above).
+    mesh.setBoundingInfo(new B.BoundingInfo(new B.Vector3(...lo), new B.Vector3(...hi)));
+    mesh.doNotSyncBoundingInfo = true;
+    mesh.freezeWorldMatrix();
     const head = B.MeshBuilder.CreateSphere(`${name} mote`, { diameter: radius * 4, segments: 8 }, scene);
     head.material = material; head.isPickable = false;
     const p = new B.Vector3();
     curves.push({ mesh, head, radius, sample, positions, p });
   }
+
+  // Every ribbon, at every moment, is inside this box: the veils circle at
+  // most 1.11 m (plus wobble) around points 1.5 m off the deck's sides and
+  // 2.3 m past its back; the orbits reach 0.86 m around points 1.3 m out, at
+  // 3.75 m up. Padded, it is the bound every ribbon is culled by.
+  const lo = [island.x[0] - 3.2, floor + .6, island.z[0] - 1], hi = [island.x[1] + 3.2, floor + 5, island.z[1] + 4];
+  const seen = watch(scene, lo, hi, { range: FAR });
 
   // Outside the deck: no ribbon sweeps across the pergola, game sign or cabinet.
   for (const [i, x, y, z, phase] of [
@@ -95,13 +117,14 @@ export function createIslandSwirls(scene, island) {
         }
         if (i === steps) head.position.set(px, py, pz);
       }
-      mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions, true);
+      mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions, false);
     }
   }
   update(0);
   let elapsed = 0, pending = 0;
   return {
     animate(dt) {
+      if (!seen()) return;
       const step = Math.max(0, Math.min(dt, .05));
       elapsed += step; pending += step;
       if (pending < 1 / 30) return;

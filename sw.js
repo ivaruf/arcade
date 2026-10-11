@@ -64,6 +64,7 @@ const SHELL_FILES = [
   './js/swirls.js',
   './js/neonfox.js',
   './js/foxrace.js',
+  './js/moving.js',
   './js/cabinets.js',
   './js/gopher.js',
   './js/customization.js',
