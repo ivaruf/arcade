@@ -157,9 +157,10 @@ const BUILD = {
     add(cyl('Top hat band',{diameter:.365,height:.065}),n,m.band,0,.515,.015);
   },
 
-  // Round pink frames, rhinestones along the top of each, a glint on each
-  // lens, and gold studs at the hinges.
-  sunglasses(n, { B, scene, m, add, cyl, ball }) {
+  // Round pink frames and dark lenses, and nothing else. Like the top hat,
+  // these stayed plain on purpose: rhinestones and glints made them somebody
+  // else's glasses.
+  sunglasses(n, { B, scene, m, add, cyl }) {
     for (const side of [-1,1]) {
       const frame = B.MeshBuilder.CreateTorus('Round pink sunglass frame',{diameter:.215,thickness:.033,tessellation:32},scene);
       frame.rotation.x=Math.PI/2;
@@ -169,14 +170,6 @@ const BUILD = {
       add(B.MeshBuilder.CreateBox('Sunglass arm',{width:.025,height:.028,depth:.23},scene),n,m.pink,side*.25,.25,.195);
     }
     add(B.MeshBuilder.CreateBox('Sunglass bridge',{width:.071,height:.025,depth:.026},scene),n,m.pink,0,.263,.308);
-    for (const side of [-1,1]) {
-      for (let i = 0; i < 5; i++) {
-        const a = (.15+i*.175)*Math.PI;
-        ball('Sunglass rhinestone',n,m.pearl,.024,side*.127+Math.cos(a)*.107,.25+Math.sin(a)*.107,.322);
-      }
-      ball('Sunglass glint',n,m.shine,.045,side*.127-.035,.285,.316).scaling.set(1.2,.5,.3);
-      ball('Sunglass hinge',n,m.gold,.03,side*.235,.25,.31);
-    }
   },
 
   // A gold rim and its chain, a glint across the glass, a loop where the
