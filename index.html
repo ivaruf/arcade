@@ -306,7 +306,15 @@
   <!-- Set once on an older tablet and then forgotten, which is exactly why it
        is behind the pause menu and not on the HUD. js/quality.js writes the
        label; a ?scale= probe takes the button over and says so. -->
-  <button id="quality" class="ghost" type="button" aria-pressed="true">Sky detail: full</button>
+  <!-- Two settings switches side by side, one pair, the same size (hub §2,
+       "things line up"), so adding the second cost the sideways phone no
+       height. Stats: fps, frame times and draw calls in the top left, for
+       judging an older device by eye; remembered, and ?perf=1 turns it on for
+       one visit. -->
+  <div class="pause-pair">
+    <button id="quality" class="ghost" type="button" aria-pressed="true">Sky detail: full</button>
+    <button id="stats" class="ghost" type="button" aria-pressed="false">Stats: off</button>
+  </div>
   <!-- Waving the title card's offer away must not delete the feature, so this
        is the way back to it. js/install.js reveals it on the same devices and
        leaves it alone afterwards; it never carries a badge or a count. -->

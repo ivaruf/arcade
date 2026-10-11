@@ -409,12 +409,55 @@ export function hold(seconds) {
 }
 
 /* -----------------------------------------------------------------------
- * ?perf=1 — the on-device readout. Everything is created inside the `if`,
- * so with the parameter absent there is no observer, no timer and no node.
+ * The stats readout — fps, frame times, draw calls, the resolution in force.
+ *
+ * Two ways in: the pause menu's "Show stats" switch, remembered on the device
+ * (STATS_KEY), and `?perf=1`, which turns it on for one session without being
+ * remembered, like `?q=` and `?scale=`. Off costs nothing: the instrumentation,
+ * the frame observer, the timer and the node are all created when it is
+ * switched on and all torn down when it is switched off.
  * -------------------------------------------------------------------- */
 
-export function startOverlay({ engine, scene }) {
-  if (params.get('perf') !== '1') return;
+const STATS_KEY = 'arcade.cloudnine.stats.v1';
+const forcedStats = params.get('perf') === '1';
+let stats = null;
+let statsTargets = null;
+
+function storedStats() {
+  try {
+    return localStorage.getItem(STATS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the readout is on right now. */
+export const statsShown = () => Boolean(stats);
+/** True while `?perf=1` holds it on, so the menu can say so. */
+export const statsForced = () => forcedStats;
+
+/** Called once at boot; shows the readout if the player or the link asked. */
+export function startOverlay(targets) {
+  statsTargets = targets;
+  if (forcedStats || storedStats()) showStats(true, { remember: false });
+}
+
+export function showStats(on, { remember = true } = {}) {
+  if (remember && !forcedStats) {
+    try {
+      localStorage.setItem(STATS_KEY, on ? '1' : '0');
+    } catch {
+      // Private mode: it still holds for this session.
+    }
+  }
+  if (on && !stats && statsTargets) stats = buildStats(statsTargets);
+  else if (!on && stats) {
+    stats.stop();
+    stats = null;
+  }
+}
+
+function buildStats({ engine, scene }) {
   const inst = new BABYLON.SceneInstrumentation(scene);
   inst.captureFrameTime = true;
   const box = document.createElement('pre');
@@ -429,12 +472,12 @@ export function startOverlay({ engine, scene }) {
   const gaps = new Float32Array(256);
   const sorted = new Float32Array(256);
   let head = 0, count = 0, last = 0;
-  engine.onBeginFrameObservable.add(() => {
+  const observer = engine.onBeginFrameObservable.add(() => {
     const now = performance.now();
     if (last && now - last < GAP_MS) { gaps[head] = now - last; head = (head + 1) % gaps.length; count = Math.min(count + 1, gaps.length); }
     last = now;
   });
-  setInterval(() => {
+  const timer = setInterval(() => {
     let n = 0, sum = 0;
     for (let i = 1; i <= count && sum < 2000; i++) {
       const g = gaps[(head - i + gaps.length) % gaps.length];
@@ -452,6 +495,15 @@ export function startOverlay({ engine, scene }) {
       (Number.isFinite(forcedScale) ? ' (?scale)' : governing()
         ? `  governed, low ${Number.isFinite(gov.lowest) ? gov.lowest.toFixed(2) : px.toFixed(2)}x` : '');
   }, 500);
+
+  return {
+    stop() {
+      clearInterval(timer);
+      engine.onBeginFrameObservable.remove(observer);
+      inst.dispose();
+      box.remove();
+    },
+  };
 }
 
 /* -----------------------------------------------------------------------

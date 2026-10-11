@@ -249,6 +249,16 @@ kbd {
 
 .pause .neon { margin-top: 22px; }
 
+/* Sky detail and Stats: peers, so one grid, equal columns, and the pair keeps
+   the single button's margin so the column's rhythm does not change. */
+.pause-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pause-pair .ghost { margin-top: 0; width: 100%; padding-inline: 10px; letter-spacing: .08em; }
+
 /* The menu is taller than it was now that two switches have become two dials,
    and a phone on its side is 300–430px tall. A safety net, and only that: the
    squeeze in the max-height block further down is the plan. touch-action has to
@@ -956,6 +966,8 @@ kbd {
      bottom of the screen — the same reasoning that hides the key hints above. */
   .pause .neon { margin-top: 14px; padding: 12px 18px; }
   .pause .ghost { margin-top: 8px; padding: 11px 16px; }
+  .pause-pair { margin-top: 8px; }
+  .pause-pair .ghost { margin-top: 0; padding: 11px 10px; }
 
   /* The board is the one thing here that grew, so it gives the pixels back. The
      note stays: it is what tells somebody which of the two rows is theirs, and

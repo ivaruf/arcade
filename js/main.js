@@ -148,6 +148,7 @@ const ui = {
   soundNote: $('sound-note'),
   soundMuted: $('sound-muted'),
   quality: $('quality'),
+  stats: $('stats'),
   touch: $('touch'),
   cabinet: $('cabinet'),
   pill: document.querySelector('.pill'),
@@ -1485,7 +1486,7 @@ const paintQuality = () => {
   const lighter = quality.tier() === 'lighter';
   ui.quality.textContent = quality.probing()
     ? `Sky detail: ${Math.round(quality.pixels() * 100) / 100}x (from the link)`
-    : `Sky detail: ${lighter ? 'runs lighter' : 'full'}`;
+    : `Sky detail: ${lighter ? 'lighter' : 'full'}`;
   ui.quality.setAttribute('aria-pressed', String(!lighter));
   ui.quality.disabled = quality.probing();
 };
@@ -1494,6 +1495,20 @@ paintQuality();
 ui.quality.addEventListener('click', () => {
   quality.setTier(quality.tier() === 'lighter' ? 'full' : 'lighter', knobs);
   paintQuality();
+  sfx.click();
+});
+
+/** The stats readout's switch (quality.js owns the readout itself). */
+const paintStats = () => {
+  const on = quality.statsShown();
+  ui.stats.textContent = `Stats: ${on ? 'on' : 'off'}${quality.statsForced() ? ' (from the link)' : ''}`;
+  ui.stats.setAttribute('aria-pressed', String(on));
+};
+paintStats();
+
+ui.stats.addEventListener('click', () => {
+  quality.showStats(!quality.statsShown());
+  paintStats();
   sfx.click();
 });
 
