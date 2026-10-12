@@ -18,8 +18,9 @@ moved up; `/arcade/cloudnine/` is a redirect so old links still land.
 The welcome cloud is surrounded by nine game islands: NeonFox to the
 northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
-MiniMaze floats above Lobbots in the southwest, and Zoodoku above Supermine
-Adventure in the southeast. Their different heights make getting between them a
+MiniMaze floats above Lobbots in the southwest, Zoodoku above Supermine
+Adventure in the southeast, and Geometry Pong above Dam Break in the northeast.
+Their different heights make getting between them a
 short flight.
 
 MiniMaze occupies **The marble garden** at `(-19, 12, 18)`: a floating wooden
@@ -54,6 +55,26 @@ to the cabinet, which faces back the way you came. Its cabinet art is
 `assets/games/zoodoku.svg`, cached with the shell like MiniMaze's, so the
 machine has a face before the game is deployed. It has no take-home machine
 yet; the board keeps `(22.6, 18.0)` beside the cabinet clear for one.
+
+Geometry Pong occupies **The hexagon court** at `(18.25, 12, -18.5)`, eleven
+metres above the reservoir: the island is the table. The game is played round
+one tablet lying flat, a finger on each edge, so the deck is that tablet seen
+from above — a near-black slab with a hexagon arena laid into it, each side
+edged in one player's neon (the game's own colours), a pale bumper at every
+corner, two faint echoes of the hexagon inside it, and each player's glyph
+(circle, triangle, square, diamond, pentagon, hexagon) on the deck outside
+their side. A tapered hexagonal keel underneath echoes the arena for anyone
+looking up from the dam. Two balls play a real, cheap game: a ball bounces off
+the paddles the way the game's do, takes the colour of the last paddle to hit
+it, and a ball through a side seals it for two seconds with a barrier in the
+scorer's colour that slams in from both corners and opens from the middle out.
+`js/geometrypong.js` builds it all in code: its still meshes go to
+`mergeStatic` as one vertex-coloured matte and one draw per neon colour, the
+six paddles and two balls are the only moving meshes, and nothing moves while
+the court is out of view or far away. Land on the hub side, cross the court,
+and play on the far apron facing back over it; the take-home machine stands
+2.4 m along that apron, square to the cabinet. The cabinet art is the game's
+own 192 px icon, `assets/games/geometry_pong-192.png`, cached with the shell.
 
 Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
 game's own hill, floating. Its sides are the in-game strata and rust seam under

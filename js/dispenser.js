@@ -49,7 +49,10 @@ import { t } from './i18n.js';
  * that solve at 2.1 to 2.4m. MiniMaze's joined them once the game had a
  * manifest to install from: 2.4m west of its cabinet and square to it, as
  * Lobbots' is, which puts its standing place 2.41m from the cabinet's and
- * leaves 0.36m of air to the maze plinth and the brass lane open.
+ * leaves 0.36m of air to the maze plinth and the brass lane open. Geometry
+ * Pong's came the same way: 2.4m along the far apron from its cabinet, square
+ * to it and facing back over the court, its standing place a metre short of the
+ * arena's east bumper.
  */
 const MACHINES = [
   { slug: 'lobbots', title: 'LOBBOTS', x: -22, z: 15.6, y: .5, yaw: Math.PI / 2 },
@@ -61,6 +64,7 @@ const MACHINES = [
   { slug: 'supermine_adventure', title: 'SUPERMINE ADVENTURE', x: 24.03, z: 21.04, y: -5.5, yaw: Math.PI },
   { slug: 'swirls', title: 'swirls', x: -2.19, z: 19.29, y: 6, yaw: -Math.PI },
   { slug: 'minimaze', title: 'MiniMaze', x: -18.4, z: 20.5, y: 12, yaw: Math.PI },
+  { slug: 'geometry_pong', title: 'Geometry Pong', x: 24.3, z: -18.6, y: 12, yaw: -Math.PI / 2 },
 ];
 
 /**

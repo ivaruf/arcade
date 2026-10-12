@@ -94,6 +94,19 @@
         "tagline": "Sudoku som starter med en rev.",
         "description": "Sudoku for unge gåteløsere: dra små dyr inn på et 4×4-brett, og klatre videre via 6×6 til klassisk 9×9 med tall. Ett av hvert i hver rad, kolonne og boks."
       }
+    },
+    {
+      "slug": "geometry_pong",
+      "name": "Geometry Pong",
+      "accent": "#3be8ff",
+      "icon": "assets/games/geometry_pong-192.png",
+      "tagline": "Pong with more sides.",
+      "description": "Pong on a polygon: two to eight sides, every side somebody's goal. Put a finger on each edge of one tablet, or share a keyboard. First to the target wins.",
+      "theme": "#06070c",
+      "nb": {
+        "tagline": "Pong med flere sider.",
+        "description": "Pong på en mangekant med to til åtte sider, og hver side er noens mål. Sett én finger på hver kant av samme nettbrett, eller del et tastatur. Den som først når målet, vinner."
+      }
     }
   ]
 }

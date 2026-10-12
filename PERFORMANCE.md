@@ -105,6 +105,27 @@ draw. The next levers, if the owner's iPad says they are needed: an emissive
 palette texture per island (breaks "0 textures"), merging near-identical glow
 colours (a look change), or per-island culling (measured 0.2–0.3 ms here).
 
+## Geometry Pong's court (2026-10-12)
+
+The first island added after the push, built to the rules below from the
+start (`js/geometrypong.js`). Same bench, same settings, before → after:
+
+| view | draw calls | active | CPU ms |
+|---|---|---|---|
+| near Geometry Pong (new) | 192 | 68 | 1.77 |
+| title | 487 → 495 | 233 → 237 | 3.12 → 3.30 |
+| near Dam Break (below it) | 209 → 213 | 75 → 77 | 1.73 → 1.82 |
+| overview | 1,177 → 1,223 | 656 → 681 | 5.09 → 5.16 |
+
+Scene 914 → 966 meshes (the court's 40 still meshes merge to 8; the rest is its cabinet, take-home machine and sign), 402 → 418 materials.
+Its still parts are one vertex-coloured matte plus one material per neon
+colour; six paddles and two balls are the only movers, a ball's colour is a
+material swap, and nothing casts. One thing worth keeping: its seal barriers
+appear only on a goal, and built switched off their first frame cost a
+~150 ms hitch (bench CPU mean 1.8 → 5.1 ms with goals forced), so they are
+built switched on, hidden in the slab, and switched off once the court has
+been drawn. Anything that appears on demand wants the same warm-up.
+
 ## Ratified
 
 - **Islands carry flat colour as vertex colours (COLOR_0, linear)**, with

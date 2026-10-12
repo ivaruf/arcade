@@ -150,6 +150,7 @@ const STRINGS = {
     // ---- where you are
     'platform.minimaze': 'Kulehagen',
     'platform.zoodoku': 'Gåteenga',
+    'platform.geometry_pong': 'Sekskantbanen',
     'platform.neonfox': 'Neonarenaen',
     'platform.lobbots': 'Prøvefeltet',
     'platform.welcome': 'Velkomstskyen',
@@ -439,6 +440,7 @@ const STRINGS = {
 
     'platform.minimaze': 'The marble garden',
     'platform.zoodoku': 'The puzzle meadow',
+    'platform.geometry_pong': 'The hexagon court',
     'platform.neonfox': 'The neon arena',
     'platform.lobbots': 'The proving ground',
     'platform.welcome': 'The welcome cloud',

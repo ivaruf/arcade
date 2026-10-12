@@ -61,6 +61,7 @@ const SHELL_FILES = [
   './assets/games/minimaze.svg',
   './js/zoodoku.js',
   './assets/games/zoodoku.svg',
+  './js/geometrypong.js',
   './js/aquarium.js',
   './js/gears.js',
   './js/swirls.js',
@@ -87,6 +88,7 @@ const SHELL_FILES = [
   // depends on a round trip to another origin to have a face.
   './assets/games/neonfox-192.png',
   './assets/games/lobbots-192.png',
+  './assets/games/geometry_pong-192.png',
   './icons/icon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',

@@ -1,3 +1,3 @@
 // Shared by the sign (ES module import) and service worker (importScripts).
 // Bump this value for every arcade release.
-globalThis.GOPHER_CLOUD_VERSION = 'v2.25.0'; // the arcade speaks Norwegian first, English one tap away
+globalThis.GOPHER_CLOUD_VERSION = 'v2.26.0'; // Geometry Pong joins the arcade, on the hexagon court above the reservoir
