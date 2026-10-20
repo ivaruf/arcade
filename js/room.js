@@ -6,6 +6,7 @@ import { createFoxRace } from './foxrace.js';
 import { createMiniMazeIsland } from './minimaze.js';
 import { createZoodokuIsland } from './zoodoku.js';
 import { createGeometryPongIsland } from './geometrypong.js';
+import { createHeistIsland } from './heist.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -59,6 +60,10 @@ export const PLATFORMS = [
   // A hexagon arena on a black deck (js/geometrypong.js), eleven metres above
   // the reservoir as MiniMaze is above Lobbots: the northeast's upper island.
   { id: 'geometry_pong', name: 'The hexagon court', x: [11.5, 25], z: [-24.75, -12.25], y: 12 },
+  // A comic-book city block at night, its bank facing the hub (js/heist.js).
+  // Over the gyro hangar, as MiniMaze is over Lobbots: the west's upper
+  // island, set back a metre so the hangar's own sign still clears its keel.
+  { id: 'heist', name: 'The night bank', x: [-28, -14], z: [-7, 7], y: 11 },
   { id: 'neonfox', name: 'The neon arena', x: [-25, -13], z: [-24, -12], y: 2 },
   { id: 'lobbots', name: 'The proving ground', x: [-25, -13], z: [12, 24], y: .5 },
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
@@ -87,6 +92,7 @@ export const BEACONS = {
   minimaze: { x: -19, y: 12, z: 22.3, top: 5.2 },
   zoodoku: { x: 25.0, y: 6.5, z: 20.4, top: 5.2 },
   geometry_pong: { x: 24.7, y: 12, z: -24.3, top: 5.2 },
+  heist: { x: -27.7, y: 11, z: 6.7, top: 5.2 },
   lobbots: { x: -24.5, y: .5, z: 18, top: 5.2 },
   neonfox: { x: -24.5, y: 2, z: -18, top: 5.4 },
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
@@ -107,6 +113,7 @@ export const PLACEMENT = {
   minimaze: 'minimaze',
   zoodoku: 'zoodoku',
   geometry_pong: 'geometry_pong',
+  heist: 'heist',
   lobbots: 'lobbots',
   neonfox: 'neonfox',
   maxgear: 'race',
@@ -132,6 +139,10 @@ export const SLOTS = {
   // Land on the hub side, cross the court between the paddles, and play on
   // the far apron facing back over it.
   geometry_pong: [{ x: 24.3, z: -16.2, yaw: -Math.PI / 2 }],
+  // Land on the hub side, cross the street at the zebra crossing, and play in
+  // front of the bank, facing back the way you came, the vault door on your
+  // right as you walk up.
+  heist: [{ x: -19.15, z: -2.0, yaw: Math.PI / 2 }],
   lobbots: [{ x: -22, z: 18, yaw: Math.PI / 2 }],
   neonfox: [{ x: -22, z: -18, yaw: Math.PI / 2 }],
   // Enter from the southwest, pass the reservoir on the right, then play.
@@ -593,7 +604,7 @@ export async function buildWorld(scene) {
   // their full bounds, not their centres: Drifting cloud.007 reaches into the
   // sign even though its centre sits outside the deck. Keep this at load time
   // too so an older cached cloud-world.glb cannot obscure a newly added island.
-  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong'].includes(p.id));
+  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong', 'heist'].includes(p.id));
   for (const mesh of held.meshes) {
     if (!/^(Near cloud|Drifting cloud)/.test(mesh.name)) continue;
     mesh.computeWorldMatrix(true);
@@ -666,6 +677,9 @@ export async function buildWorld(scene) {
   const geometryPong = createGeometryPongIsland(scene, PLATFORMS.find((p) => p.id === 'geometry_pong'),
     { mast: BEACONS.geometry_pong });
   for (const one of mergeStatic(geometryPong.statics, { label: 'Geometry Pong', cell: 1e6 })) one.freezeWorldMatrix();
+  // And HEIST's block: one matte for street, stone and thief, one per glow.
+  const heist = createHeistIsland(scene, PLATFORMS.find((p) => p.id === 'heist'), { mast: BEACONS.heist });
+  for (const one of mergeStatic(heist.statics, { label: 'Heist', cell: 1e6 })) one.freezeWorldMatrix();
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
   const foxrace = createFoxRace(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
@@ -682,7 +696,8 @@ export async function buildWorld(scene) {
       ...minimaze.blockers,
       ...zoodoku.blockers,
       ...geometryPong.blockers,
+      ...heist.blockers,
     ],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); zoodoku.animate(dt); geometryPong.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); zoodoku.animate(dt); geometryPong.animate(dt); heist.animate(dt); },
   };
 }

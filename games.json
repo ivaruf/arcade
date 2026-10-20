@@ -107,6 +107,19 @@
         "tagline": "Pong med flere sider.",
         "description": "Pong på en mangekant med to til åtte sider, og hver side er noens mål. Sett én finger på hver kant av samme nettbrett, eller del et tastatur. Den som først når målet, vinner."
       }
+    },
+    {
+      "slug": "heist",
+      "name": "HEIST",
+      "accent": "#f4b63d",
+      "icon": "assets/games/heist-192.png",
+      "tagline": "Crack it before the cops come.",
+      "description": "A comic-book safecracking game. Pick locks, crack dials, cut the right wire and slip past the lasers before the police car arrives, then spend the take on better tools.",
+      "theme": "#141a33",
+      "nb": {
+        "tagline": "Knekk den før politiet kommer.",
+        "description": "Et tegneseriespill om å knekke safer. Dirk opp låser, vri på tallskiver, klipp riktig ledning og snik deg forbi laserne før politibilen kommer, og bruk byttet på bedre verktøy."
+      }
     }
   ]
 }
