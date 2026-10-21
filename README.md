@@ -19,7 +19,8 @@ The welcome cloud is surrounded by nine game islands: NeonFox to the
 northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
 MiniMaze floats above Lobbots in the southwest, Zoodoku above Supermine
-Adventure in the southeast, and Geometry Pong above Dam Break in the northeast.
+Adventure in the southeast, Geometry Pong above Dam Break in the northeast, and
+HEIST above Maxgear's gyro hangar in the west.
 Their different heights make getting between them a
 short flight.
 
@@ -75,6 +76,28 @@ the court is out of view or far away. Land on the hub side, cross the court,
 and play on the far apron facing back over it; the take-home machine stands
 2.4 m along that apron, square to the cabinet. The cabinet art is the game's
 own 192 px icon, `assets/games/geometry_pong-192.png`, cached with the shell.
+
+HEIST occupies **The night bank** at `(-21, 11, 0)`, nine and a half metres
+above the gyro hangar: one city block out of the game's comic book at night,
+in its own navy, mustard, cream and siren colours. A navy street runs all the
+way round with a mustard centre line, cream kerbs and a zebra crossing on the
+hub side; in the middle a little stone bank faces the welcome cloud, with four
+columns, a mustard frieze, a gold coin in the pediment (no words, as in the
+game) and between the columns a giant round vault door that is the game's own
+icon — steel rim, cream face ticked like a clock, brass dial, red index mark.
+Lit windows either side have laser beams crossed in front of them, and the
+masked thief stands on the roof by an open skylight with his swag bag. Now and
+then the dial is worked through a combination, click-stop by click-stop, and
+the door swings open on a vault of gold bars before shutting again; a navy
+police car with cream doors circles the block with its light bar flashing red
+and blue at the game's own four times a second. `js/heist.js` builds it all in
+code: its still meshes go to `mergeStatic` as one vertex-coloured matte and one
+draw per glow colour, the door, the dial and the car are folded rigid groups,
+and nothing moves while the block is out of view or far away. Cross the street
+at the crossing and play in front of the bank, facing back toward the hub; the
+take-home machine stands 2.4 m to the left, inside the kerb so the police
+car's street stays clear. The cabinet art is the game's own 192 px icon,
+`assets/games/heist-192.png`, cached with the shell.
 
 Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
 game's own hill, floating. Its sides are the in-game strata and rust seam under

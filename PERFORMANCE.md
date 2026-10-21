@@ -126,6 +126,31 @@ appear only on a goal, and built switched off their first frame cost a
 built switched on, hidden in the slab, and switched off once the court has
 been drawn. Anything that appears on demand wants the same warm-up.
 
+## HEIST's night bank (2026-10-21)
+
+The second island built to the rules from the start (`js/heist.js`). Same
+bench, same settings, before (3a1bf6a) → after (cf608f2):
+
+| view | draw calls | active | CPU ms |
+|---|---|---|---|
+| near HEIST (new) | 292 | 120 | 1.95 |
+| title | 495 → 495 | 237 → 237 | 2.87 → 2.81 |
+| near the gyro hangar (below it) | 317 → 318 | 131 → 132 | 2.06 → 1.92 |
+| overview | 1,236 → 1,269 | 688 → 723 | 4.22 → 4.30 |
+
+Scene 966 → 1,014 meshes, 418 → 433 materials, shadow casters 211 → 226 (the
+cabinet and take-home machine, as everywhere else; the island itself casts
+nothing). The island is eleven meshes: some two hundred still pieces — street, kerbs,
+bank, columns, windows, lasers, the thief on the roof — merge to five (one
+vertex-coloured matte, four glow colours), and the movers are the vault door,
+its dial, and the police car's body, headlights and two lamps. A lamp's flash
+is a material swap to one unlit lens material. Its own view is under the 300
+budget, but only just, and most of that is the neighbours in shot: the island
+is 11 of the 120 active meshes, its cabinet and machine 29. The title view does
+not see it. One look note: the gold behind the vault door was first the pale
+window gold, and a two-metre disc of it bloomed to white; the loot is a deeper
+mustard glow on a dark interior instead, which reads as gold and not as a lamp.
+
 ## Ratified
 
 - **Islands carry flat colour as vertex colours (COLOR_0, linear)**, with
