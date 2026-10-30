@@ -251,6 +251,7 @@ const ACTIONS = {
   dress:   { name: 'dress',   code: 'KeyE' },
   write:   { name: 'write',   code: 'KeyE' },
   take:    { name: 'take',    code: 'KeyE' },
+  launch:  { name: 'launch',  code: 'KeyE' },
   run:     { name: 'run',     code: 'ShiftLeft', glyph: '\u00bb' },
   descend: { name: 'descend', code: 'ShiftLeft', glyph: '\u25bc' },
   play:    { name: 'play',    code: 'KeyE' },

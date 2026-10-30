@@ -291,6 +291,30 @@ export function boot() {
   noise({ at: 0.3, duration: 0.3, peak: 0.05, from: 6000, to: 2000, q: 0.5 });
 }
 
+/**
+ * The rocket pad (rockets.js). A fizz that climbs with a thin whistle on top,
+ * and then the burst: a low thump you feel more than hear, a wide hiss, and
+ * for the willow a scatter of crackles as it droops. Synthesized like the rest
+ * of the room; if the paid shows ever happen they get composed cues (hub §9).
+ */
+export function rocketLaunch() {
+  noise({ duration: 1.25, peak: 0.07, from: 500, to: 3200, q: 0.6 });
+  tone({ freq: 900, to: 2100, type: 'sine', attack: 0.05, hold: 0.7, release: 0.5, peak: 0.035 });
+}
+
+export function rocketBurst(kind) {
+  const pan = Math.random() * 0.6 - 0.3;
+  tone({ freq: 95, to: 38, type: 'sine', attack: 0.005, hold: 0.04, release: 0.6, peak: 0.3, pan });
+  noise({ duration: 0.7, peak: 0.12, from: 2400, to: 260, q: 0.5 });
+  if (kind === 'willow') {
+    for (let i = 0; i < 14; i++) {
+      noise({ at: 0.5 + Math.random() * 1.6, duration: 0.03, peak: 0.05 + Math.random() * 0.04, from: 5200, to: 2600, q: 1.5 });
+    }
+  } else if (kind === 'ring') {
+    tone({ freq: 1568, type: 'sine', at: 0.05, hold: 0.05, release: 0.9, peak: 0.03, pan });
+  }
+}
+
 export const click = () => tone({ freq: 880, type: 'square', hold: 0.008, release: 0.05, peak: 0.07 });
 
 export const back = () => tone({ freq: 700, to: 320, type: 'triangle', hold: 0.01, release: 0.16, peak: 0.09 });

@@ -7,6 +7,7 @@ import { createPets } from './pets.js';
 import { createCustomizationStation, ACCESSORIES, accessoryPreviews } from './customization.js';
 import { createMailbox, createLetterPanel } from './mailbox.js';
 import { createDispensers, createTakeawayPanel } from './dispenser.js';
+import { createRockets } from './rockets.js';
 /* =============================================================================
  * main.js — the arcade floor: boot, movement, camera, and the coin.
  *
@@ -390,6 +391,21 @@ const easeCamera = (beta, radius, seconds, alpha = null) => {
   ease = { until: time + seconds, beta, radius, alpha };
 };
 
+/**
+ * Watching a rocket go up. The bursts happen six to eight metres over the
+ * north edge of the welcome cloud, well above anything the shoulder camera
+ * frames, so the rig backs off, comes round behind the gopher to face north
+ * (alpha -π/2 puts cameraForward on +z) and aims a couple of metres higher
+ * until the sky is quiet again. Level rather than looking up, because below
+ * level the camera would sink into the cloud under the gopher's feet.
+ * A drag still wins, as it does for every ease.
+ */
+const ROCKET_VIEW = { beta: 1.6, lift: 2.4 };
+function watchRockets() {
+  watchingRockets = true;
+  easeCamera(ROCKET_VIEW.beta, CAMERA.maxRadius, 2.5, -Math.PI / 2);
+}
+
 /** Which platform the gopher is over, for the HUD. */
 let platform = null;
 
@@ -411,6 +427,12 @@ let takeaway = null;
 let nearDispenser = null;
 let atDispenser = null;
 let nearPets = false;
+let rockets = null;
+let nearRockets = false;
+/** True while the camera is looking up at rockets the player launched. */
+let watchingRockets = false;
+/** How far above the gopher the camera aims while watching: eased, metres. */
+let lookLift = 0;
 let nearSeat = null;
 let seatReturn = null;
 let standMotion = null;
@@ -467,7 +489,8 @@ async function boot() {
     cabinets.filter((c) => c.game).map((c) => [c.game.slug, c.game]),
   ));
   takeaway = createTakeawayPanel({ onShut: closeTakeaway });
-  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
+  rockets = createRockets(scene, sfx);
+  blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, rockets.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 
   say(t('boot.gopher'));
@@ -1078,7 +1101,7 @@ const cue = (action, words) => (input.IS_TOUCH ? t('cue.tap', t(`glyph.${action}
 
 function updatePrompt(dt) {
   if (state.seated) {
-    near = null; nearParents = nearPets = nearCustomization = nearMailbox = false; nearSeat = nearDispenser = null;
+    near = null; nearParents = nearPets = nearCustomization = nearMailbox = nearRockets = false; nearSeat = nearDispenser = null;
     gopher.setReach(0, dt);
     setPrompt(
       t(sitMotion ? 'prompt.sitting' : standMotion ? 'prompt.standing' : 'prompt.resting'),
@@ -1092,6 +1115,7 @@ function updatePrompt(dt) {
   nearCustomization = state.mode === 'walk' && state.grounded && customizationStation.inReach(gopher.pivot.position);
   nearMailbox = state.mode === 'walk' && state.grounded && mailbox.inReach(gopher.pivot.position);
   nearDispenser = state.mode === 'walk' && state.grounded ? dispensers.near(gopher.pivot.position) : null;
+  nearRockets = state.mode === 'walk' && state.grounded && rockets.inReach(gopher.pivot.position);
   const previous = near;
   near = findNear();
   if (previous && previous !== near) setLit(previous, false);
@@ -1135,6 +1159,9 @@ function updatePrompt(dt) {
     );
   } else if (nearDispenser) {
     setPrompt(t('prompt.take', nearDispenser.spec.title), cue('take', t('cue.take')));
+  } else if (nearRockets) {
+    // An empty pad still says what it is, and that more are coming.
+    setPrompt(t('prompt.rockets'), rockets.loaded() ? cue('launch', t('cue.launch')) : t('cue.reloading'));
   } else if (nearSeat) {
     setPrompt(t(`seat.${nearSeat.key}`), cue('sit', t('cue.sit')));
   } else {
@@ -1144,7 +1171,7 @@ function updatePrompt(dt) {
   // The one button under UP says what the gopher can actually do from here.
   // Being at a machine beats everything, because it is the point of the place;
   // otherwise the air means sink and the ground means run.
-  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearMailbox ? 'write' : nearDispenser ? 'take' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
+  input.setAction(near ? 'play' : nearPets ? 'pets' : nearCustomization ? 'dress' : nearParents ? 'read' : nearMailbox ? 'write' : nearDispenser ? 'take' : nearRockets ? 'launch' : nearSeat ? 'sit' : state.mode === 'fly' ? 'descend' : 'run');
 }
 
 // ---------------------------------------------------------------------------
@@ -1195,7 +1222,8 @@ function updateCamera(dt) {
   const rate = time < settleUntil ? 3 : 14;
   cameraTarget.position.x = damp(cameraTarget.position.x, p.x, rate, dt);
   cameraTarget.position.z = damp(cameraTarget.position.z, p.z, rate, dt);
-  cameraTarget.position.y = damp(cameraTarget.position.y, p.y + CAMERA.height, Math.min(rate, 8), dt);
+  lookLift = damp(lookLift, watchingRockets ? ROCKET_VIEW.lift : 0, 2.5, dt);
+  cameraTarget.position.y = damp(cameraTarget.position.y, p.y + CAMERA.height + lookLift, Math.min(rate, 8), dt);
 
   // Drift toward the framing this activity wants, unless the player is
   // dragging the camera themselves — then it is theirs.
@@ -1295,10 +1323,16 @@ function render() {
       else if (nearParents && coin) openParents();
       else if (nearMailbox && coin) openMailbox();
       else if (nearDispenser && coin) openTakeaway(nearDispenser);
+      else if (nearRockets && coin) { if (rockets.launch()) watchRockets(); }
       else if (nearSeat && coin) sitOnSeat(nearSeat);
       // Other machines carry across the sky from the platforms that have
       // them; the quiet cloud is supposed to be quiet.
       if (platform?.id !== 'calm') sfx.tickAmbience(dt);
+      // Walking off, or the last burst fading, hands the camera back.
+      if (watchingRockets && (!nearRockets || !rockets.busy())) {
+        watchingRockets = false;
+        easeCamera(CAMERA.beta, CAMERA.radius, 1.6);
+      }
     } else if (phase === 'diving' || phase === 'rising') {
       if (dive) updateDive(dt);
     } else {
@@ -1311,6 +1345,7 @@ function render() {
     if (gopher) gopher.animate(time, dt, state);
     animateCabinets(cabinets, near, time);
     animateWorld(dt);
+    rockets?.animate(dt);
     if (phase === 'floor') pets?.animate(dt, time, gopher?.pivot.position, state, groundAt, blockers);
     // Inside a game the sky is not drawn at all; anywhere else, the shadow
     // map goes where the gopher is, nudged toward what the camera faces.
