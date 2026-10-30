@@ -7,6 +7,7 @@ import { createMiniMazeIsland } from './minimaze.js';
 import { createZoodokuIsland } from './zoodoku.js';
 import { createGeometryPongIsland } from './geometrypong.js';
 import { createHeistIsland } from './heist.js';
+import { createSpectaclesIsland } from './spectacles.js';
 
 /* =============================================================================
  * room.js — the sky: five platforms, one big volume, and nothing underneath.
@@ -74,6 +75,10 @@ export const PLATFORMS = [
   { id: 'mine_bridge', name: 'The miners’ bridge', x: [20.8, 23.2], z: [6, 12], y: -5.5 },
   { id: 'dam', name: 'The reservoir', x: [12.5, 23.5], z: [-23.5, -12.5], y: 1 },
   { id: 'calm', name: 'The quiet cloud', x: [-4.5, 4.5], z: [13.5, 22.5], y: 6 },
+  // Where the shows go up (js/spectacles.js): past the quiet cloud, seen
+  // from the hub in the gap between it and the puzzle meadow. Beyond it is
+  // open sky to the edge of the world (SKY z 45), to grow into.
+  { id: 'spectacles', name: 'Spectacles', x: [4.5, 14], z: [25, 34], y: 2 },
 ];
 
 /**
@@ -604,7 +609,7 @@ export async function buildWorld(scene) {
   // their full bounds, not their centres: Drifting cloud.007 reaches into the
   // sign even though its centre sits outside the deck. Keep this at load time
   // too so an older cached cloud-world.glb cannot obscure a newly added island.
-  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong', 'heist'].includes(p.id));
+  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong', 'heist', 'spectacles'].includes(p.id));
   for (const mesh of held.meshes) {
     if (!/^(Near cloud|Drifting cloud)/.test(mesh.name)) continue;
     mesh.computeWorldMatrix(true);
@@ -680,6 +685,10 @@ export async function buildWorld(scene) {
   // And HEIST's block: one matte for street, stone and thief, one per glow.
   const heist = createHeistIsland(scene, PLATFORMS.find((p) => p.id === 'heist'), { mast: BEACONS.heist });
   for (const one of mergeStatic(heist.statics, { label: 'Heist', cell: 1e6 })) one.freezeWorldMatrix();
+  // Spectacles: deck, bulbs and board. The rocket pad on it is main.js's,
+  // because it is something the gopher uses rather than scenery.
+  const spectacles = createSpectaclesIsland(scene, PLATFORMS.find((p) => p.id === 'spectacles'));
+  for (const one of mergeStatic(spectacles.statics, { label: 'Spectacles', cell: 1e6 })) one.freezeWorldMatrix();
   const swirls = createIslandSwirls(scene, PLATFORMS.find((p) => p.id === 'calm'));
   const neonfox = createNeonFoxFloor(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
   const foxrace = createFoxRace(scene, PLATFORMS.find((p) => p.id === 'neonfox'));
@@ -697,6 +706,7 @@ export async function buildWorld(scene) {
       ...zoodoku.blockers,
       ...geometryPong.blockers,
       ...heist.blockers,
+      ...spectacles.blockers,
     ],
     animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); zoodoku.animate(dt); geometryPong.animate(dt); heist.animate(dt); },
   };

@@ -36,7 +36,7 @@ import { createRockets } from './rockets.js';
 
 import { loadMachines } from './registry.js';
 import {
-  buildWorld, groundAt, insideSky, platformNear,
+  buildWorld, groundAt, insideSky, platformNear, PLATFORMS,
   SKY, SKY_LOOK, SPAWN,
 } from './room.js';
 import { raiseSigns } from './signs.js';
@@ -392,12 +392,12 @@ const easeCamera = (beta, radius, seconds, alpha = null) => {
 };
 
 /**
- * Watching a rocket go up. The bursts happen six to eight metres over the
- * north edge of the welcome cloud, well above anything the shoulder camera
- * frames, so the rig backs off, comes round behind the gopher to face north
- * (alpha -π/2 puts cameraForward on +z) and aims a couple of metres higher
- * until the sky is quiet again. Level rather than looking up, because below
- * level the camera would sink into the cloud under the gopher's feet.
+ * Watching a rocket go up. The bursts happen six to eight metres over the far
+ * side of Spectacles (rockets.js), well above anything the shoulder camera
+ * frames, so the rig backs off, comes round behind the gopher to face the way
+ * the tubes lean (alpha -π/2 puts cameraForward on +z) and aims a couple of
+ * metres higher until the sky is quiet again. Level rather than looking up,
+ * because below level the camera would sink into the deck under the gopher.
  * A drag still wins, as it does for every ease.
  */
 const ROCKET_VIEW = { beta: 1.6, lift: 2.4 };
@@ -489,7 +489,7 @@ async function boot() {
     cabinets.filter((c) => c.game).map((c) => [c.game.slug, c.game]),
   ));
   takeaway = createTakeawayPanel({ onShut: closeTakeaway });
-  rockets = createRockets(scene, sfx);
+  rockets = createRockets(scene, sfx, PLATFORMS.find((p) => p.id === 'spectacles'));
   blockers = [...world.blockers, customizationStation.blocker, pets.blocker, parentsSign.blocker, mailbox.blocker, rockets.blocker, ...dispensers.blockers, ...cabinets.flatMap((c) => c.blockers)];
   raiseSigns(scene, cabinets);
 

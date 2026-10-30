@@ -1,5 +1,5 @@
 /* =============================================================================
- * rockets.js — a launch pad on the welcome cloud, and three free rockets.
+ * rockets.js — a launch pad on Spectacles, and three free rockets.
  *
  * THE POINT OF IT. A feel test, built 2026-10-30, for an idea that is still
  * mostly TBD: the arcade may one day put on paid "shows" (a fireworks display
@@ -9,10 +9,11 @@
  * If the shows ever happen, the rule they live under is that they are watched,
  * never played, and that no price ever appears inside the sky.
  *
- * WHAT IS HERE. A round plinth at the north edge of the cloud with three tubes
- * leaning out over the edge — aimed away from where people stand, as real ones
- * are, and also the only way the bursts land in front of a camera that is
- * standing behind the gopher. Each tube holds one rocket with its own burst:
+ * WHAT IS HERE. A round plinth near the hub-facing edge of Spectacles with
+ * three tubes leaning away from the hub (+z), out over the island — aimed away from where
+ * people stand, as real ones are, and also the way the bursts land in front of
+ * a camera standing behind the gopher. Each tube holds one rocket with its own
+ * burst:
  *
  *      0  gold peony    a full sphere that sags as it fades
  *      1  ring          a tilted halo, cyan and pink
@@ -35,18 +36,17 @@
  * this sky is.
  * ========================================================================== */
 import { mergeStatic } from './room.js';
+import { padOn } from './spectacles.js';
 
-/** Where the pad stands; room.js FURNITURE is not used, the blocker is ours. */
-const PAD = { x: 1.4, z: 4.25 };
-/** Where the gopher stands to launch, and how near counts. Kept clear of the
- *  pets' reach (3.3, 2.3) and of the spawn point (0, 2.6). */
-const STAND = { x: 1.4, z: 3.2, reach: 0.8 };
+/** Where the gopher stands to launch, behind the pad, and how near counts. */
+const STAND_BACK = 1.05;
+const REACH = 0.8;
 
 const FLIGHT = 1.35; // seconds from tube to burst
 const RELOAD = 4.5; // seconds from burst to a fresh rocket in the tube
 const GROW = 0.35; // a fresh rocket slides up out of the tube over this long
 
-/** Each tube's lean: fanned in x, out over the north edge in z. */
+/** Each tube's lean: fanned in x, away from the hub in +z. */
 const TUBES = [-0.42, 0, 0.42].map((x) => ({ x, dir: [x * 0.6, 1, 0.95] }));
 
 const STYLES = [
@@ -55,15 +55,20 @@ const STYLES = [
   { body: '#3e9a4f', nose: '#f2e7a0', kind: 'willow' },
 ];
 
-export function createRockets(scene, sfx) {
+export function createRockets(scene, sfx, island) {
   const B = BABYLON;
+  // On Spectacles (spectacles.js), which lays its launch field round this spot.
+  const PAD = padOn(island);
+  const floor = PAD.y;
+  const STAND = { x: PAD.x, z: PAD.z - STAND_BACK };
   const root = new B.TransformNode('Rocket pad', scene);
-  root.position.set(PAD.x, 0, PAD.z);
+  root.position.set(PAD.x, floor, PAD.z);
 
-  // PBR, like everything else on the welcome cloud, and not for looks: the two
-  // lamps over this cloud (main.js) burn at intensity 34, a physical value
-  // that a StandardMaterial takes literally. The first build of this pad was
-  // Standard and came out solid white under them.
+  // PBR, and not for looks: the pad was first built on the welcome cloud,
+  // whose two lamps (main.js) burn at intensity 34, a physical value that a
+  // StandardMaterial takes literally, and it came out solid white under them
+  // on the full tier. Out on Spectacles it is beyond their range, but PBR
+  // stays, so the pad looks the same wherever it is moved next.
   function paint(name, hex, glowing = false) {
     const m = new B.PBRMaterial(`Rocket pad ${name}`, scene);
     m.albedoColor = B.Color3.FromHexString(hex).toLinearSpace();
@@ -114,7 +119,7 @@ export function createRockets(scene, sfx) {
     nose.parent = node; nose.position.y = 0.35; nose.material = paint(`rocket ${i} nose`, tube.style.nose, true);
     for (const m of [body, nose]) m.isPickable = false;
     // Resting: the bottom third inside the tube, the rest showing.
-    const rest = new B.Vector3(PAD.x, 0, PAD.z).addInPlace(tube.foot).addInPlace(tube.dir.scale(0.78));
+    const rest = new B.Vector3(PAD.x, floor, PAD.z).addInPlace(tube.foot).addInPlace(tube.dir.scale(0.78));
     node.position.copyFrom(rest);
     return {
       node, body, tube, rest,
@@ -252,7 +257,7 @@ export function createRockets(scene, sfx) {
     rocket.t = 0;
     rocket.from.copyFrom(rocket.rest);
     // Up its tube's lean to a height of its own, so a salvo spreads out.
-    const height = 6.2 + Math.random() * 1.6;
+    const height = floor + 6.2 + Math.random() * 1.6;
     const k = (height - rocket.rest.y) / rocket.tube.dir.y;
     rocket.to.copyFrom(rocket.rest).addInPlace(rocket.tube.dir.scale(k));
     rocket.to.x += (Math.random() - 0.5) * 1.2;
@@ -307,8 +312,8 @@ export function createRockets(scene, sfx) {
   }
 
   return {
-    blocker: { x: PAD.x, z: PAD.z, hx: 0.75, hz: 0.75, base: 0, top: 1.5 },
-    inReach(p) { return Math.abs(p.y) < 0.3 && Math.hypot(p.x - STAND.x, p.z - STAND.z) < STAND.reach; },
+    blocker: { x: PAD.x, z: PAD.z, hx: 0.75, hz: 0.75, base: floor, top: floor + 1.5 },
+    inReach(p) { return Math.abs(p.y - floor) < 0.3 && Math.hypot(p.x - STAND.x, p.z - STAND.z) < REACH; },
     /** How many are in their tubes right now. */
     loaded: () => rockets.filter((r) => r.state === 'ready').length,
     /** Whether a rocket is up or has just burst: the camera keeps watching. */

@@ -99,6 +99,18 @@ take-home machine stands 2.4 m to the left, inside the kerb so the police
 car's street stays clear. The cabinet art is the game's own 192 px icon,
 `assets/games/heist-192.png`, cached with the shell.
 
+**Spectacles** (*Spektakkelet*) is not a game's island: it is where the
+arcade puts on shows, at `(9.25, 2, 29.5)`, past Swirls' quiet cloud and seen
+from the hub in the gap between it and Zoodoku. A violet festival deck on a
+tapered keel, a gold rim, a ring of pink, gold and cyan bulbs, and a name
+board at the back facing the hub. On it so far: one rocket pad with three
+free rockets (`js/rockets.js`) — a gold peony, a cyan and pink ring and a
+green willow, each refilling a few seconds after it bursts. It is a feel test
+for bigger shows that may come later; whatever comes is watched, never
+played, and no price ever appears in the sky. `js/spectacles.js` builds the
+island in code and its still meshes go to `mergeStatic` like the others; the
+rockets' particle systems are built on the first launch.
+
 Lobbots occupies **The proving ground** at `(-19, .5, 18)`: a slice of the
 game's own hill, floating. Its sides are the in-game strata and rust seam under
 the pale crust, a berm with a crater bitten out of it runs along the back, and
