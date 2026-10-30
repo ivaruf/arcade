@@ -60,11 +60,16 @@ export function createRockets(scene, sfx) {
   const root = new B.TransformNode('Rocket pad', scene);
   root.position.set(PAD.x, 0, PAD.z);
 
+  // PBR, like everything else on the welcome cloud, and not for looks: the two
+  // lamps over this cloud (main.js) burn at intensity 34, a physical value
+  // that a StandardMaterial takes literally. The first build of this pad was
+  // Standard and came out solid white under them.
   function paint(name, hex, glowing = false) {
-    const m = new B.StandardMaterial(`Rocket pad ${name}`, scene);
-    m.diffuseColor = B.Color3.FromHexString(hex);
-    m.specularColor = new B.Color3(0.08, 0.08, 0.08);
-    if (glowing) m.emissiveColor = B.Color3.FromHexString(hex).scale(0.55);
+    const m = new B.PBRMaterial(`Rocket pad ${name}`, scene);
+    m.albedoColor = B.Color3.FromHexString(hex).toLinearSpace();
+    m.metallic = 0;
+    m.roughness = 0.55;
+    if (glowing) m.emissiveColor = B.Color3.FromHexString(hex).toLinearSpace().scale(0.55);
     return m;
   }
   const navy = paint('navy', '#1d2a4a');
