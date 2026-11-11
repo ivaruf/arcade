@@ -151,6 +151,30 @@ not see it. One look note: the gold behind the vault door was first the pale
 window gold, and a two-metre disc of it bloomed to white; the loot is a deeper
 mustard glow on a dark interior instead, which reads as gold and not as a lamp.
 
+## Starswing's star ladder (2026-11-11)
+
+The third island built to the rules from the start (`js/starswing.js`). Same
+bench, same settings, before (ba7955e) → after:
+
+| view | draw calls | active | CPU ms |
+|---|---|---|---|
+| near Starswing (new) | 281 | 116 | 2.09 |
+| title | 495 → 495 | 237 → 237 | 3.23 → 3.16 |
+| near the outcrop (below it) | 331 → 331 | 137 → 137 | 2.25 → 2.19 |
+| overview | 1,289 → 1,351 | 732 → 782 | 5.51 → 5.86 |
+
+Scene 1,029 → 1,081 meshes, 448 → 464 materials, shadow casters 226 → 241
+(the cabinet and take-home machine; the island casts nothing). Some seventy
+still pieces merge to about ten (one vertex-coloured matte, one per star
+colour, ice and gold); the movers are the comet, its beam and four tail
+beads. One thing worth keeping: at its first height, nine metres, its own
+view was 324 draw calls, over the 300 budget, and nearly all of the excess
+was the outcrop underneath, inside the frustum though hidden by the deck
+(nothing here culls by occlusion). At thirteen metres the outcrop falls
+below the view and the same island costs 281. **Where an upper island
+stands decides what its view pays for the one below.** The deck's nebula is
+nine flat discs in the matte, so it cost no draw at all.
+
 ## Ratified
 
 - **Islands carry flat colour as vertex colours (COLOR_0, linear)**, with

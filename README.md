@@ -19,8 +19,9 @@ The welcome cloud is surrounded by nine game islands: NeonFox to the
 northwest, Fishtank north, Dam Break northeast, Supermine east, Supermine
 Adventure southeast, Swirls south, Lobbots southwest, and Maxgear west.
 MiniMaze floats above Lobbots in the southwest, Zoodoku above Supermine
-Adventure in the southeast, Geometry Pong above Dam Break in the northeast, and
-HEIST above Maxgear's gyro hangar in the west.
+Adventure in the southeast, Geometry Pong above Dam Break in the northeast,
+HEIST above Maxgear's gyro hangar in the west, and Starswing above Supermine's
+outcrop in the east.
 Their different heights make getting between them a
 short flight.
 
@@ -76,6 +77,23 @@ the court is out of view or far away. Land on the hub side, cross the court,
 and play on the far apron facing back over it; the take-home machine stands
 2.4 m along that apron, square to the cabinet. The cabinet art is the game's
 own 192 px icon, `assets/games/geometry_pong-192.png`, cached with the shell.
+
+Starswing occupies **The star ladder** at `(20, 13, 0)`, the highest deck in
+the sky, over the outcrop as HEIST is over the hangar opposite: the island is
+the climb. Over a night-blue deck painted with a dim nebula stands the game's
+sky turned on its edge to face the welcome cloud — five stars zigzagging up
+eight metres, one in each of the game's zone colours in the order you meet
+them, each with its four-point sparkle, and gold stardust between. One comet
+plays the game: it swings round a star on a beam of light, lets go when it is
+heading for the next, is caught, and swings again, its tail taking the colour
+of the star it last held; off the top it falls back to the first. `js/starswing.js`
+builds it all in code: the deck, keel, mast and nebula are one vertex-coloured
+matte, the stars and lights one draw per colour, and the comet, its beam and
+four tail beads are the only movers, still while the island is out of view.
+Land on the hub side, walk in under the ladder, and play on the far apron
+facing back at it; the take-home machine stands 2.4 m north along that apron.
+The cabinet art is the game's own 192 px icon,
+`assets/games/starswing-192.png`, cached with the shell.
 
 HEIST occupies **The night bank** at `(-21, 11, 0)`, nine and a half metres
 above the gyro hangar: one city block out of the game's comic book at night,

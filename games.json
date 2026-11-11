@@ -120,6 +120,19 @@
         "tagline": "Knekk den før politiet kommer.",
         "description": "Et tegneseriespill om å knekke safer. Dirk opp låser, vri på tallskiver, klipp riktig ledning og snik deg forbi laserne før politibilen kommer, og bruk byttet på bedre verktøy."
       }
+    },
+    {
+      "slug": "starswing",
+      "name": "Starswing",
+      "accent": "#5ac8ff",
+      "icon": "assets/games/starswing-192.png",
+      "tagline": "Swing from star to star.",
+      "description": "A one-button climb through a glowing night sky. Hold to catch a star and swing round it, let go to fly on to the next, and see how high you can get before the sky leaves you behind.",
+      "theme": "#05060f",
+      "nb": {
+        "tagline": "Sving deg fra stjerne til stjerne.",
+        "description": "En klatretur med én knapp gjennom en lysende nattehimmel. Hold for å gripe en stjerne og svinge rundt den, slipp for å fly videre til den neste, og se hvor høyt du kommer før himmelen drar fra deg."
+      }
     }
   ]
 }

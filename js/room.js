@@ -7,6 +7,7 @@ import { createMiniMazeIsland } from './minimaze.js';
 import { createZoodokuIsland } from './zoodoku.js';
 import { createGeometryPongIsland } from './geometrypong.js';
 import { createHeistIsland } from './heist.js';
+import { createStarswingIsland } from './starswing.js';
 import { createSpectaclesIsland } from './spectacles.js';
 
 /* =============================================================================
@@ -65,6 +66,11 @@ export const PLATFORMS = [
   // Over the gyro hangar, as MiniMaze is over Lobbots: the west's upper
   // island, set back a metre so the hangar's own sign still clears its keel.
   { id: 'heist', name: 'The night bank', x: [-28, -14], z: [-7, 7], y: 11 },
+  // A night-blue deck with a ladder of five stars standing over it and a
+  // comet swinging up them (js/starswing.js). Over the outcrop, as HEIST is
+  // over the hangar opposite: the east's upper island, and the highest deck
+  // in the sky, which also keeps the outcrop out of its own view's frustum.
+  { id: 'starswing', name: 'The star ladder', x: [14, 26], z: [-6, 6], y: 13 },
   { id: 'neonfox', name: 'The neon arena', x: [-25, -13], z: [-24, -12], y: 2 },
   { id: 'lobbots', name: 'The proving ground', x: [-25, -13], z: [12, 24], y: .5 },
   { id: 'welcome', name: 'The welcome cloud', x: [-6, 6], z: [-5, 5], y: 0 },
@@ -98,6 +104,7 @@ export const BEACONS = {
   zoodoku: { x: 25.0, y: 6.5, z: 20.4, top: 5.2 },
   geometry_pong: { x: 24.7, y: 12, z: -24.3, top: 5.2 },
   heist: { x: -27.7, y: 11, z: 6.7, top: 5.2 },
+  starswing: { x: 25.7, y: 13, z: -5.7, top: 5.2 },
   lobbots: { x: -24.5, y: .5, z: 18, top: 5.2 },
   neonfox: { x: -24.5, y: 2, z: -18, top: 5.4 },
   dam: { x: 23, y: 1, z: -18, top: 5.0 },
@@ -119,6 +126,7 @@ export const PLACEMENT = {
   zoodoku: 'zoodoku',
   geometry_pong: 'geometry_pong',
   heist: 'heist',
+  starswing: 'starswing',
   lobbots: 'lobbots',
   neonfox: 'neonfox',
   maxgear: 'race',
@@ -148,6 +156,9 @@ export const SLOTS = {
   // front of the bank, facing back the way you came, the vault door on your
   // right as you walk up.
   heist: [{ x: -19.15, z: -2.0, yaw: Math.PI / 2 }],
+  // Land on the hub side, walk in under the ladder of stars, and play on the
+  // far apron facing back at it, the comet swinging over your head.
+  starswing: [{ x: 24.3, z: 1.6, yaw: -Math.PI / 2 }],
   lobbots: [{ x: -22, z: 18, yaw: Math.PI / 2 }],
   neonfox: [{ x: -22, z: -18, yaw: Math.PI / 2 }],
   // Enter from the southwest, pass the reservoir on the right, then play.
@@ -609,7 +620,7 @@ export async function buildWorld(scene) {
   // their full bounds, not their centres: Drifting cloud.007 reaches into the
   // sign even though its centre sits outside the deck. Keep this at load time
   // too so an older cached cloud-world.glb cannot obscure a newly added island.
-  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong', 'heist', 'spectacles'].includes(p.id));
+  const newIslands = PLATFORMS.filter((p) => ['lobbots', 'minimaze', 'zoodoku', 'geometry_pong', 'heist', 'starswing', 'spectacles'].includes(p.id));
   for (const mesh of held.meshes) {
     if (!/^(Near cloud|Drifting cloud)/.test(mesh.name)) continue;
     mesh.computeWorldMatrix(true);
@@ -685,6 +696,9 @@ export async function buildWorld(scene) {
   // And HEIST's block: one matte for street, stone and thief, one per glow.
   const heist = createHeistIsland(scene, PLATFORMS.find((p) => p.id === 'heist'), { mast: BEACONS.heist });
   for (const one of mergeStatic(heist.statics, { label: 'Heist', cell: 1e6 })) one.freezeWorldMatrix();
+  // And Starswing's ladder: one matte for the deck, one draw per star colour.
+  const starswing = createStarswingIsland(scene, PLATFORMS.find((p) => p.id === 'starswing'), { mast: BEACONS.starswing });
+  for (const one of mergeStatic(starswing.statics, { label: 'Starswing', cell: 1e6 })) one.freezeWorldMatrix();
   // Spectacles: deck, bulbs and board. The rocket pad on it is main.js's,
   // because it is something the gopher uses rather than scenery.
   const spectacles = createSpectaclesIsland(scene, PLATFORMS.find((p) => p.id === 'spectacles'));
@@ -706,8 +720,9 @@ export async function buildWorld(scene) {
       ...zoodoku.blockers,
       ...geometryPong.blockers,
       ...heist.blockers,
+      ...starswing.blockers,
       ...spectacles.blockers,
     ],
-    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); zoodoku.animate(dt); geometryPong.animate(dt); heist.animate(dt); },
+    animate(dt) { swimmers.animate(dt); gears.animate(dt); swirls.animate(dt); neonfox.animate(dt); foxrace.animate(dt); minimaze.animate(dt); zoodoku.animate(dt); geometryPong.animate(dt); heist.animate(dt); starswing.animate(dt); },
   };
 }

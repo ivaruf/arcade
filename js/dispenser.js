@@ -54,7 +54,8 @@ import { t } from './i18n.js';
  * to it and facing back over the court, its standing place a metre short of the
  * arena's east bumper. HEIST's stands 2.4m south of its cabinet in front of the
  * bank, square to it and facing the hub, its box inside the block's kerb so
- * the police car's street stays clear.
+ * the police car's street stays clear. Starswing's stands 2.4m north of its
+ * cabinet on the far apron, square to it and facing back at the star ladder.
  */
 const MACHINES = [
   { slug: 'lobbots', title: 'LOBBOTS', x: -22, z: 15.6, y: .5, yaw: Math.PI / 2 },
@@ -68,6 +69,7 @@ const MACHINES = [
   { slug: 'minimaze', title: 'MiniMaze', x: -18.4, z: 20.5, y: 12, yaw: Math.PI },
   { slug: 'geometry_pong', title: 'Geometry Pong', x: 24.3, z: -18.6, y: 12, yaw: -Math.PI / 2 },
   { slug: 'heist', title: 'HEIST', x: -19.15, z: -4.4, y: 11, yaw: Math.PI / 2 },
+  { slug: 'starswing', title: 'Starswing', x: 24.3, z: -.8, y: 13, yaw: -Math.PI / 2 },
 ];
 
 /**
