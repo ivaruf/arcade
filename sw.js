@@ -7,11 +7,14 @@
  *                           dropped on activate.
  *   arcade-runtime          the games' manifests and icons (same origin,
  *                           outside this scope), and anything heavy in scope:
- *                           the models, the theme and Babylon. Cached as they
- *                           are seen, and it survives version bumps — which is
+ *                           the models and the theme. Cached as they are
+ *                           seen, and it survives version bumps — which is
  *                           the whole point of keeping them out of the shell.
  *                           Nine megabytes of gopher should not be downloaded
  *                           again because a stylesheet changed.
+ *
+ * Babylon is in neither: it comes from jsDelivr, and every cross-origin
+ * request passes straight through to the browser's own HTTP cache.
  *
  * Both are stale-while-revalidate: answer from cache at once, refresh from
  * the network in the background. A new build therefore shows up on the visit
@@ -30,10 +33,11 @@ const RUNTIME = 'arcade-runtime';
 /**
  * Precached on install: the page, its modules, its stylesheet and its icons.
  *
- * The models, the theme and Babylon itself are NOT here. They are megabytes,
- * and the runtime cache picks them up the first time they are fetched, so it
- * survives a version bump — nine megabytes of gopher should not be downloaded
- * again because a stylesheet changed. The cost of that trade is honest and
+ * The models and the theme are NOT here (nor is Babylon, which is cross-origin
+ * and passed straight through). They are megabytes, and the runtime cache
+ * picks them up the first time they are fetched, so it survives a version
+ * bump — nine megabytes of gopher should not be downloaded again because a
+ * stylesheet changed. The cost of that trade is honest and
  * worth writing down: the arcade needs ONE online visit before it works
  * offline, because a sky with no clouds in it is not a sky.
  */
@@ -96,8 +100,10 @@ const SHELL_FILES = [
   './assets/games/heist-192.png',
   './assets/games/starswing-192.png',
   './icons/icon-32.png',
+  './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
 ];
 
 /** Big binaries live in the unversioned cache. See the header. */

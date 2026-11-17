@@ -56,15 +56,20 @@ body { touch-action: none; }
  * for the same reason.
  *
  * On `body` rather than per-element: the canvas is the whole page and the DOM
- * over it is all HUD. There is not one input or piece of prose to opt back in,
- * which is worth saying out loud — add `user-select: text` to it explicitly if
- * one ever appears. */
+ * over it is all HUD. The letter box (#letter-text) is the one place someone
+ * types, so text fields get selection back below — on Safari a field that
+ * inherits `user-select: none` can refuse typing altogether. */
 body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
   /* Stops Safari inflating the HUD's type when a phone is turned. */
   -webkit-text-size-adjust: 100%;
+}
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 #stage {

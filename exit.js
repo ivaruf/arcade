@@ -8,11 +8,13 @@
  * (fishtank is a directory deeper, so `../../arcade/exit.js` there.)
  *
  * It draws NOTHING. The button belongs to the game, in the game's own colours
- * and the game's own words — a generic chip dropped into six different games
- * is exactly the thing §2 of the hub's CLAUDE.md warns about, and an earlier
- * version of this file did it before being talked out of it. What the games
- * cannot each work out for themselves is what quitting should DO, because the
- * answer depends on how the page was opened, so that is what lives here.
+ * — a generic chip dropped into six different games is exactly the thing §2
+ * of the hub's CLAUDE.md warns about, and an earlier version of this file did
+ * it before being talked out of it. Its words are not the game's: §2 fixes
+ * them as "Back to arcade" / "Tilbake til arkaden", or "Close" / "Lukk".
+ * What the games cannot each work out for themselves is what quitting should
+ * DO, because the answer depends on how the page was opened, so that is what
+ * lives here.
  *
  * IT IS A CLASSIC SCRIPT, NOT A MODULE, AND THAT IS DELIBERATE. A game loading
  * this is taking a runtime dependency on another repo's file, and a failed
@@ -249,9 +251,10 @@
   /**
    * What a quit button should SAY, so six games do not each guess differently
    * and none of them promise something that will not happen. The game supplies
-   * its own vocabulary; this only picks which of them applies.
+   * the hub's fixed labels in its current language ("Back to arcade" /
+   * "Tilbake til arkaden", "Close" / "Lukk"); this only picks which applies.
    *
-   *   verb({ arcade: 'Back to the arcade', app: 'Close' })
+   *   verb({ arcade: 'Back to arcade', app: 'Close' })
    *
    * It answers the same three questions as `quit()`, in the same order, so the
    * label and the action can never disagree — which they did, and that is how
@@ -302,7 +305,7 @@
    * looking: whether the game it just framed has a way out of its own.
    *
    * It reads `contentWindow.ArcadeExit` to decide whether to show its own
-   * FLOOR pill, and that read THROWS against a cross-origin frame — so the
+   * back-to-arcade pill, and that read THROWS against a cross-origin frame — so the
    * arcade that most needs the pill hidden (the game does have a quit; we are
    * standing in it) is exactly the one where it appeared. A message crosses
    * origins where a property read cannot. Sent once, on load, carrying nothing
