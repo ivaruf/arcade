@@ -605,12 +605,17 @@ function armSound() {
   for (const event of events) window.addEventListener(event, go);
 }
 
+// What had the focus when the menu opened, so closing it can hand it back.
+let pauseOpener = null;
+
 function pause() {
   if (phase !== 'floor') return;
   phase = 'paused';
   input.clear();
+  pauseOpener = document.activeElement;
   ui.pause.hidden = false;
   ui.prompt.hidden = true;
+  ui.resume.focus();
   sfx.click();
 }
 
@@ -618,6 +623,8 @@ function unpause() {
   if (phase !== 'paused') return;
   phase = 'floor';
   ui.pause.hidden = true;
+  pauseOpener?.focus?.();
+  pauseOpener = null;
   sfx.click();
 }
 

@@ -124,8 +124,8 @@ const STRINGS = {
     'install.pause': 'Ha arkaden på enheten din',
     'install.head': 'Ta den med deg',
     'install.why':
-      'Sitt eget ikon, rett inn i himmelen, i fullskjerm — ingen adresselinje i veien. ' +
-      'Samme arkade, samme maskiner, ingenting holdt tilbake.',
+      'Eget ikon, rett inn i himmelen, i fullskjerm — ingen adresselinje i veien. ' +
+      'Samme arkade, samme maskiner, alt er med.',
     'install.go': 'Installer arkaden',
     'install.tap': 'Trykk på',
     'install.share': 'Del',
@@ -256,9 +256,9 @@ const STRINGS = {
     'parents.p3':
       'Jeg håper det kan bli et sted å dele: finn et spill sammen, hei på hverandre, og la barna finne sine egne favoritter og sitt eget tempo. Her er det plass til å vandre, tulle eller bare sitte i skyene en stund.',
     'parents.p4':
-      'Noen av spillene kan spilles sammen over internett, og de kjører i nettleseren på nettbrett, telefoner og datamaskiner, så en venn, et søskenbarn eller en besteforelder kan være med fra det de allerede har i hendene. Én spiller deler en romkode, de andre skriver den inn, og det er alt: ingenting å installere, ingen å registrere.',
+      'Noen av spillene kan spilles sammen over internett, og de kjører i nettleseren på nettbrett, telefoner og datamaskiner, så en venn, et søskenbarn eller en besteforelder kan være med fra det de allerede har i hendene. Én spiller deler en romkode, de andre trykker den inn, og det er alt: ingenting å installere, ingen å registrere.',
     'parents.p5':
-      'Jeg kommer ikke til å selge dataene dine. Jeg vil ikke engang ha dem. Det finnes ingen analyse her og ingen sporing av noe slag, og ingenting blir stille samlet inn mens barnet ditt spiller. Det arkaden husker er lite, og det blir værende på enheten du spiller på: om lyden er på, hvor skarp du vil ha himmelen. Hvis kontoer og lagret fremgang kommer en dag, er det der de blir lagret også. Og hvis noe forlater enheten, som et brev barnet ditt velger å legge i arkadens postkasse, inneholder det det de skrev, hvilket spill det handlet om, og et tilfeldig navn arkaden har gitt denne nettleseren — noe sånt som gc-7f3q-k2m9. Det navnet er hvordan svaret mitt finner veien tilbake til riktig postkasse, og det betyr at jeg kan se at to brev kom fra samme sted, som er det som gjør en samtale mulig i det hele tatt. Det er også alt jeg noen gang vet: ikke noe ekte navn, ingen konto, ingen e-post, ingenting om hvem eller hvor du er. Det hører til en nettleser og ikke til en person, og tømmer du nettleserens data, er det borte for godt. Selskapet som bringer posten for meg, Forminit, oppbevarer brevene på servere i Irland og noterer, som alle postvesen, hvilken internettadresse de kom fra. Jeg bruker den aldri til noe, og jeg sletter brevene når jeg har svart på dem.',
+      'Jeg kommer ikke til å selge dataene dine. Jeg vil ikke engang ha dem. Det finnes ingen analyse her og ingen sporing av noe slag, og ingenting blir stille samlet inn mens barnet ditt spiller. Det arkaden husker, er lite, og det blir værende på enheten du spiller på: om lyden er på, hvor skarp du vil ha himmelen. Hvis kontoer og lagret fremgang kommer en dag, er det der de blir lagret også. Og hvis noe forlater enheten, som et brev barnet ditt velger å legge i arkadens postkasse, inneholder det det de skrev, hvilket spill det handlet om, og et tilfeldig navn arkaden har gitt denne nettleseren — noe sånt som gc-7f3q-k2m9. Det navnet er hvordan svaret mitt finner veien tilbake til riktig postkasse, og det betyr at jeg kan se at to brev kom fra samme sted, som er det som gjør en samtale mulig i det hele tatt. Det er også alt jeg noen gang vet: ikke noe ekte navn, ingen konto, ingen e-post, ingenting om hvem eller hvor du er. Det hører til en nettleser og ikke til en person, og tømmer du nettleserens data, er det borte for godt. Selskapet som bringer posten for meg, Forminit, oppbevarer brevene på servere i Irland og noterer, som alle postvesen, hvilken internettadresse de kom fra. Jeg bruker den aldri til noe, og jeg sletter brevene når jeg har svart på dem.',
     'parents.p6':
       'Alt i arkaden er gratis i dag. Hvis den noen gang skal betale for seg selv, blir det gjennom tullete hatter og skyvenner for alle som har lyst til å bidra. Aldri et abonnement, aldri en pris på et spill, og aldri noe som gir én spiller en fordel eller låser en del av et spill.',
     'parents.p7':
@@ -296,7 +296,7 @@ const STRINGS = {
     'take.title': 'Ta det med hjem',
     'take.heading': (title) => `Ta med ${title} hjem`,
     'take.blurb': (title) =>
-      `${title} kan bo på enheten din som alt annet der: sitt eget ikon, ingen adresselinje, og det virker selv når internett ikke gjør det.`,
+      `${title} kan bo på enheten din som alt annet der: eget ikon, ingen adresselinje, og det virker selv når internett ikke gjør det.`,
     'take.ios': (title) => [
       `${title} åpnes i Safari.`,
       'Trykk på Del-knappen — firkanten med en pil ut av seg.',
@@ -310,7 +310,7 @@ const STRINGS = {
     'take.desktop': (title) => [
       `${title} åpnes i en ny fane.`,
       'Se etter installeringsknappen i adresselinjen — en liten skjerm med en pil.',
-      'Chrome og Edge har en. Firefox har det ikke, og det er ikke din feil.',
+      'Chrome og Edge har en. Firefox har ingen, og det er ikke din feil.',
     ],
     'take.note':
       'Du er i den installerte arkaden, så dette åpnes i et vanlig nettleservindu — og den typen vindu har ingen installeringsknapp. Hvis menyen ikke tilbyr det, åpner du arkaden i selve Chrome og kommer tilbake til denne maskinen.',
@@ -354,7 +354,7 @@ const STRINGS = {
     'outfit.done': 'Bruk dette antrekket',
     'outfit.note': 'Antrekket ditt blir husket, og reven din har det på seg i NeonFox.',
     'outfit.loading': 'Laster bilde …',
-    'outfit.noPreview': 'Ingen bilde',
+    'outfit.noPreview': 'Ikke noe bilde',
     'outfit.slotSmall': (slot) => slot,
     'outfit.empty': 'tom',
     'slot.head': 'Hode',

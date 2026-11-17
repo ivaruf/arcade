@@ -102,7 +102,12 @@ export function attachKeyboard(target = window) {
     // set from the keyboard, and SCROLL_KEYS would preventDefault the very keys
     // that move it — then walk the gopher with them. Space likewise: it is how
     // a focused button is pressed, and it was being eaten as a hop.
-    if (e.target.closest?.('#pause')) return;
+    // A text field owns every key, and a focused button owns Enter and Space,
+    // which press it: on a corner chip they used to press it AND start a dive
+    // or hop. Arrows still walk, so a chip clicked with a mouse (Chrome leaves
+    // it focused) does not leave the gopher stuck.
+    if (e.target.closest?.('#pause, input, textarea')) return;
+    if ((e.code === 'Enter' || e.code === 'Space') && e.target.closest?.('button')) return;
     if (SCROLL_KEYS.has(e.code)) e.preventDefault();
     if (e.repeat) return;
     press(e.code);

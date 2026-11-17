@@ -43,7 +43,7 @@
       "slug": "maxgear",
       "nb": {
         "tagline": "Full fart gjennom portene",
-        "description": "Reklamen var falsk. Dette er ekte. Et steampunk-løp der kanonene skyter av seg selv: styr gjennom oppgraderingsporter, gang opp ildkraften og knus IRONCLAD."
+        "description": "Reklamen var falsk. Dette er ekte. Et steampunk-løp der kanonene skyter av seg selv: styr gjennom oppgraderingsporter, bygg opp ildkraften og knus Jernkolossen."
       }
     },
     {
@@ -79,7 +79,7 @@
       "theme": "#30251b",
       "nb": {
         "tagline": "Vipp. Trill. Finn veien.",
-        "description": "Vipp en labyrint av tre og trill stålkula forbi hullene og ned i messingkoppen. Spill ved å vippe enheten, dra, med piltaster, WASD eller håndkontroll."
+        "description": "Vipp en labyrint av tre og trill stålkula forbi hullene og ned i messingkoppen. Vipp enheten, dra i brettet, eller bruk piltaster, WASD eller håndkontroll."
       }
     },
     {
@@ -105,7 +105,7 @@
       "theme": "#06070c",
       "nb": {
         "tagline": "Pong med flere sider.",
-        "description": "Pong på en mangekant med to til åtte sider, og hver side er noens mål. Sett én finger på hver kant av samme nettbrett, eller del et tastatur. Den som først når målet, vinner."
+        "description": "Pong på en mangekant med to til åtte sider, og hver side er noens mål. Sett én finger på hver kant av samme nettbrett, eller del et tastatur. Den som først når poengmålet, vinner."
       }
     },
     {
